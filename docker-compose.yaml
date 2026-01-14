@@ -1,8 +1,8 @@
 services:
   app:
     build: .
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - APP_NAME=Pertamak
       - APP_ENV=production
@@ -34,7 +34,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
