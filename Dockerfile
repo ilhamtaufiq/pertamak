@@ -11,7 +11,7 @@ RUN bun run build
 FROM composer:2 AS backend-build
 WORKDIR /app
 COPY backend/composer.json backend/composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-req=ext-exif
 
 # Production stage
 FROM php:8.2-fpm-alpine AS production
@@ -29,7 +29,7 @@ RUN apk add --no-cache \
     zip \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo pdo_mysql gd mbstring xml bcmath opcache
+    && docker-php-ext-install pdo pdo_mysql gd mbstring xml bcmath opcache exif
 
 # Configure PHP for production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

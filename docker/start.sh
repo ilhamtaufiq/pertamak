@@ -16,6 +16,9 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
+# Seed database (creates admin user & roles)
+php artisan db:seed --force
+
 # Create storage link
 php artisan storage:link --force 2>/dev/null || true
 
