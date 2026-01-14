@@ -16,6 +16,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - CACHE_STORE=file
       - SESSION_DRIVER=file
+      - SESSION_DOMAIN=pertamak.ilham.wtf
+      - SESSION_SECURE_COOKIE=true
+      - SANCTUM_STATEFUL_DOMAINS=pertamak.ilham.wtf
       - QUEUE_CONNECTION=sync
     volumes:
       - storage:/var/www/html/storage/app
