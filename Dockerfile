@@ -11,25 +11,29 @@ RUN bun run build
 FROM composer:2 AS backend-build
 WORKDIR /app
 COPY backend/composer.json backend/composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-req=ext-exif
+RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
-# Production stage
-FROM php:8.3-fpm-alpine AS production
+# Production stage - using Debian for faster extension install
+FROM php:8.3-fpm AS production
 
-# Install dependencies
-RUN apk add --no-cache \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
     libpng-dev \
-    libjpeg-turbo-dev \
+    libjpeg-dev \
     libwebp-dev \
-    freetype-dev \
-    oniguruma-dev \
+    libfreetype6-dev \
+    libonig-dev \
     libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo pdo_mysql gd mbstring xml bcmath opcache exif
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) pdo pdo_mysql gd mbstring xml bcmath opcache exif zip
 
 # Configure PHP for production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
@@ -44,10 +48,10 @@ COPY --from=backend-build /app/vendor ./vendor
 COPY --from=frontend-build /app/frontend/dist ./public/frontend
 
 # Copy nginx config
-COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
 # Copy supervisor config
-COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \

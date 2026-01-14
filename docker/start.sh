@@ -26,4 +26,4 @@ php artisan storage:link --force 2>/dev/null || true
 chown -R www-data:www-data storage bootstrap/cache
 
 # Start supervisor
-exec /usr/bin/supervisord -c /etc/supervisord.conf
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
