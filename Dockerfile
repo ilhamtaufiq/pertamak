@@ -14,7 +14,7 @@ COPY backend/composer.json backend/composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-req=ext-exif
 
 # Production stage
-FROM php:8.2-fpm-alpine AS production
+FROM php:8.3-fpm-alpine AS production
 
 # Install dependencies
 RUN apk add --no-cache \
