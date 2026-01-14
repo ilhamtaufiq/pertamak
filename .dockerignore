@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+vendor
+
+# Build artifacts
+frontend/dist
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+.phpunit.result.cache
+
+# Docker
+docker-compose*.yml
+!docker/
+
+# Documentation
+*.md
+!README.md
+
+# Laragon
+.laragon
