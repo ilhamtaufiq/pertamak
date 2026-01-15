@@ -11,6 +11,7 @@ import { KegiatanPrintView } from '../components/KegiatanPrintView';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useAuth } from '../contexts/AuthContext';
 import type { Kegiatan, PaginatedResponse, ApiResponse, KegiatanFormData } from '../types/kegiatan';
+import type { Karyawan } from '../types/karyawan';
 
 export function KegiatanPage() {
     const { user } = useAuth();
@@ -21,10 +22,20 @@ export function KegiatanPage() {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
-    // Date filter state
+    // Filters
     const [filterDay, setFilterDay] = useState<string>('');
     const [filterMonth, setFilterMonth] = useState<string>('');
     const [filterYear, setFilterYear] = useState<string>('');
+    const [filterUser, setFilterUser] = useState<string>('');
+
+    const isAdmin = user?.roles?.some(r => r.name === 'admin');
+
+    // Fetch employees (for admin filter)
+    const { data: employeesData } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => api.get<{ data: Karyawan[] }>('/karyawans'),
+        enabled: isAdmin,
+    });
 
     // Fetch kegiatans
     const { data, isLoading, error } = useQuery({
@@ -70,8 +81,13 @@ export function KegiatanPage() {
             ...Array.from(years).sort((a, b) => b.localeCompare(a)).map(y => ({ value: y, label: y }))
         ];
 
-        return { days, months, years: yearOptions };
-    }, [data]);
+        const userOptions = [
+            { value: '', label: 'Semua Petugas' },
+            ...(employeesData?.data.map(e => ({ value: String(e.user_id), label: e.nama })) || [])
+        ];
+
+        return { days, months, years: yearOptions, users: userOptions };
+    }, [data, employeesData, isAdmin]);
 
     // Filtered data
     const filteredData = useMemo(() => {
@@ -81,16 +97,27 @@ export function KegiatanPage() {
             const matchDay = !filterDay || day === filterDay;
             const matchMonth = !filterMonth || month === filterMonth;
             const matchYear = !filterYear || year === filterYear;
-            return matchDay && matchMonth && matchYear;
+            const matchUser = !filterUser || String(kegiatan.user_id) === filterUser;
+            return matchDay && matchMonth && matchYear && matchUser;
         });
-    }, [data, filterDay, filterMonth, filterYear]);
+    }, [data, filterDay, filterMonth, filterYear, filterUser]);
 
-    const hasActiveFilter = filterDay || filterMonth || filterYear;
+    const hasActiveFilter = filterDay || filterMonth || filterYear || filterUser;
     const clearFilters = () => {
         setFilterDay('');
         setFilterMonth('');
         setFilterYear('');
+        setFilterUser('');
     };
+
+    // Get selected user info for print
+    const selectedUserInfo = useMemo(() => {
+        if (!isAdmin) {
+            return user?.karyawan;
+        }
+        if (!filterUser) return undefined;
+        return employeesData?.data.find(e => String(e.user_id) === filterUser);
+    }, [filterUser, employeesData, isAdmin, user]);
 
     // Delete mutation
     const deleteMutation = useMutation({
@@ -232,6 +259,16 @@ export function KegiatanPage() {
                         placeholder="Tahun"
                     />
                 </div>
+                {isAdmin && (
+                    <div className="mt-2">
+                        <Select
+                            options={filterOptions.users}
+                            value={filterUser}
+                            onChange={setFilterUser}
+                            placeholder="Pilih Petugas"
+                        />
+                    </div>
+                )}
                 {hasActiveFilter && (
                     <p className="text-xs text-muted-foreground mt-2">
                         Menampilkan {filteredData.length} dari {data?.data.length} kegiatan
@@ -298,6 +335,11 @@ export function KegiatanPage() {
                                 data={filteredData}
                                 month={filterMonth}
                                 year={filterYear}
+                                userInfo={selectedUserInfo ? {
+                                    nama: selectedUserInfo.nama,
+                                    nip: selectedUserInfo.nip,
+                                    jabatan: selectedUserInfo.jabatan
+                                } : undefined}
                             />
                         </div>
                     </div>

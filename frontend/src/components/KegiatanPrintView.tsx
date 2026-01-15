@@ -6,11 +6,17 @@ interface KegiatanPrintViewProps {
     data: Kegiatan[];
     month?: string;
     year?: string;
+    userInfo?: {
+        nama: string;
+        nip: string | null;
+        jabatan: string;
+    };
 }
 
-export function KegiatanPrintView({ data, month, year }: KegiatanPrintViewProps) {
+export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrintViewProps) {
     const monthName = month ? format(new Date(2024, parseInt(month) - 1), 'MMMM', { locale: id }).toUpperCase() : '';
     const displayYear = year || new Date().getFullYear().toString();
+    const today = format(new Date(), 'dd MMMM yyyy', { locale: id });
 
     return (
         <div className="bg-white p-8 text-black font-serif" id="print-area">
@@ -37,7 +43,14 @@ export function KegiatanPrintView({ data, month, year }: KegiatanPrintViewProps)
 
             <div className="header">
                 <h1>JURNAL KEGIATAN SKP BULAN {monthName || '...'} {displayYear}</h1>
-                <h1>KEPALA UPTD PERTAMANAN DAN PEMAKAMAN</h1>
+                {userInfo ? (
+                    <>
+                        <h1 className="mt-2">{userInfo.nama.toUpperCase()}</h1>
+                        <h1>NIP. {userInfo.nip || '-'}</h1>
+                    </>
+                ) : (
+                    <h1>KEPALA UPTD PERTAMANAN DAN PEMAKAMAN</h1>
+                )}
             </div>
 
             <table>
@@ -90,6 +103,19 @@ export function KegiatanPrintView({ data, month, year }: KegiatanPrintViewProps)
                     ))}
                 </tbody>
             </table>
+
+            {/* Signature Section */}
+            {userInfo && (
+                <div className="mt-12 flex justify-end">
+                    <div className="text-center w-[300px]">
+                        <p>Cianjur, {today}</p>
+                        <p className="mt-1">Petugas,</p>
+                        <div className="h-[100px]" />
+                        <p className="font-bold underline">{userInfo.nama}</p>
+                        <p>NIP. {userInfo.nip || '-'}</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

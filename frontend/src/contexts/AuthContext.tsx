@@ -7,6 +7,11 @@ interface User {
     name: string;
     email: string;
     roles?: Array<{ name: string }>;
+    karyawan?: {
+        nama: string;
+        nip: string | null;
+        jabatan: string;
+    };
 }
 
 interface AuthContextType {
