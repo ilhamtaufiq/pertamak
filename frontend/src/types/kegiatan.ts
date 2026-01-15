@@ -11,6 +11,15 @@ export interface Kegiatan {
     id: number;
     user_id: number;
     user_name?: string;
+    user?: {
+        id: number;
+        name: string;
+        karyawan?: {
+            nama: string;
+            nip: string | null;
+            jabatan: string;
+        };
+    };
     tanggal: string;
     hari: string;
     lokasi: string;

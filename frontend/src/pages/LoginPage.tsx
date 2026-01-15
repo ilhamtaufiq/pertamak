@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Shield } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/Button';
@@ -40,8 +40,8 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-sm z-10 space-y-8">
                 {/* Logo & Header */}
                 <div className="text-center space-y-2">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary shadow-lg shadow-primary/30 mb-4 animate-in fade-in zoom-in duration-500">
-                        <Shield className="w-8 h-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white shadow-lg mb-4 animate-in fade-in zoom-in duration-500 overflow-hidden p-2">
+                        <img src="/logo.png" alt="Cianjur Kab Logo" className="w-full h-full object-contain" />
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Selamat Datang

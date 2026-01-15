@@ -17,7 +17,7 @@ class KegiatanController extends Controller
         $perPage = $request->get('per_page', 15);
         $user = auth()->user();
 
-        $query = Kegiatan::with(['media', 'user'])
+        $query = Kegiatan::with(['media', 'user.karyawan'])
             ->orderBy('tanggal', 'desc');
 
         if (!$user->hasRole('admin')) {

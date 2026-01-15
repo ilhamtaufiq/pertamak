@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { KegiatanCard } from '../components/KegiatanCard';
 import { KegiatanDetailModal } from '../components/KegiatanDetailModal';
 import { KegiatanPrintView } from '../components/KegiatanPrintView';
+import { KegiatanGroupedPrintView } from '../components/KegiatanGroupedPrintView';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useAuth } from '../contexts/AuthContext';
 import type { Kegiatan, PaginatedResponse, ApiResponse, KegiatanFormData } from '../types/kegiatan';
@@ -331,16 +332,24 @@ export function KegiatanPage() {
                 <ModalBody className="p-0 bg-muted overflow-hidden">
                     <div className="max-h-[70vh] overflow-auto p-4 flex justify-center">
                         <div id="print-preview-content" className="bg-white shadow-xl origin-top scale-[0.6] sm:scale-[0.8] md:scale-100 min-w-[1000px]">
-                            <KegiatanPrintView
-                                data={filteredData}
-                                month={filterMonth}
-                                year={filterYear}
-                                userInfo={selectedUserInfo ? {
-                                    nama: selectedUserInfo.nama,
-                                    nip: selectedUserInfo.nip,
-                                    jabatan: selectedUserInfo.jabatan
-                                } : undefined}
-                            />
+                            {isAdmin && !filterUser ? (
+                                <KegiatanGroupedPrintView
+                                    data={filteredData}
+                                    month={filterMonth}
+                                    year={filterYear}
+                                />
+                            ) : (
+                                <KegiatanPrintView
+                                    data={filteredData}
+                                    month={filterMonth}
+                                    year={filterYear}
+                                    userInfo={selectedUserInfo ? {
+                                        nama: selectedUserInfo.nama,
+                                        nip: selectedUserInfo.nip,
+                                        jabatan: selectedUserInfo.jabatan
+                                    } : undefined}
+                                />
+                            )}
                         </div>
                     </div>
                 </ModalBody>

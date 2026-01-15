@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Users, Calendar, ArrowLeft, LogOut, User as UserIcon, Shield, CalendarDays } from 'lucide-react';
+import { ClipboardList, Users, Calendar, ArrowLeft, LogOut, Shield, CalendarDays } from 'lucide-react';
 import { KegiatanPage, KegiatanFormModal } from './pages/KegiatanPage';
 import { KaryawanSection } from './components/KaryawanSection';
 import { JadwalPiketSection } from './components/JadwalPiketSection';
@@ -131,8 +131,8 @@ function App() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               )}
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden p-1.5">
+                <img src="/logo.png" alt="Cianjur Kab Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex-1">
                 <h1 className="font-semibold text-white leading-tight">{user.name}</h1>
