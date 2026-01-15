@@ -15,6 +15,8 @@ interface KegiatanCardProps {
 }
 
 export function KegiatanCard({ kegiatan, index, onClick, onEdit, onDelete, isDeleting }: KegiatanCardProps) {
+    const { user } = useAuth();
+    const isAdmin = user?.roles?.some(r => r.name === 'admin');
     const heroImage = kegiatan.dokumentasi[0];
 
     return (
@@ -56,7 +58,7 @@ export function KegiatanCard({ kegiatan, index, onClick, onEdit, onDelete, isDel
                 </Chip>
 
                 {/* Author Badge (Admin only) */}
-                {kegiatan.user_name && (
+                {isAdmin && kegiatan.user_name && (
                     <Chip
                         size="sm"
                         className="absolute top-2 right-2 bg-black/60 text-white border-none"
