@@ -2,6 +2,7 @@
 
 export interface Karyawan {
     id: number;
+    user_id: number | null;
     nama: string;
     jabatan: string;
     nip: string | null;

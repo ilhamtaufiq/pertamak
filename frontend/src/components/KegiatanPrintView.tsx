@@ -46,7 +46,7 @@ export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrint
                 {userInfo ? (
                     <>
                         <h1 className="mt-2">{userInfo.nama.toUpperCase()}</h1>
-                        <h1>NIP. {userInfo.nip || '-'}</h1>
+                        {/* <h1>NIP. {userInfo.nip || '-'}</h1> */}
                     </>
                 ) : (
                     <h1>KEPALA UPTD PERTAMANAN DAN PEMAKAMAN</h1>
