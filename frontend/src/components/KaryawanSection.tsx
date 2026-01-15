@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, Card, CardContent, Avatar, Spinner } from './ui';
+import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, Avatar, Spinner, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui';
 import { api } from '../lib/api';
 import type { Karyawan, KaryawanFormData } from '../types/karyawan';
 
@@ -76,48 +76,76 @@ export function KaryawanSection() {
                 </Button>
             </div>
 
-            {/* Horizontal scroll cards */}
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
-                {data?.data.map((karyawan) => (
-                    <Card key={karyawan.id} className="flex-shrink-0 w-36">
-                        <CardContent className="items-center text-center p-3">
-                            <Avatar
-                                src={karyawan.foto?.thumb}
-                                alt={karyawan.nama}
-                                size="lg"
-                                className="mb-2 mx-auto"
-                                fallback={<User className="w-6 h-6 text-default-500" />}
-                            />
-                            <h4 className="font-semibold text-sm truncate w-full">{karyawan.nama}</h4>
-                            <p className="text-xs text-default-500 truncate w-full mb-2">{karyawan.jabatan}</p>
-                            <div className="flex justify-center gap-1">
-                                <Button
-                                    isIconOnly
+            {/* Karyawan Table */}
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-16 text-center">Foto</TableHead>
+                        <TableHead>Nama</TableHead>
+                        <TableHead>Jabatan</TableHead>
+                        <TableHead>NIP</TableHead>
+                        <TableHead>No. HP</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {data?.data.map((karyawan) => (
+                        <TableRow key={karyawan.id}>
+                            <TableCell className="text-center">
+                                <Avatar
+                                    src={karyawan.foto?.thumb}
+                                    alt={karyawan.nama}
                                     size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleEdit(karyawan)}
-                                >
-                                    <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                                <Button
-                                    isIconOnly
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDelete(karyawan.id)}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5 text-danger" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                                    className="mx-auto"
+                                    fallback={<User className="w-4 h-4 text-default-500" />}
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <span className="font-bold text-foreground">{karyawan.nama}</span>
+                            </TableCell>
+                            <TableCell>
+                                <span className="text-sm font-medium text-muted-foreground">{karyawan.jabatan}</span>
+                            </TableCell>
+                            <TableCell>
+                                <span className="text-xs font-mono text-muted-foreground">{karyawan.nip || '-'}</span>
+                            </TableCell>
+                            <TableCell>
+                                <span className="text-xs text-muted-foreground">{karyawan.no_hp || '-'}</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                    <Button
+                                        isIconOnly
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleEdit(karyawan)}
+                                        className="text-muted-foreground hover:text-primary"
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                        isIconOnly
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDelete(karyawan.id)}
+                                        className="text-muted-foreground hover:text-danger"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5 text-danger" />
+                                    </Button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
 
-                {data?.data.length === 0 && (
-                    <div className="flex-shrink-0 w-full py-8 text-center text-default-500 text-sm">
-                        Belum ada data karyawan
-                    </div>
-                )}
-            </div>
+                    {data?.data.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                                Belum ada data karyawan
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
 
             {/* Form Modal */}
             <KaryawanFormModal

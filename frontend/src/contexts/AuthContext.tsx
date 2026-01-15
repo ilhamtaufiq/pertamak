@@ -8,6 +8,7 @@ interface User {
     email: string;
     roles?: Array<{ name: string }>;
     karyawan?: {
+        id: number;
         nama: string;
         nip: string | null;
         jabatan: string;

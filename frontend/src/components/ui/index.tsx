@@ -7,3 +7,4 @@ export { Avatar } from './Avatar';
 export { Input, TextArea } from './Input';
 export { Select } from './Select';
 export { ImageUploader } from './ImageUploader';
+export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';

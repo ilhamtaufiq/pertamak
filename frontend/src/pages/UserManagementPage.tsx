@@ -6,7 +6,6 @@ import {
     Trash2,
     Mail,
     ShieldCheck,
-    Briefcase,
     AlertCircle,
     Users,
     UserPlus,
@@ -16,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 // UI Components
-import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Card, CardContent, Spinner, Chip, Avatar, Input, Select } from '../components/ui';
+import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Spinner, Chip, Avatar, Input, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui';
 
 interface Karyawan {
     id: string;
@@ -212,75 +211,83 @@ const UserManagementPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* User Grid */}
+            {/* User Table */}
             {filteredUsers.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredUsers.map((user) => {
-                        const userRole = user.roles?.[0]?.name || user.role;
-                        return (
-                            <Card key={user.id} className="group hover:border-primary/50 transition-colors shadow-sm active:scale-[0.98]">
-                                <CardContent className="p-5">
-                                    <div className="flex items-start justify-between mb-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Linked Profile</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredUsers.map((user) => {
+                            const userRole = user.roles?.[0]?.name || user.role;
+                            return (
+                                <TableRow key={user.id}>
+                                    <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar
-                                                fallback={<Users className="w-5 h-5 text-muted-foreground" />}
-                                                className="bg-muted ring-2 ring-card"
+                                                fallback={<Users className="w-4 h-4 text-muted-foreground" />}
+                                                className="bg-muted w-8 h-8"
                                             />
-                                            <div>
-                                                <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{user.name}</h3>
-                                                <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                                                    <Mail className="w-3 h-3" />
-                                                    {user.email}
-                                                </div>
-                                            </div>
+                                            <span className="font-bold text-foreground">{user.name}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                            <Mail className="w-3.5 h-3.5" />
+                                            {user.email}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
                                         <Chip
                                             variant="flat"
                                             className={userRole === 'admin' ? 'bg-amber-50 text-amber-600' : 'bg-sky-50 text-sky-600'}
                                         >
                                             {userRole === 'admin' ? 'ADMIN' : 'Karyawan'}
                                         </Chip>
-                                    </div>
-
-                                    <div className="space-y-3 py-3 border-y border-border">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Briefcase className="w-3.5 h-3.5" />
-                                                <span>Employee Profile</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {user.karyawan ? (
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-foreground text-xs">{user.karyawan.nama}</span>
+                                                <span className="text-[10px] text-muted-foreground">{user.karyawan.jabatan}</span>
                                             </div>
-                                            {user.karyawan ? (
-                                                <span className="font-semibold text-foreground">{user.karyawan.nama}</span>
-                                            ) : (
-                                                <span className="text-muted-foreground italic">Unlinked</span>
-                                            )}
+                                        ) : (
+                                            <span className="text-muted-foreground italic text-xs">Unlinked</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                isIconOnly
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleOpenModal(user)}
+                                                className="text-muted-foreground hover:text-primary"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                isIconOnly
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDeleteUser(user.id)}
+                                                className="text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-end gap-2 mt-4">
-                                        <Button
-                                            isIconOnly
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleOpenModal(user)}
-                                            className="text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            isIconOnly
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDeleteUser(user.id)}
-                                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
-                </div>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-muted rounded-3xl border-2 border-dashed border-border">
                     <UserPlus className="w-16 h-16 text-muted-foreground/30 mb-4" />

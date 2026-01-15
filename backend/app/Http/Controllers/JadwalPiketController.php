@@ -13,9 +13,15 @@ class JadwalPiketController extends Controller
      */
     public function index(): JsonResponse
     {
-        $jadwals = JadwalPiket::with('karyawan')
-            ->where('shift', 'Malam')
-            ->get()
+        $user = auth()->user();
+        $query = JadwalPiket::with('karyawan');
+
+        if (!$user->hasRole('admin')) {
+            $karyawanId = $user->karyawan?->id;
+            $query->where('karyawan_id', $karyawanId);
+        }
+
+        $jadwals = $query->get()
             ->sortBy(function ($jadwal) {
                 $hariOrder = JadwalPiket::getHariOrder();
                 return ($hariOrder[$jadwal->hari] ?? 99) * 10;

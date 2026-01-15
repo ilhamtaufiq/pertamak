@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
                         Selamat Datang
                     </h1>
                     <p className="text-sm text-muted-foreground italic">
-                        Layanan Administrasi UPTD Pertamak
+                        Layanan Administrasi UPTD Pertamanan dan Pemakaman Disperkim Cianjur
                     </p>
                 </div>
 

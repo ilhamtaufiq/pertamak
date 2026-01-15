@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Select, Chip, Spinner, Input } from './ui';
 import { api } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import { JadwalPiketPrintView } from './JadwalPiketPrintView';
 import type { JadwalPiket, JadwalPiketFormData, JadwalPiketResponse, Hari, Shift } from '../types/jadwal_piket';
 import type { Karyawan } from '../types/karyawan';
@@ -30,6 +31,9 @@ interface ApiResponse<T> {
 
 export function JadwalPiketSection() {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
+    const isAdmin = user?.roles?.some(r => r.name === 'admin');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
@@ -37,11 +41,19 @@ export function JadwalPiketSection() {
     const [filterDay, setFilterDay] = useState<string>('');
     const [filterMonth, setFilterMonth] = useState<string>('');
     const [filterYear, setFilterYear] = useState<string>('');
+    const [filterUser, setFilterUser] = useState<string>('');
+
+    const { data: karyawanData } = useQuery({
+        queryKey: ['karyawans'],
+        queryFn: () => api.get<KaryawanResponse>('/karyawans'),
+    });
 
     const { data, isLoading } = useQuery({
-        queryKey: ['jadwal-pikets'],
+        queryKey: ['jadwal-pikets', user?.id],
         queryFn: () => api.get<JadwalPiketResponse>('/jadwal-pikets'),
     });
+
+
 
     // Generate filter options
     const filterOptions = useMemo(() => {
@@ -82,8 +94,13 @@ export function JadwalPiketSection() {
             ...Array.from(years).sort((a, b) => b.localeCompare(a)).map(y => ({ value: y, label: y }))
         ];
 
-        return { days, months, years: yearOptions };
-    }, [data]);
+        const userOptions = [
+            { value: '', label: 'Semua Petugas' },
+            ...(karyawanData?.data.map(k => ({ value: String(k.id), label: k.nama })) || [])
+        ];
+
+        return { days, months, years: yearOptions, users: userOptions };
+    }, [data, karyawanData]);
 
     // Filtered data
     const filteredData = useMemo(() => {
@@ -94,21 +111,20 @@ export function JadwalPiketSection() {
             const matchDay = !filterDay || day === filterDay;
             const matchMonth = !filterMonth || month === filterMonth;
             const matchYear = !filterYear || year === filterYear;
-            return matchDay && matchMonth && matchYear;
+            const matchUser = !filterUser || String(j.karyawan_id) === filterUser;
+            return matchDay && matchMonth && matchYear && matchUser;
         });
-    }, [data, filterDay, filterMonth, filterYear]);
+    }, [data, filterDay, filterMonth, filterYear, filterUser]);
 
-    const hasActiveFilter = filterDay || filterMonth || filterYear;
+    const hasActiveFilter = filterDay || filterMonth || filterYear || filterUser;
     const clearFilters = () => {
         setFilterDay('');
         setFilterMonth('');
         setFilterYear('');
+        setFilterUser('');
     };
 
-    const { data: karyawanData } = useQuery({
-        queryKey: ['karyawans'],
-        queryFn: () => api.get<KaryawanResponse>('/karyawans'),
-    });
+
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete<ApiResponse<null>>(`/jadwal-pikets/${id}`),
@@ -207,7 +223,7 @@ export function JadwalPiketSection() {
                         </button>
                     )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className={`grid ${isAdmin ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-2`}>
                     <Select
                         options={filterOptions.days}
                         value={filterDay}
@@ -226,6 +242,16 @@ export function JadwalPiketSection() {
                         onChange={setFilterYear}
                         placeholder="Tahun"
                     />
+                    {isAdmin && (
+                        <div className="col-span-2 md:col-span-1">
+                            <Select
+                                options={filterOptions.users}
+                                value={filterUser}
+                                onChange={setFilterUser}
+                                placeholder="Petugas"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -250,17 +276,20 @@ export function JadwalPiketSection() {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex flex-wrap gap-1.5">
-                                        {getScheduleForDay(hari, 'Malam').map(s => (
-                                            <Chip
-                                                key={s.id}
-                                                size="sm"
-                                                variant="flat"
-                                                onClose={() => handleDelete(s.id)}
-                                                className="bg-primary/10 text-primary-600 border-primary/20"
-                                            >
-                                                {s.karyawan.nama}
-                                            </Chip>
-                                        ))}
+                                        {getScheduleForDay(hari, 'Malam').map(s => {
+                                            const isCurrentUser = user?.karyawan?.id === s.karyawan_id;
+                                            return (
+                                                <Chip
+                                                    key={s.id}
+                                                    size="sm"
+                                                    variant={isCurrentUser ? "solid" : "flat"}
+                                                    onClose={isAdmin ? () => handleDelete(s.id) : undefined}
+                                                    className={isCurrentUser ? "bg-primary text-white" : "bg-primary/10 text-primary-600 border-primary/20"}
+                                                >
+                                                    {s.karyawan.nama}
+                                                </Chip>
+                                            );
+                                        })}
                                         {getScheduleForDay(hari, 'Malam').length === 0 && (
                                             <span className="text-muted-foreground text-xs italic">Kosong</span>
                                         )}
