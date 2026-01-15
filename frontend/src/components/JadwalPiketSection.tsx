@@ -406,6 +406,7 @@ function JadwalPiketFormModal({ isOpen, onClose, karyawans }: JadwalPiketFormMod
                     onChange={(value) => setFormData(prev => ({ ...prev, karyawan_id: Number(value) }))}
                     options={karyawans.map(k => ({ value: String(k.id), label: k.nama }))}
                     disabled={karyawans.length === 0}
+                    showSearch={true}
                 />
 
 
