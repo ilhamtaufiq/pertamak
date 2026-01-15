@@ -15,9 +15,16 @@ class KegiatanController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->get('per_page', 15);
-        $kegiatans = Kegiatan::with('media')
-            ->orderBy('tanggal', 'desc')
-            ->paginate($perPage);
+        $user = auth()->user();
+
+        $query = Kegiatan::with(['media', 'user'])
+            ->orderBy('tanggal', 'desc');
+
+        if (!$user->hasRole('admin')) {
+            $query->where('user_id', $user->id);
+        }
+
+        $kegiatans = $query->paginate($perPage);
 
         return response()->json($kegiatans);
     }
@@ -34,7 +41,7 @@ class KegiatanController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'uraian_kegiatan' => 'required|string',
             'dokumentasi' => 'nullable|array',
-            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         // Auto-generate hari from tanggal
@@ -50,6 +57,7 @@ class KegiatanController extends Controller
         ];
 
         $kegiatan = Kegiatan::create([
+            'user_id' => auth()->id(),
             'tanggal' => $validated['tanggal'],
             'hari' => $hariIndo[$tanggal->format('l')],
             'lokasi' => $validated['lokasi'],
@@ -85,6 +93,11 @@ class KegiatanController extends Controller
      */
     public function update(Request $request, Kegiatan $kegiatan): JsonResponse
     {
+        $user = auth()->user();
+        if (!$user->hasRole('admin') && $kegiatan->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $validated = $request->validate([
             'tanggal' => 'sometimes|required|date',
             'lokasi' => 'sometimes|required|string|max:255',
@@ -140,6 +153,11 @@ class KegiatanController extends Controller
      */
     public function destroy(Kegiatan $kegiatan): JsonResponse
     {
+        $user = auth()->user();
+        if (!$user->hasRole('admin') && $kegiatan->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $kegiatan->delete();
 
         return response()->json([

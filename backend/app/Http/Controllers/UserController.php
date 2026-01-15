@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -40,6 +41,13 @@ class UserController extends Controller
         ]);
 
         $user->assignRole($validated['role']);
+
+        // Link to Karyawan profile
+        Karyawan::create([
+            'user_id' => $user->id,
+            'nama' => $user->name,
+            'jabatan' => $validated['role'] === 'admin' ? 'Administrator' : 'Staf', // Default fallback
+        ]);
 
         return response()->json([
             'message' => 'User created successfully',

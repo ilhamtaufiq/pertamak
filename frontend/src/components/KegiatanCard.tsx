@@ -2,6 +2,7 @@ import { Calendar, MapPin, Pencil, Trash2, Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Button, Card, CardContent, CardFooter, Chip } from './ui';
+import { useAuth } from '../contexts/AuthContext';
 import type { Kegiatan } from '../types/kegiatan';
 
 interface KegiatanCardProps {
@@ -53,6 +54,16 @@ export function KegiatanCard({ kegiatan, index, onClick, onEdit, onDelete, isDel
                 >
                     #{index + 1}
                 </Chip>
+
+                {/* Author Badge (Admin only) */}
+                {kegiatan.user_name && (
+                    <Chip
+                        size="sm"
+                        className="absolute top-2 right-2 bg-black/60 text-white border-none"
+                    >
+                        {kegiatan.user_name}
+                    </Chip>
+                )}
             </div>
 
             <CardContent className="space-y-2">

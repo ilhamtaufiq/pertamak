@@ -20,6 +20,7 @@ function createUppy(maxFiles: number) {
     return new Uppy({
         restrictions: {
             maxNumberOfFiles: maxFiles,
+            maxFileSize: 10485760, // 10 MB
             allowedFileTypes: ['image/*'],
         },
         autoProceed: false,

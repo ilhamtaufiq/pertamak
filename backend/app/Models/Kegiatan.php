@@ -18,6 +18,7 @@ class Kegiatan extends Model implements HasMedia
     public bool $shouldQueueMediaConversions = false;
 
     protected $fillable = [
+        'user_id',
         'tanggal',
         'hari',
         'lokasi',
@@ -32,7 +33,7 @@ class Kegiatan extends Model implements HasMedia
         'longitude' => 'float',
     ];
 
-    protected $appends = ['dokumentasi'];
+    protected $appends = ['dokumentasi', 'user_name'];
 
     /**
      * Register media collections for dokumentasi photos
@@ -67,5 +68,20 @@ class Kegiatan extends Model implements HasMedia
                 'name' => $media->name,
             ];
         })->toArray();
+    }
+    /**
+     * Get user relationship
+     */
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get user name attribute
+     */
+    public function getUserNameAttribute(): ?string
+    {
+        return $this->user ? $this->user->name : null;
     }
 }
