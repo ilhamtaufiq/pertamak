@@ -9,9 +9,11 @@ import { KegiatanCard } from '../components/KegiatanCard';
 import { KegiatanDetailModal } from '../components/KegiatanDetailModal';
 import { KegiatanPrintView } from '../components/KegiatanPrintView';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { useAuth } from '../contexts/AuthContext';
 import type { Kegiatan, PaginatedResponse, ApiResponse, KegiatanFormData } from '../types/kegiatan';
 
 export function KegiatanPage() {
+    const { user } = useAuth();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingKegiatan, setEditingKegiatan] = useState<Kegiatan | null>(null);
@@ -26,8 +28,9 @@ export function KegiatanPage() {
 
     // Fetch kegiatans
     const { data, isLoading, error } = useQuery({
-        queryKey: ['kegiatans'],
+        queryKey: ['kegiatans', user?.id],
         queryFn: () => api.get<PaginatedResponse<Kegiatan>>('/kegiatans'),
+        enabled: !!user,
     });
 
     // Generate filter options from data

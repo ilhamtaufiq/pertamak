@@ -20,9 +20,14 @@ class DashboardController extends Controller
         $date = $request->get('date', Carbon::today()->toDateString());
         
         $targetDate = Carbon::parse($date);
+        $user = auth()->user();
         
         // Build kegiatan query based on period
         $kegiatanQuery = Kegiatan::query();
+
+        if (!$user->hasRole('admin')) {
+            $kegiatanQuery->where('user_id', $user->id);
+        }
         
         switch ($period) {
             case 'day':
