@@ -7,6 +7,7 @@ interface RequestOptions extends RequestInit {
 }
 
 let authToken: string | null = null;
+let currentCoords: { latitude: number; longitude: number } | null = null;
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { params, ...fetchOptions } = options;
@@ -30,6 +31,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         headers.set('Authorization', `Bearer ${authToken}`);
     }
 
+    if (currentCoords) {
+        headers.set('X-User-Lat', String(currentCoords.latitude));
+        headers.set('X-User-Lng', String(currentCoords.longitude));
+    }
+
     const response = await fetch(url, {
         ...fetchOptions,
         headers,
@@ -50,6 +56,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 export const api = {
     setToken: (token: string | null) => {
         authToken = token;
+    },
+
+    setLocation: (coords: { latitude: number; longitude: number } | null) => {
+        currentCoords = coords;
     },
 
     get: <T>(endpoint: string, params?: Record<string, string | number>) =>

@@ -26,8 +26,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const savedToken = localStorage.getItem('auth_token');
+    if (savedToken) {
+        api.setToken(savedToken);
+    }
+
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+    const [token, setToken] = useState<string | null>(savedToken);
     const [isLoading, setIsLoading] = useState(true);
     const queryClient = useQueryClient();
 

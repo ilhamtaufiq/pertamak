@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Admin only
     Route::middleware('role:admin')->group(function () {
+        Route::get('/users/online', [UserController::class, 'online']);
         Route::apiResource('users', UserController::class);
     });
 });

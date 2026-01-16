@@ -8,6 +8,9 @@ import { Button, Spinner } from './components/ui';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import UserManagementPage from './pages/UserManagementPage';
+import { OnlineUsersWidget } from './components/OnlineUsersWidget';
+import { OnlineUsersMapPage } from './pages/OnlineUsersMapPage';
+import { LocationTracker } from './components/LocationTracker';
 import { api } from './lib/api';
 
 type PeriodFilter = 'day' | 'month' | 'year';
@@ -20,7 +23,7 @@ interface DashboardStats {
   date: string;
 }
 
-type PageType = 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users';
+type PageType = 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map';
 
 const menuItems = [
   {
@@ -108,6 +111,8 @@ function App() {
         return <JadwalPiketSection />;
       case 'users':
         return <UserManagementPage />;
+      case 'map':
+        return <OnlineUsersMapPage onBack={() => setCurrentPage('home')} />;
       default:
         return null;
     }
@@ -115,6 +120,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <LocationTracker />
       {/* Header */}
       <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
         <div className="px-4 py-3">
@@ -168,6 +174,11 @@ function App() {
       <main className="px-4 py-4">
         {currentPage === 'home' ? (
           <>
+            {/* Online Users Widget */}
+            {user?.roles?.some(r => r.name === 'admin') && (
+              <OnlineUsersWidget onOpenMap={() => setCurrentPage('map')} />
+            )}
+
             {/* Menu Icons Grid */}
             <section className="mb-6">
               <h3 className="text-lg font-bold mb-4">Menu</h3>

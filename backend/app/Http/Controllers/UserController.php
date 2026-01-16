@@ -115,4 +115,20 @@ class UserController extends Controller
             'message' => 'User deleted successfully'
         ]);
     }
+    /**
+     * Display a listing of online users.
+     */
+    public function online()
+    {
+        // Users seen in the last 5 minutes
+        $users = User::with(['roles', 'karyawan'])
+            ->where('last_seen', '>=', now()->subMinutes(5))
+            ->orderBy('last_seen', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Online users retrieved successfully',
+            'data' => $users
+        ]);
+    }
 }
