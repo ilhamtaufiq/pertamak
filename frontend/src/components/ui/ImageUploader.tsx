@@ -103,7 +103,7 @@ export function ImageUploader({
                     </label>
                     <Dropzone />
                     <p className="text-xs text-muted-foreground mt-1 mb-2">
-                        Drop file atau klik untuk pilih (Maks. {maxFiles} foto)
+                        Drop file atau klik untuk pilih (Maks. {maxFiles} foto, @10MB)
                     </p>
                     <FilesGrid columns={3} />
                 </div>

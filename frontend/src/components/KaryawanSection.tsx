@@ -276,6 +276,7 @@ function KaryawanFormModal({ isOpen, onClose, karyawan }: KaryawanFormModalProps
                         onChange={(e) => setFoto(e.target.files?.[0] || null)}
                         className="w-full px-4 py-3 rounded-xl border border-default-200 bg-default-100 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-primary-foreground file:text-sm"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Maks. 10MB (JPG, PNG)</p>
                 </div>
 
                 {mutation.error && (

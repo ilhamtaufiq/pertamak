@@ -105,7 +105,7 @@ class KegiatanController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'uraian_kegiatan' => 'sometimes|required|string',
             'dokumentasi' => 'nullable|array',
-            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'delete_dokumentasi' => 'nullable|array',
             'delete_dokumentasi.*' => 'integer',
         ]);
