@@ -23,12 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'last_seen' => \App\Http\Middleware\UpdateUserLastSeen::class,
         ]);
 
-        // Enable CORS and track last seen
+        // Enable CORS
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
-            \App\Http\Middleware\UpdateUserLastSeen::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
