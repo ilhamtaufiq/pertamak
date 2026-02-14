@@ -13,23 +13,13 @@ export function KegiatanGroupedPrintView({ data, month, year }: KegiatanGroupedP
     const displayYear = year || new Date().getFullYear().toString();
     const today = format(new Date(), 'dd MMMM yyyy', { locale: id });
 
-    // Group by user
-    const groupedData = data.reduce((acc, current) => {
-        const userId = current.user_id;
-        if (!acc[userId]) {
-            acc[userId] = {
-                userInfo: current.user?.karyawan || { nama: current.user?.name || 'Unknown', nip: '-', jabatan: 'Petugas' },
-                items: []
-            };
-        }
-        acc[userId].items.push(current);
-        return acc;
-    }, {} as Record<number, { userInfo: { nama: string, nip: string | null, jabatan: string }, items: Kegiatan[] }>);
-
-    // Filter out rows with invalid user_id and group data
-    const userIds = Object.keys(groupedData)
-        .filter(key => key !== 'null' && key !== 'undefined' && groupedData[Number(key)])
-        .map(Number);
+    // Sort by date (ascending) then by user name
+    const sortedData = [...data].sort((a, b) => {
+        const dateA = new Date(a.tanggal).getTime();
+        const dateB = new Date(b.tanggal).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return (a.user?.name || '').localeCompare(b.user?.name || '');
+    });
 
     return (
         <div className="bg-white text-black font-serif" id="print-area">
@@ -38,105 +28,99 @@ export function KegiatanGroupedPrintView({ data, month, year }: KegiatanGroupedP
                 @media print {
                     @page { size: landscape; margin: 1cm; }
                     body { background: white; }
-                    .page-break { page-break-after: always; }
                     .print-section { padding: 0 !important; margin: 0 !important; }
                 }
                 .print-section { padding: 40px; background: white; }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-                th, td { border: 1px solid black; padding: 12px 8px; vertical-align: top; font-size: 12px; word-wrap: break-word; }
+                th, td { border: 1px solid black; padding: 12px 8px; vertical-align: top; font-size: 11px; word-wrap: break-word; }
                 th { background-color: #f3f4f6; font-weight: bold; text-align: center; text-transform: uppercase; }
                 .header { text-align: center; margin-bottom: 30px; }
                 .header h1 { font-size: 18px; font-weight: bold; margin: 0; padding: 0; text-transform: uppercase; line-height: 1.5; }
-                .no-col { width: 40px; text-align: center; }
-                .date-col { width: 120px; text-align: center; }
-                .location-col { width: 150px; }
+                .no-col { width: 35px; text-align: center; }
+                .date-col { width: 100px; text-align: center; }
+                .petugas-col { width: 120px; }
+                .location-col { width: 130px; }
                 .content-col { width: auto; }
-                .image-col { width: 220px; }
-                .doc-image { width: 100%; max-height: 150px; object-fit: cover; margin-bottom: 5px; border: 1px solid #ddd; }
+                .image-col { width: 180px; }
+                .doc-image { width: 100%; max-height: 120px; object-fit: cover; margin-bottom: 5px; border: 1px solid #ddd; }
                 `}
             </style>
 
-            {userIds.length === 0 && (
-                <div className="p-8 text-center text-gray-500 italic">
-                    Tidak ada data kegiatan yang dapat ditampilkan.
+            <div className="print-section">
+                <div className="header">
+                    <h1>JURNAL KEGIATAN SKP {monthText} {displayYear}</h1>
+                    <h1>UPTD PERTAMANAN DAN PEMAKAMAN</h1>
                 </div>
-            )}
 
-            {userIds.map((userId, idx) => {
-                const group = groupedData[userId];
-                if (!group) return null;
-
-                return (
-                    <div key={userId} className={`print-section ${idx < userIds.length - 1 ? 'page-break' : ''}`}>
-                        <div className="header">
-                            <h1>JURNAL KEGIATAN SKP {monthText} {displayYear}</h1>
-                            <h1>UPTD PERTAMANAN DAN PEMAKAMAN</h1>
-                            <h1 className="mt-2 text-base">{(group.userInfo?.nama || 'Petugas').toUpperCase()}</h1>
-                        </div>
-
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th className="no-col">NO</th>
-                                    <th className="date-col">HARI/TANGGAL</th>
-                                    <th className="location-col">LOKASI</th>
-                                    <th className="content-col">URAIAN KEGIATAN</th>
-                                    <th className="image-col">DOKUMENTASI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {group.items.map((k, index) => (
-                                    <tr key={k.id}>
-                                        <td className="no-col">{index + 1}</td>
-                                        <td className="date-col text-center">
-                                            {k.hari},<br />
-                                            {format(new Date(k.tanggal), 'dd MMMM yyyy', { locale: id })}
-                                        </td>
-                                        <td className="location-col">
-                                            <ul className="list-disc ml-4">
-                                                <li>{k.lokasi}</li>
-                                            </ul>
-                                        </td>
-                                        <td className="content-col whitespace-pre-wrap">
-                                            {k.uraian_kegiatan.split('\n').map((line, i) => (
-                                                <div key={i} className="flex gap-2">
-                                                    <span>•</span>
-                                                    <span>{line.replace(/^[•\-\*]\s*/, '')}</span>
-                                                </div>
-                                            ))}
-                                        </td>
-                                        <td className="image-col">
-                                            <div className="space-y-2">
-                                                {k.dokumentasi.map((img) => (
-                                                    <img
-                                                        key={img.id}
-                                                        src={img.url}
-                                                        alt="Dokumentasi"
-                                                        className="doc-image"
-                                                    />
-                                                ))}
-                                                {k.dokumentasi.length === 0 && (
-                                                    <p className="text-[10px] text-center italic">Tidak ada foto</p>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        <div className="mt-12 flex justify-end">
-                            <div className="text-center w-[300px]">
-                                <p>Cianjur, {today}</p>
-                                <p className="mt-1">Petugas,</p>
-                                <div className="h-[100px]" />
-                                <p className="font-bold underline">{group.userInfo.nama}</p>
-                                <p>NIP. {group.userInfo.nip || '-'}</p>
-                            </div>
-                        </div>
+                {sortedData.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500 italic">
+                        Tidak ada data kegiatan yang dapat ditampilkan.
                     </div>
-                );
-            })}
+                ) : (
+                    <table>
+                        <thead>
+                            <tr>
+                                <th className="no-col">NO</th>
+                                <th className="date-col">HARI/TANGGAL</th>
+                                <th className="petugas-col">PETUGAS</th>
+                                <th className="location-col">LOKASI</th>
+                                <th className="content-col">URAIAN KEGIATAN</th>
+                                <th className="image-col">DOKUMENTASI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedData.map((k, index) => (
+                                <tr key={k.id}>
+                                    <td className="no-col">{index + 1}</td>
+                                    <td className="date-col text-center">
+                                        {k.hari},<br />
+                                        {format(new Date(k.tanggal), 'dd MMMM yyyy', { locale: id })}
+                                    </td>
+                                    <td className="petugas-col font-medium">
+                                        {k.user?.karyawan?.nama || k.user?.name || 'Unknown'}
+                                    </td>
+                                    <td className="location-col">
+                                        {k.lokasi}
+                                    </td>
+                                    <td className="content-col whitespace-pre-wrap text-left">
+                                        {k.uraian_kegiatan.split('\n').map((line, i) => (
+                                            <div key={i} className="flex gap-2">
+                                                <span>•</span>
+                                                <span>{line.replace(/^[•\-\*]\s*/, '')}</span>
+                                            </div>
+                                        ))}
+                                    </td>
+                                    <td className="image-col">
+                                        <div className="space-y-2">
+                                            {k.dokumentasi.map((img) => (
+                                                <img
+                                                    key={img.id}
+                                                    src={img.url}
+                                                    alt="Dokumentasi"
+                                                    className="doc-image"
+                                                />
+                                            ))}
+                                            {k.dokumentasi.length === 0 && (
+                                                <p className="text-[10px] text-center italic text-gray-400">Tidak ada foto</p>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
+                <div className="mt-12 flex justify-end">
+                    <div className="text-center w-[350px]">
+                        <p>Cianjur, {today}</p>
+                        <p className="mt-1 font-semibold">Kepala UPTD Pertamanan dan Pemakaman</p>
+                        <div className="h-[80px]" />
+                        <p className="font-bold underline">RIZAL RAMDHANI, S.H.</p>
+                        <p>NIP. 0000000 00 000</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
