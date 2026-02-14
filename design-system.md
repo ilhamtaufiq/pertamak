@@ -74,7 +74,7 @@ Cards used for activities (`KegiatanCard`) focus on visual documentation.
 ---
 
 ## 🖋️ Typography
-- **Primary Font:** `Inter` (Sans-serif)
+- **Primary Font:** `Google Sans Flex` (Official Google Sans variable font)
 - **Principles:**
   - **Captions:** Use `text-[10px]` with `font-bold` and `uppercase` for category labels (e.g., "LAPORAN", "PROFIL PEGAWAI").
   - **Headlines:** Use `font-black` or `font-bold` for numeric stats to create high visual hierarchy.

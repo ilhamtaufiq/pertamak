@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Filter, X, FileText, Printer } from 'lucide-react';
+import { Plus, Filter, X, Printer, Calendar } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Select, Chip, Spinner, Input } from './ui';
+import { id } from 'date-fns/locale';
+import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Select, Spinner, Input } from './ui';
 import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { JadwalPiketPrintView } from './JadwalPiketPrintView';
@@ -178,127 +179,176 @@ export function JadwalPiketSection() {
     }
 
     return (
-        <section className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <section className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Premium Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">Jadwal Piket</h2>
-                    <p className="text-muted-foreground text-sm">Atur jadwal piket malam karyawan.</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-8 h-1 bg-primary rounded-full" />
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Management</span>
+                    </div>
+                    <h2 className="text-2xl font-black text-foreground tracking-tight">Jadwal Piket Malam</h2>
+                    <p className="text-muted-foreground text-sm font-medium">Monitoring kehadiran kerja tim shift malam.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button
                         variant="secondary"
                         size="sm"
-                        className="gap-2 h-8 px-2 text-xs"
+                        className="h-10 px-4 gap-2 text-[11px] font-bold bg-card border border-border/60 shadow-sm hover:scale-105 active:scale-95 transition-all"
                         onClick={() => setIsPrintModalOpen(true)}
                         isDisabled={filteredData.length === 0}
                     >
-                        <FileText className="w-3.5 h-3.5" />
-                        Ekspor PDF
+                        <Printer className="w-3.5 h-3.5" />
+                        CETAK PDF
                     </Button>
                     <Button
-                        variant="ghost"
+                        variant="primary"
                         size="sm"
-                        className="gap-2 h-8"
+                        className="h-10 px-4 gap-2 text-[11px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                         onClick={() => setIsModalOpen(true)}
                     >
                         <Plus className="w-4 h-4" />
-                        Tambah
+                        TAMBAH JADWAL
                     </Button>
                 </div>
             </div>
 
-            {/* Filter Bar */}
-            <div className="p-3 bg-card rounded-xl border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Filter</span>
-                    {hasActiveFilter && (
-                        <button
-                            onClick={clearFilters}
-                            className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
-                        >
-                            <X className="w-3 h-3" />
-                            Reset
-                        </button>
-                    )}
-                </div>
-                <div className={`grid ${isAdmin ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-2`}>
-                    <Select
-                        options={filterOptions.days}
-                        value={filterDay}
-                        onChange={setFilterDay}
-                        placeholder="Tgl"
-                    />
-                    <Select
-                        options={filterOptions.months}
-                        value={filterMonth}
-                        onChange={setFilterMonth}
-                        placeholder="Bulan"
-                    />
-                    <Select
-                        options={filterOptions.years}
-                        value={filterYear}
-                        onChange={setFilterYear}
-                        placeholder="Tahun"
-                    />
+            {/* Premium Filter Section (Glassmorphism) */}
+            <section className="animate-in fade-in slide-in-from-top-2 duration-500 delay-75">
+                <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                <Filter className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Filter Jadwal</span>
+                        </div>
+                        {hasActiveFilter && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-[10px] font-bold text-destructive uppercase tracking-tight px-3 py-1.5 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-colors"
+                            >
+                                Reset Filter
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Hari</span>
+                            <Select
+                                options={filterOptions.days}
+                                value={filterDay}
+                                onChange={setFilterDay}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Bulan</span>
+                            <Select
+                                options={filterOptions.months}
+                                value={filterMonth}
+                                onChange={setFilterMonth}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Tahun</span>
+                            <Select
+                                options={filterOptions.years}
+                                value={filterYear}
+                                onChange={setFilterYear}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                    </div>
+
                     {isAdmin && (
-                        <div className="col-span-2 md:col-span-1">
+                        <div className="mt-3 flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Petugas</span>
                             <Select
                                 options={filterOptions.users}
                                 value={filterUser}
                                 onChange={setFilterUser}
-                                placeholder="Petugas"
+                                className="bg-background/50 border-none shadow-inner"
                             />
                         </div>
                     )}
                 </div>
-            </div>
+            </section>
 
-            {/* Schedule Table */}
-            <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                        <tr>
-                            <th className="px-4 py-3 text-left font-semibold w-24">HARI</th>
-                            <th className="px-4 py-3 text-left font-semibold">
-                                <Chip color="primary" size="sm" variant="flat">
-                                    Piket Malam
-                                </Chip>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {HARI.map(hari => (
-                            <tr key={hari} className="border-t border-border">
-                                <td className="px-4 py-3 font-medium text-card-foreground">
-                                    {hari}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {getScheduleForDay(hari, 'Malam').map(s => {
+            {/* Premium Schedule Scroll View (Bento grouped cards) */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                    <div className="w-2 h-2 rounded-full bg-success" />
+                    <h3 className="text-[11px] font-black text-foreground uppercase tracking-wider">Weekly Coverage</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {HARI.map(hari => {
+                        const schedule = getScheduleForDay(hari, 'Malam');
+                        return (
+                            <div
+                                key={hari}
+                                className="group bg-card border border-border/40 p-5 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 active:scale-[0.98]"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-black text-lg tracking-tight group-hover:text-primary transition-colors">{hari}</h4>
+                                    <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-lg uppercase">
+                                        Shift Malam
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-col gap-2.5">
+                                    {schedule.length > 0 ? (
+                                        schedule.map(s => {
                                             const isCurrentUser = user?.karyawan?.id === s.karyawan_id;
                                             return (
-                                                <Chip
+                                                <div
                                                     key={s.id}
-                                                    size="sm"
-                                                    variant={isCurrentUser ? "solid" : "flat"}
-                                                    onClose={isAdmin ? () => handleDelete(s.id) : undefined}
-                                                    className={isCurrentUser ? "bg-primary text-white" : "bg-primary/10 text-primary-600 border-primary/20"}
+                                                    className={`relative flex items-center justify-between p-3 rounded-2xl border transition-all ${isCurrentUser
+                                                        ? 'bg-primary/5 border-primary/20 ring-1 ring-primary/10'
+                                                        : 'bg-muted/30 border-transparent hover:bg-muted/50'
+                                                        }`}
                                                 >
-                                                    {s.karyawan.nama}
-                                                </Chip>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black shadow-sm ${isCurrentUser ? 'bg-primary text-white' : 'bg-background text-muted-foreground border border-border/40'
+                                                            }`}>
+                                                            {s.karyawan.nama.charAt(0)}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-xs font-bold ${isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                                                                {s.karyawan.nama}
+                                                            </span>
+                                                            {s.tanggal && (
+                                                                <span className="text-[10px] text-muted-foreground font-medium opacity-60">
+                                                                    {format(new Date(s.tanggal), 'dd MMM yyyy', { locale: id })}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}
+                                                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             );
-                                        })}
-                                        {getScheduleForDay(hari, 'Malam').length === 0 && (
-                                            <span className="text-muted-foreground text-xs italic">Kosong</span>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                        })
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-6 px-4 bg-muted/20 border border-dashed border-border/60 rounded-2xl">
+                                            <Calendar className="w-5 h-5 text-muted-foreground/20 mb-2" />
+                                            <span className="text-[10px] text-muted-foreground font-bold tracking-tight uppercase">No Officer Assigned</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Form Modal */}
