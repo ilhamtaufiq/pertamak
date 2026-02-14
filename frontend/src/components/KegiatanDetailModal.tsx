@@ -77,14 +77,14 @@ export function KegiatanDetailModal({
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] transition-opacity duration-300"
                 onClick={onClose}
             />
 
             {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="fixed inset-0 z-[71] flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none">
                 <div
-                    className="modal-content bg-card w-full sm:max-w-2xl sm:rounded-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl"
+                    className="modal-content bg-card w-full sm:max-w-2xl sm:rounded-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl pointer-events-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Sticky Header */}
@@ -99,12 +99,23 @@ export function KegiatanDetailModal({
                             <h2 className={`font-semibold text-lg transition-opacity duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0'}`}>
                                 Detail Kegiatan
                             </h2>
-                            <button
-                                onClick={onClose}
-                                className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    isIconOnly
+                                    size="sm"
+                                    onClick={() => onEdit(kegiatan)}
+                                    className="text-primary hover:bg-primary/5"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </Button>
+                                <button
+                                    onClick={onClose}
+                                    className="p-2 rounded-full hover:bg-muted transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -147,8 +158,8 @@ export function KegiatanDetailModal({
                                                     key={index}
                                                     onClick={() => setActiveImageIndex(index)}
                                                     className={`w-2 h-2 rounded-full transition-all duration-300 ${index === activeImageIndex
-                                                            ? 'bg-white w-6'
-                                                            : 'bg-white/50 hover:bg-white/80'
+                                                        ? 'bg-white w-6'
+                                                        : 'bg-white/50 hover:bg-white/80'
                                                         }`}
                                                 />
                                             ))}
@@ -231,8 +242,8 @@ export function KegiatanDetailModal({
                                                 key={foto.id}
                                                 onClick={() => setActiveImageIndex(index)}
                                                 className={`relative aspect-square rounded-xl overflow-hidden transition-all duration-200 ring-2 ring-offset-2 ${activeImageIndex === index
-                                                        ? 'ring-primary'
-                                                        : 'ring-transparent hover:ring-primary/40'
+                                                    ? 'ring-primary'
+                                                    : 'ring-transparent hover:ring-primary/40'
                                                     }`}
                                             >
                                                 <img
@@ -249,7 +260,7 @@ export function KegiatanDetailModal({
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="p-4 bg-card border-t border-border flex gap-3 sm:justify-end safe-bottom">
+                    <div className="p-4 bg-muted/50 dark:bg-slate-900/50 backdrop-blur-sm border-t border-border flex gap-3 sm:justify-end safe-bottom">
                         <Button
                             variant="ghost"
                             className="flex-1 sm:flex-none text-destructive hover:bg-destructive/10"

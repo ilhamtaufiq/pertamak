@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, Filter, X, FileText, Printer } from 'lucide-react';
+import { MapPin, Filter, FileText, Printer, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useInView } from 'react-intersection-observer';
-import { Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, TextArea, Spinner, ImageUploader, Select } from '../components/ui';
 import { api } from '../lib/api';
@@ -239,69 +238,95 @@ export function KegiatanPage() {
 
     return (
         <>
-            {/* Filter Bar */}
-            <div className="mb-4 p-3 bg-card rounded-xl border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Filter</span>
-                    <div className="ml-auto flex items-center gap-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-7 px-2 gap-1.5 text-xs"
-                            onClick={() => setIsPrintModalOpen(true)}
-                            isDisabled={isLoading || !infiniteData || flattedData.length === 0}
-                        >
-                            <FileText className="w-3.5 h-3.5" />
-                            Ekspor PDF
-                        </Button>
-                        {hasActiveFilter && (
-                            <button
-                                onClick={clearFilters}
-                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+            {/* Premium Filter Bar */}
+            <section className="mb-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                <Filter className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Filter Laporan</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {hasActiveFilter && (
+                                <button
+                                    onClick={clearFilters}
+                                    className="text-[10px] font-bold text-destructive uppercase tracking-tight px-2 py-1 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-colors"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-8 px-3 gap-2 text-[11px] font-bold bg-primary text-white border-none shadow-md shadow-primary/20 hover:scale-105 active:scale-95"
+                                onClick={() => setIsPrintModalOpen(true)}
+                                isDisabled={isLoading || !infiniteData || flattedData.length === 0}
                             >
-                                <X className="w-3 h-3" />
-                                Reset
-                            </button>
-                        )}
+                                <Printer className="w-3.5 h-3.5" />
+                                CETAK PDF
+                            </Button>
+                        </div>
                     </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                    <Select
-                        options={filterOptions.days}
-                        value={filterDay}
-                        onChange={setFilterDay}
-                        placeholder="Tgl"
-                    />
-                    <Select
-                        options={filterOptions.months}
-                        value={filterMonth}
-                        onChange={setFilterMonth}
-                        placeholder="Bulan"
-                    />
-                    <Select
-                        options={filterOptions.years}
-                        value={filterYear}
-                        onChange={setFilterYear}
-                        placeholder="Tahun"
-                    />
-                </div>
-                {isAdmin && (
-                    <div className="mt-2">
-                        <Select
-                            options={filterOptions.users}
-                            value={filterUser}
-                            onChange={setFilterUser}
-                            placeholder="Pilih Petugas"
-                        />
+
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Hari</span>
+                            <Select
+                                options={filterOptions.days}
+                                value={filterDay}
+                                onChange={setFilterDay}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Bulan</span>
+                            <Select
+                                options={filterOptions.months}
+                                value={filterMonth}
+                                onChange={setFilterMonth}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Tahun</span>
+                            <Select
+                                options={filterOptions.years}
+                                value={filterYear}
+                                onChange={setFilterYear}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
                     </div>
-                )}
-                {hasActiveFilter && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                        Menampilkan {flattedData.length} dari {totalResults} kegiatan
-                    </p>
-                )}
-            </div>
+
+                    {isAdmin && (
+                        <div className="mt-3 flex flex-col gap-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase ml-1">Petugas</span>
+                            <Select
+                                options={filterOptions.users}
+                                value={filterUser}
+                                onChange={setFilterUser}
+                                className="bg-background/50 border-none shadow-inner"
+                            />
+                        </div>
+                    )}
+
+                    {hasActiveFilter && (
+                        <div className="mt-4 flex items-center justify-between px-1">
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                                Ditemukan <span className="text-foreground font-bold">{flattedData.length}</span> dari <span className="text-foreground font-bold">{totalResults}</span> kegiatan
+                            </p>
+                            <div className="h-1 flex-1 bg-muted rounded-full mx-3 overflow-hidden">
+                                <div
+                                    className="h-full bg-primary transition-all duration-500"
+                                    style={{ width: `${Math.min(100, (flattedData.length / totalResults) * 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
 
             {/* Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -331,20 +356,34 @@ export function KegiatanPage() {
                 )}
             </div>
 
-            {/* Empty State */}
+            {/* Premium Empty State */}
             {flattedData.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-default-100 flex items-center justify-center mb-4">
-                        <Image className="w-10 h-10 text-default-400" />
+                <section className="flex flex-col items-center justify-center py-20 px-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="relative mb-8">
+                        <div className="w-32 h-32 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
+                            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                                <FileText className="w-12 h-12 text-primary/40" />
+                            </div>
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 p-3 bg-card rounded-2xl shadow-xl">
+                            <Plus className="w-6 h-6 text-primary" strokeWidth={3} />
+                        </div>
                     </div>
-                    <h3 className="text-lg font-semibold mb-1">Belum ada kegiatan</h3>
-                    <p className="text-default-500 text-sm mb-4">
-                        Tap "Tambah" untuk mulai mencatat kegiatan
+
+                    <h3 className="text-xl font-black text-foreground mb-2">Jurnal Masih Kosong</h3>
+                    <p className="text-muted-foreground text-sm mb-8 max-w-[240px] text-center leading-relaxed">
+                        Mulai catat aktivitas harianmu untuk laporan SKP yang lebih rapi.
                     </p>
-                    <Button variant="primary" onClick={handleAddClick}>
-                        Tambah Kegiatan Pertama
+
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleAddClick}
+                        className="rounded-2xl px-8 py-6 font-bold text-base shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                        Tambah Jurnal Sekarang
                     </Button>
-                </div>
+                </section>
             )}
 
             {/* Form Modal */}

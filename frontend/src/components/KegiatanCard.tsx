@@ -1,7 +1,7 @@
-import { Calendar, MapPin, Pencil, Trash2, Image } from 'lucide-react';
+import { Calendar, MapPin, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Button, Card, CardContent, CardFooter, Chip } from './ui';
+import { Button, Card, CardContent, CardFooter } from './ui';
 import { useAuth } from '../contexts/AuthContext';
 import type { Kegiatan } from '../types/kegiatan';
 
@@ -20,92 +20,90 @@ export function KegiatanCard({ kegiatan, index, onClick, onEdit, onDelete, isDel
     const heroImage = kegiatan.dokumentasi[0];
 
     return (
-        <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={() => onClick(kegiatan)}>
-            {/* Hero Image */}
+        <Card
+            className="group overflow-hidden border-none shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 active:scale-[0.98] rounded-[2rem] bg-card border border-border/40"
+            onClick={() => onClick(kegiatan)}
+        >
+            {/* Hero Section */}
             <div className="aspect-video bg-muted relative overflow-hidden">
                 {heroImage ? (
                     <img
                         src={heroImage.url}
                         alt={kegiatan.uraian_kegiatan}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <Image className="w-12 h-12" />
+                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30 bg-muted/30">
+                        <ImageIcon className="w-10 h-10 mb-1" />
+                        <span className="text-[10px] font-bold uppercase tracking-tighter">No Documentation</span>
                     </div>
                 )}
 
+                {/* Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+
+                {/* Index & Author */}
+                <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <div className="px-2.5 py-1 rounded-lg bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/30">
+                        #{String(index + 1).padStart(2, '0')}
+                    </div>
+                    {isAdmin && kegiatan.user_name && (
+                        <div className="px-2 py-1 rounded-lg bg-white/20 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-tight border border-white/20">
+                            {kegiatan.user_name}
+                        </div>
+                    )}
+                </div>
+
                 {/* Photo count badge */}
                 {kegiatan.dokumentasi.length > 1 && (
-                    <Chip
-                        size="sm"
-                        className="absolute bottom-2 right-2 bg-black/60 text-white"
-                    >
-                        +{kegiatan.dokumentasi.length - 1} foto
-                    </Chip>
-                )}
-
-                {/* Index badge */}
-                <Chip
-                    color="primary"
-                    size="sm"
-                    variant="solid"
-                    className="absolute top-2 left-2 font-bold"
-                >
-                    #{index + 1}
-                </Chip>
-
-                {/* Author Badge (Admin only) */}
-                {isAdmin && kegiatan.user_name && (
-                    <Chip
-                        size="sm"
-                        className="absolute top-2 right-2 bg-black/60 text-white border-none"
-                    >
-                        {kegiatan.user_name}
-                    </Chip>
+                    <div className="absolute bottom-3 right-3 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10px] font-bold border border-white/10 flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        +{kegiatan.dokumentasi.length - 1}
+                    </div>
                 )}
             </div>
 
-            <CardContent className="space-y-2">
-                {/* Location */}
-                <div className="flex items-center gap-2 text-primary">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium truncate">{kegiatan.lokasi}</span>
+            <CardContent className="p-5 space-y-3">
+                {/* Header Info */}
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-primary bg-primary/10 px-2 py-1 rounded-lg w-fit">
+                        <MapPin className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]">
+                            {kegiatan.lokasi.split(',')[0]}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tabular-nums">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(kegiatan.tanggal), 'dd MMM yyyy', { locale: id })}
+                    </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm leading-relaxed line-clamp-2">
+                <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                     {kegiatan.uraian_kegiatan}
-                </p>
-
-                {/* Date */}
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>
-                        {kegiatan.hari}, {format(new Date(kegiatan.tanggal), 'd MMMM yyyy', { locale: id })}
-                    </span>
-                </div>
+                </h3>
             </CardContent>
 
-            <div className="border-t border-border" />
+            <div className="mx-5 border-t border-border/40" />
 
-            <CardFooter className="gap-2">
+            <CardFooter className="p-3 gap-2">
                 <Button
                     variant="ghost"
-                    className="flex-1"
+                    size="sm"
+                    className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider text-muted-foreground hover:bg-muted active:scale-95"
                     onClick={(e) => { e.stopPropagation(); onEdit(kegiatan); }}
                 >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3.5 h-3.5 mr-2" />
                     Edit
                 </Button>
-                <div className="w-px h-6 bg-border" />
                 <Button
                     variant="ghost"
-                    className="flex-1"
+                    size="sm"
+                    className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider text-destructive hover:bg-destructive/5 active:scale-95"
                     onClick={(e) => { e.stopPropagation(); onDelete(kegiatan.id); }}
                     isDisabled={isDeleting}
                 >
-                    <Trash2 className="w-4 h-4 text-danger" />
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
                     Hapus
                 </Button>
             </CardFooter>

@@ -15,9 +15,10 @@ interface SelectProps {
     disabled?: boolean;
     error?: string;
     showSearch?: boolean;
+    className?: string;
 }
 
-export function Select({ label, value, onChange, options, placeholder = 'Pilih...', disabled, error, showSearch }: SelectProps) {
+export function Select({ label, value, onChange, options, placeholder = 'Pilih...', disabled, error, showSearch, className = '' }: SelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const selectRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,7 @@ export function Select({ label, value, onChange, options, placeholder = 'Pilih..
     }, [isOpen, showSearch]);
 
     return (
-        <div className="space-y-1.5" ref={selectRef}>
+        <div className={`space-y-1.5 ${className}`} ref={selectRef}>
             {label && (
                 <label className="block text-sm font-medium text-foreground">{label}</label>
             )}

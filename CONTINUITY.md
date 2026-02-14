@@ -21,12 +21,12 @@ Replace unstable HeroUI v3 components with custom-built Tailwind CSS components 
   - Installed and configured `spatie/laravel-permission`
   - Created `RoleSeeder` and defined `admin` & `karyawan` roles
   - Seeded sample users: `admin@pertamak.com` and `karyawan@pertamak.com`
+  - Redesigned `BottomNav` into a floating glassmorphic island navigation. ✅
 - Now:
-  - Monitoring for further type issues or UI improvements
+  - Redesigning `App.tsx` header and quick stats section to be more dynamic and compact.
 - Next:
-  - Refactor `LoginPage.tsx` (if needed) to use custom components
-  - Enhance `KaryawanSection`
-  - Implement role-based access control in the frontend
+  - Implement chosen dashboard redesign (Bento-style or Floating Island).
+  - Update `LoginPage.tsx` (if needed) to use custom components.
 
 ## Open Questions
 - None

@@ -12,6 +12,10 @@ interface User {
         nama: string;
         nip: string | null;
         jabatan: string;
+        foto?: {
+            thumb: string;
+            url: string;
+        };
     };
 }
 

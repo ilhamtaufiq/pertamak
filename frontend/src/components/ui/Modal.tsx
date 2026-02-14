@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, children, size = 'md' }: ModalProps) {
     return (
         <dialog
             ref={dialogRef}
-            className={`fixed inset-0 z-50 w-full ${sizeClasses[size]} m-auto p-0 bg-transparent backdrop:bg-black/50 backdrop:backdrop-blur-sm`}
+            className={`fixed inset-0 z-[60] w-full ${sizeClasses[size]} m-auto p-0 bg-transparent backdrop:bg-black/50 backdrop:backdrop-blur-sm`}
             onClick={handleBackdropClick}
         >
             <div className="bg-card text-card-foreground rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-border">

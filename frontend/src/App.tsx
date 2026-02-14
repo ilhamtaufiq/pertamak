@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Users, Calendar, ArrowLeft, LogOut, Shield, CalendarDays } from 'lucide-react';
+import { ClipboardList, Users, Calendar, ArrowLeft, LogOut, Shield, MapPin } from 'lucide-react';
 import { KegiatanPage, KegiatanFormModal } from './pages/KegiatanPage';
 import { KaryawanSection } from './components/KaryawanSection';
 import { JadwalPiketSection } from './components/JadwalPiketSection';
@@ -119,54 +119,55 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-32">
       <LocationTracker />
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
-        <div className="px-4 py-3">
-          {/* Top bar */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              {currentPage !== 'home' && (
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  onClick={() => setCurrentPage('home')}
-                  className="text-white hover:bg-white/20"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              )}
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden p-1.5">
-                <img src="/logo.png" alt="Cianjur Kab Logo" className="w-full h-full object-contain" />
+      {/* Header - Floating Island Style (Matches BottomNav) */}
+      <header className="sticky top-0 z-40 w-full px-4 pt-4 pb-2 safe-top pointer-events-none">
+        <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] px-4 py-2 flex items-center justify-between pointer-events-auto">
+          <div className="flex items-center gap-3">
+            {currentPage !== 'home' ? (
+              <Button
+                variant="ghost"
+                isIconOnly
+                size="sm"
+                onClick={() => setCurrentPage('home')}
+                className="text-foreground hover:bg-muted rounded-full"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            ) : (
+              <div className="group relative shrink-0">
+                <div className="w-10 h-10 rounded-full border-2 border-primary/20 overflow-hidden bg-muted p-0.5 transition-transform group-hover:scale-105 shadow-inner">
+                  <img
+                    src={user.karyawan?.foto?.thumb || "/logo.png"}
+                    alt="User"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success border-2 border-white rounded-full shadow-sm"></div>
               </div>
-              <div className="flex-1">
-                <h1 className="font-semibold text-white leading-tight">{user.name}</h1>
-                <p className="text-[10px] text-white/70 uppercase tracking-wider font-bold">Administrator</p>
-              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-bold text-muted-foreground leading-none opacity-60">
+                {currentPage === 'home' ? 'PROFIL PEGAWAI' : 'HALAMAN'}
+              </span>
+              <h1 className="font-bold text-foreground text-sm leading-tight tracking-tight truncate">
+                {currentPage === 'home' ? user.name : menuItems.find(m => m.id === currentPage)?.label || 'Detail'}
+              </h1>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="ghost"
               isIconOnly
               size="sm"
               onClick={logout}
-              className="text-white hover:bg-white/20 rounded-xl"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-full transition-colors"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
-
-          {/* Search bar - only on home */}
-          {/* {currentPage === 'home' && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Cari kegiatan..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-            </div>
-          )} */}
         </div>
       </header>
 
@@ -174,28 +175,105 @@ function App() {
       <main className="px-4 py-4">
         {currentPage === 'home' ? (
           <>
-            {/* Online Users Widget */}
-            {user?.roles?.some(r => r.name === 'admin') && (
-              <OnlineUsersWidget onOpenMap={() => setCurrentPage('map')} />
-            )}
+            {/* Bento-style Status & Quick Actions */}
+            <section className="mb-10 px-1 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="grid grid-cols-6 gap-3">
+                {/* Main Stats Card - Bento 1 */}
+                <button
+                  onClick={() => setCurrentPage('kegiatan')}
+                  className="col-span-4 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-3xl p-5 flex flex-col justify-between transition-all active:scale-[0.98] group"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 rounded-xl bg-primary text-white shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                      <ClipboardList className="w-5 h-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">Laporan</span>
+                  </div>
+                  <div>
+                    {statsLoading ? (
+                      <div className="h-8 w-16 bg-muted animate-pulse rounded-lg" />
+                    ) : (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-foreground tabular-nums">{stats?.kegiatan_count ?? 0}</span>
+                        <span className="text-xs text-muted-foreground font-semibold">Total Kegiatan</span>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground mt-1 font-medium">Klik untuk lihat riwayat SKP</p>
+                  </div>
+                </button>
 
-            {/* Menu Icons Grid */}
-            <section className="mb-6">
-              <h3 className="text-lg font-bold mb-4">Menu</h3>
-              <div className="grid grid-cols-3 gap-3">
+                {/* Period Filter - Bento 2 */}
+                <button
+                  onClick={() => setPeriodFilter(periodFilter === 'day' ? 'month' : periodFilter === 'month' ? 'year' : 'day')}
+                  className="col-span-2 bg-card border border-border/60 hover:border-primary/40 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-sm shadow-black/5"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase leading-none mb-1">Periode</p>
+                    <span className="text-[11px] font-bold text-foreground">
+                      {periodFilter === 'day' ? 'Harian' : periodFilter === 'month' ? 'Bulanan' : 'Tahunan'}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Map Action - Bento 3 */}
+                <button
+                  onClick={() => setCurrentPage('map')}
+                  className="col-span-3 bg-card border border-border/60 hover:border-primary/40 rounded-3xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] shadow-sm shadow-black/5"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-foreground">Peta Lokasi</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">Pantau Tim</span>
+                  </div>
+                </button>
+
+                {/* Permissions/Users - Bento 4 */}
+                <button
+                  onClick={() => user?.roles?.some(r => r.name === 'admin') && setCurrentPage('users')}
+                  className={`col-span-3 border rounded-3xl p-4 flex items-center gap-4 transition-all active:scale-[0.98] shadow-sm shadow-black/5 ${user?.roles?.some(r => r.name === 'admin')
+                    ? 'bg-card border-border/60 hover:border-primary/40'
+                    : 'bg-muted/50 border-transparent opacity-50 cursor-not-allowed'
+                    }`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${user?.roles?.some(r => r.name === 'admin') ? 'bg-indigo-50 text-indigo-600' : 'bg-muted text-muted-foreground'
+                    }`}>
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-foreground">Akses Izin</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">
+                      {user?.roles?.some(r => r.name === 'admin') ? 'Kelola Akun' : 'Admin Saja'}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </section>
+
+            {/* Services Grid (Gojek Style Icons) */}
+            <section className="mb-10 px-2">
+              <div className="grid grid-cols-4 gap-y-6">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
+                  const colorMap: any = {
+                    'bg-blue-500': 'bg-blue-50 text-blue-600',
+                    'bg-emerald-500': 'bg-emerald-50 text-emerald-600',
+                    'bg-orange-500': 'bg-orange-50 text-orange-600'
+                  };
                   return (
                     <button
                       key={item.id}
                       onClick={() => setCurrentPage(item.id)}
-                      className="flex flex-col items-center p-4 rounded-2xl bg-card shadow-sm border border-default-200 hover:shadow-md hover:scale-105 transition-all active:scale-95"
+                      className="flex flex-col items-center gap-2 group"
                     >
-                      <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mb-2`}>
-                        <Icon className="w-6 h-6 text-white" />
+                      <div className={`w-14 h-14 rounded-2xl ${colorMap[item.color] || 'bg-primary/10 text-primary'} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-7 h-7" />
                       </div>
-                      <span className="text-sm font-medium text-foreground">{item.label}</span>
-                      <span className="text-xs text-muted-foreground">{item.description}</span>
+                      <span className="text-[11px] font-bold text-foreground text-center line-clamp-1">{item.label}</span>
                     </button>
                   );
                 })}
@@ -203,86 +281,69 @@ function App() {
                 {user?.roles?.some(r => r.name === 'admin') && (
                   <button
                     onClick={() => setCurrentPage('users')}
-                    className="flex flex-col items-center p-4 rounded-2xl bg-card shadow-sm border border-default-200 hover:shadow-md hover:scale-105 transition-all active:scale-95"
+                    className="flex flex-col items-center gap-2 group"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center mb-2">
-                      <Shield className="w-6 h-6 text-white" />
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                      <Shield className="w-7 h-7" />
                     </div>
-                    <span className="text-sm font-medium text-foreground">Users</span>
-                    <span className="text-xs text-muted-foreground">User Management</span>
+                    <span className="text-[11px] font-bold text-foreground text-center">Pengguna</span>
                   </button>
                 )}
+                <button className="flex flex-col items-center gap-2">
+                  <div className="w-14 h-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center border-2 border-dashed border-gray-200">
+                    <Users className="w-7 h-7" />
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-400">Lainnya</span>
+                </button>
               </div>
             </section>
 
-            {/* Quick Stats with Date Filter */}
+            {/* Online Users Section */}
+            {user?.roles?.some(r => r.name === 'admin') && (
+              <OnlineUsersWidget onOpenMap={() => setCurrentPage('map')} />
+            )}
+
+            {/* "What's New" / Bento Highlights */}
             <section className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">Ringkasan</h3>
-                {/* Period Filter Tabs */}
-                <div className="flex bg-muted rounded-xl p-1 gap-1">
-                  {(['day', 'month', 'year'] as PeriodFilter[]).map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => setPeriodFilter(period)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${periodFilter === period
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                      {period === 'day' ? 'Hari' : period === 'month' ? 'Bulan' : 'Tahun'}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="text-lg font-bold">Terbaru dari kami</h3>
+                <button className="text-xs font-bold text-primary">Lihat semua</button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Kegiatan Card */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden">
-                  <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full" />
-                  <ClipboardList className="w-8 h-8 mb-2 opacity-80" />
-                  {statsLoading ? (
-                    <div className="h-8 flex items-center">
-                      <Spinner size="sm" color="white" />
+              <div className="grid grid-cols-1 gap-4">
+                {/* Highlight 1: Online Status */}
+                {user?.roles?.some(r => r.name === 'admin') && (
+                  <div className="p-4 rounded-3xl bg-emerald-50 border border-emerald-100 flex items-center gap-4 transition-transform active:scale-[0.98]" onClick={() => setCurrentPage('map')}>
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                      <Users className="w-6 h-6 text-white" />
                     </div>
-                  ) : (
-                    <p className="text-2xl font-bold">{stats?.kegiatan_count ?? 0}</p>
-                  )}
-                  <p className="text-sm opacity-80">
-                    Kegiatan {periodFilter === 'day' ? 'Hari Ini' : periodFilter === 'month' ? 'Bulan Ini' : 'Tahun Ini'}
-                  </p>
-                </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-emerald-900 leading-tight">Pantau Kehadiran</h4>
+                      <p className="text-xs text-emerald-700/70 mt-0.5">Lihat siapa saja yang sedang bertugas di lapangan saat ini.</p>
+                    </div>
+                  </div>
+                )}
 
-                {/* Karyawan Card */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white relative overflow-hidden">
-                  <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full" />
-                  <Users className="w-8 h-8 mb-2 opacity-80" />
-                  {statsLoading ? (
-                    <div className="h-8 flex items-center">
-                      <Spinner size="sm" color="white" />
+                {/* Highlight 2: Jurnal Summary Card */}
+                <div className="p-1 rounded-[2rem] bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-200">
+                  <div className="bg-white/10 backdrop-blur-sm p-5 rounded-[1.8rem] flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div className="p-2 rounded-xl bg-white/20">
+                        <ClipboardList className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-white/20 text-[10px] font-bold text-white uppercase tracking-tighter">Review Jurnal</span>
                     </div>
-                  ) : (
-                    <p className="text-2xl font-bold">{stats?.karyawan_count ?? 0}</p>
-                  )}
-                  <p className="text-sm opacity-80">Total Karyawan</p>
-                </div>
-
-                {/* Jadwal Piket Today Card */}
-                <div className="col-span-2 p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white relative overflow-hidden">
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full" />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CalendarDays className="w-8 h-8 mb-2 opacity-80" />
-                      {statsLoading ? (
-                        <div className="h-8 flex items-center">
-                          <Spinner size="sm" color="white" />
-                        </div>
-                      ) : (
-                        <p className="text-2xl font-bold">{stats?.jadwal_piket_today_count ?? 0}</p>
-                      )}
-                      <p className="text-sm opacity-80">Jadwal Piket Hari Ini</p>
+                    <div className="text-white">
+                      <h4 className="text-lg font-bold leading-tight">Sudah Lapor Hari Ini?</h4>
+                      <p className="text-sm opacity-80 mt-1">Pastikan Jurnal SKP Anda terisi setiap harinya untuk laporan bulanan yang akurat.</p>
                     </div>
-                    <Calendar className="w-16 h-16 opacity-20" />
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-white text-blue-600 font-bold hover:bg-blue-50 border-none"
+                      onClick={() => setCurrentPage('kegiatan')}
+                    >
+                      Buka Jurnal
+                    </Button>
                   </div>
                 </div>
               </div>

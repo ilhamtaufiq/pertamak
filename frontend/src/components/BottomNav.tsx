@@ -1,44 +1,77 @@
-import { Home, PlusCircle, ClipboardList } from 'lucide-react';
+import { Home, Plus, Calendar, ClipboardList, User } from 'lucide-react';
 import { Button } from './ui';
 
 interface BottomNavProps {
     onAddClick: () => void;
-    onPageChange: (page: 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users') => void;
+    onPageChange: (page: 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map') => void;
     activePage: string;
 }
 
 export function BottomNav({ onAddClick, onPageChange, activePage }: BottomNavProps) {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-card nav-shadow z-50 safe-bottom border-t border-border">
-            <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-                <Button
-                    variant="ghost"
+        <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-lg z-50">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] px-2 py-2 flex items-center justify-between">
+
+                {/* Home */}
+                <button
                     onClick={() => onPageChange('home')}
-                    className={`flex-1 h-full flex-col gap-0.5 rounded-none ${activePage === 'home' ? 'text-primary' : 'text-muted-foreground'
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'home'
+                            ? 'text-primary scale-110'
+                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
-                    <Home className="w-6 h-6" />
-                    <span className="text-xs font-medium">Beranda</span>
-                </Button>
+                    <Home className={`w-5 h-5 ${activePage === 'home' ? 'fill-primary/10' : ''}`} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Beranda</span>
+                </button>
 
-                <Button
-                    variant="ghost"
-                    onClick={onAddClick}
-                    className="flex-1 h-full flex-col gap-0.5 text-muted-foreground hover:text-foreground rounded-none"
+                {/* Piket / Calendar */}
+                <button
+                    onClick={() => onPageChange('piket')}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'piket'
+                            ? 'text-primary scale-110'
+                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        }`}
                 >
-                    <PlusCircle className="w-7 h-7" />
-                    <span className="text-xs font-medium">Tambah</span>
-                </Button>
+                    <Calendar className={`w-5 h-5 ${activePage === 'piket' ? 'fill-primary/10' : ''}`} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Jadwal</span>
+                </button>
 
-                <Button
-                    variant="ghost"
+                {/* FAB: Add */}
+                <div className="px-2">
+                    <Button
+                        variant="primary"
+                        isIconOnly
+                        onClick={onAddClick}
+                        className="w-14 h-14 rounded-full shadow-lg shadow-primary/30 hover:scale-110 hover:rotate-90 transition-all duration-500 bg-primary border-none"
+                    >
+                        <Plus className="w-8 h-8 text-white" strokeWidth={3} />
+                    </Button>
+                </div>
+
+                {/* Kegiatan / Jurnal */}
+                <button
                     onClick={() => onPageChange('kegiatan')}
-                    className={`flex-1 h-full flex-col gap-0.5 rounded-none ${activePage === 'kegiatan' ? 'text-primary' : 'text-muted-foreground'
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'kegiatan'
+                            ? 'text-primary scale-110'
+                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
-                    <ClipboardList className="w-6 h-6" />
-                    <span className="text-xs font-medium">Kegiatan</span>
-                </Button>
+                    <ClipboardList className={`w-5 h-5 ${activePage === 'kegiatan' ? 'fill-primary/10' : ''}`} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Jurnal</span>
+                </button>
+
+                {/* Karyawan / Profile */}
+                <button
+                    onClick={() => onPageChange('karyawan')}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'karyawan'
+                            ? 'text-primary scale-110'
+                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        }`}
+                >
+                    <User className={`w-5 h-5 ${activePage === 'karyawan' ? 'fill-primary/10' : ''}`} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Profil</span>
+                </button>
+
             </div>
         </nav>
     );
