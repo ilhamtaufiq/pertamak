@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MapPin, Filter, X, FileText, Printer } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useInView } from 'react-intersection-observer';
 import { Image } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, TextArea, Spinner, ImageUploader, Select } from '../components/ui';
@@ -38,12 +39,47 @@ export function KegiatanPage() {
         enabled: isAdmin,
     });
 
-    // Fetch kegiatans - increasing per_page to avoid filtering issues with pagination
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['kegiatans', user?.id],
-        queryFn: () => api.get<PaginatedResponse<Kegiatan>>('/kegiatans', { per_page: 500 }),
+    // Infinite Query for fetch kegiatans
+    const {
+        data: infiniteData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        error
+    } = useInfiniteQuery({
+        queryKey: ['kegiatans', user?.id, filterDay, filterMonth, filterYear, filterUser],
+        queryFn: ({ pageParam = 1 }) => api.get<PaginatedResponse<Kegiatan>>('/kegiatans', {
+            page: pageParam,
+            per_page: 20,
+            day: filterDay,
+            month: filterMonth,
+            year: filterYear,
+            user_id: filterUser
+        }),
+        getNextPageParam: (lastPage) => lastPage.next_page_url ? lastPage.current_page + 1 : undefined,
+        initialPageParam: 1,
         enabled: !!user,
     });
+
+    const { ref: loadMoreRef, inView } = useInView();
+
+    useEffect(() => {
+        if (inView && hasNextPage) {
+            fetchNextPage();
+        }
+    }, [inView, hasNextPage, fetchNextPage]);
+
+    // Flattened data from multiple pages
+    const flattedData = useMemo(() => {
+        return infiniteData?.pages.flatMap(page => page.data) || [];
+    }, [infiniteData]);
+
+    // Data used for display (already filtered on server, but can still apply client filters if needed)
+    const filteredData = flattedData;
+
+    // Total results count from pagination
+    const totalResults = infiniteData?.pages[0]?.total || 0;
 
     // Generate filter options from data
     const filterOptions = useMemo(() => {
@@ -73,10 +109,13 @@ export function KegiatanPage() {
 
         // Extract unique years from data
         const years = new Set<string>();
-        data?.data.forEach(k => {
+        flattedData.forEach(k => {
             const year = k.tanggal.split('-')[0];
             years.add(year);
         });
+        const currentYear = new Date().getFullYear().toString();
+        years.add(currentYear); // Ensure current year is always there
+
         const yearOptions = [
             { value: '', label: 'Semua Tahun' },
             ...Array.from(years).sort((a, b) => b.localeCompare(a)).map(y => ({ value: y, label: y }))
@@ -88,20 +127,7 @@ export function KegiatanPage() {
         ];
 
         return { days, months, years: yearOptions, users: userOptions };
-    }, [data, employeesData, isAdmin]);
-
-    // Filtered data
-    const filteredData = useMemo(() => {
-        if (!data?.data) return [];
-        return data.data.filter(kegiatan => {
-            const [year, month, day] = kegiatan.tanggal.split('-');
-            const matchDay = !filterDay || day === filterDay;
-            const matchMonth = !filterMonth || month === filterMonth;
-            const matchYear = !filterYear || year === filterYear;
-            const matchUser = !filterUser || String(kegiatan.user_id) === filterUser;
-            return matchDay && matchMonth && matchYear && matchUser;
-        });
-    }, [data, filterDay, filterMonth, filterYear, filterUser]);
+    }, [flattedData, employeesData, isAdmin]);
 
     const hasActiveFilter = filterDay || filterMonth || filterYear || filterUser;
     const clearFilters = () => {
@@ -224,7 +250,7 @@ export function KegiatanPage() {
                             size="sm"
                             className="h-7 px-2 gap-1.5 text-xs"
                             onClick={() => setIsPrintModalOpen(true)}
-                            isDisabled={isLoading || !data?.data || data.data.length === 0}
+                            isDisabled={isLoading || !infiniteData || flattedData.length === 0}
                         >
                             <FileText className="w-3.5 h-3.5" />
                             Ekspor PDF
@@ -272,7 +298,7 @@ export function KegiatanPage() {
                 )}
                 {hasActiveFilter && (
                     <p className="text-xs text-muted-foreground mt-2">
-                        Menampilkan {filteredData.length} dari {data?.data.length} kegiatan
+                        Menampilkan {flattedData.length} dari {totalResults} kegiatan
                     </p>
                 )}
             </div>
@@ -292,8 +318,21 @@ export function KegiatanPage() {
                 ))}
             </div>
 
+            {/* Load More Sentinel */}
+            <div ref={loadMoreRef} className="py-8 flex justify-center">
+                {isFetchingNextPage && (
+                    <div className="flex flex-col items-center gap-2">
+                        <Spinner size="sm" />
+                        <p className="text-xs text-muted-foreground">Memuat lebih banyak...</p>
+                    </div>
+                )}
+                {!hasNextPage && flattedData.length > 0 && (
+                    <p className="text-xs text-muted-foreground italic">Semua kegiatan telah dimuat</p>
+                )}
+            </div>
+
             {/* Empty State */}
-            {data?.data.length === 0 && (
+            {flattedData.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="w-20 h-20 rounded-full bg-default-100 flex items-center justify-center mb-4">
                         <Image className="w-10 h-10 text-default-400" />
@@ -355,7 +394,7 @@ export function KegiatanPage() {
                 </ModalBody>
                 <ModalFooter className="justify-between">
                     <p className="text-xs text-muted-foreground">
-                        {filteredData.length} kegiatan akan dicetak
+                        {flattedData.length} kegiatan akan dicetak
                     </p>
                     <div className="flex gap-2">
                         <Button variant="ghost" onClick={() => setIsPrintModalOpen(false)}>

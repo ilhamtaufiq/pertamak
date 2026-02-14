@@ -24,6 +24,20 @@ class KegiatanController extends Controller
             $query->where('user_id', $user->id);
         }
 
+        // Filtering
+        if ($request->has('day') && !empty($request->day)) {
+            $query->whereDay('tanggal', $request->day);
+        }
+        if ($request->has('month') && !empty($request->month)) {
+            $query->whereMonth('tanggal', $request->month);
+        }
+        if ($request->has('year') && !empty($request->year)) {
+            $query->whereYear('tanggal', $request->year);
+        }
+        if ($user->hasRole('admin') && $request->has('user_id') && !empty($request->user_id)) {
+            $query->where('user_id', $request->user_id);
+        }
+
         $kegiatans = $query->paginate($perPage);
 
         return response()->json($kegiatans);

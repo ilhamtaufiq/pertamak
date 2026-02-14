@@ -24,13 +24,11 @@ export function KegiatanCard({ kegiatan, index, onClick, onEdit, onDelete, isDel
             {/* Hero Image */}
             <div className="aspect-video bg-muted relative overflow-hidden">
                 {heroImage ? (
-                    <a href={heroImage.url} target="_blank" rel="noopener noreferrer">
-                        <img
-                            src={heroImage.thumb}
-                            alt={kegiatan.uraian_kegiatan}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                    </a>
+                    <img
+                        src={heroImage.url}
+                        alt={kegiatan.uraian_kegiatan}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                         <Image className="w-12 h-12" />
