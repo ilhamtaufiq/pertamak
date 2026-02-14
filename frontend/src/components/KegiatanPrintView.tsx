@@ -14,7 +14,7 @@ interface KegiatanPrintViewProps {
 }
 
 export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrintViewProps) {
-    const monthName = month ? format(new Date(2024, parseInt(month) - 1), 'MMMM', { locale: id }).toUpperCase() : '';
+    const monthText = month ? `BULAN ${format(new Date(2024, parseInt(month) - 1), 'MMMM', { locale: id }).toUpperCase()}` : 'SEMUA BULAN';
     const displayYear = year || new Date().getFullYear().toString();
     const today = format(new Date(), 'dd MMMM yyyy', { locale: id });
 
@@ -42,14 +42,10 @@ export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrint
             </style>
 
             <div className="header">
-                <h1>JURNAL KEGIATAN SKP BULAN {monthName || '...'} {displayYear}</h1>
-                {userInfo ? (
-                    <>
-                        <h1 className="mt-2">{userInfo.nama.toUpperCase()}</h1>
-                        {/* <h1>NIP. {userInfo.nip || '-'}</h1> */}
-                    </>
-                ) : (
-                    <h1>KEPALA UPTD PERTAMANAN DAN PEMAKAMAN</h1>
+                <h1>JURNAL KEGIATAN SKP {monthText} {displayYear}</h1>
+                <h1>UPTD PERTAMANAN DAN PEMAKAMAN</h1>
+                {userInfo && (
+                    <h1 className="mt-2 text-base">{userInfo.nama.toUpperCase()}</h1>
                 )}
             </div>
 

@@ -38,10 +38,10 @@ export function KegiatanPage() {
         enabled: isAdmin,
     });
 
-    // Fetch kegiatans
+    // Fetch kegiatans - increasing per_page to avoid filtering issues with pagination
     const { data, isLoading, error } = useQuery({
         queryKey: ['kegiatans', user?.id],
-        queryFn: () => api.get<PaginatedResponse<Kegiatan>>('/kegiatans'),
+        queryFn: () => api.get<PaginatedResponse<Kegiatan>>('/kegiatans', { per_page: 500 }),
         enabled: !!user,
     });
 
@@ -224,7 +224,7 @@ export function KegiatanPage() {
                             size="sm"
                             className="h-7 px-2 gap-1.5 text-xs"
                             onClick={() => setIsPrintModalOpen(true)}
-                            isDisabled={filteredData.length === 0}
+                            isDisabled={isLoading || !data?.data || data.data.length === 0}
                         >
                             <FileText className="w-3.5 h-3.5" />
                             Ekspor PDF

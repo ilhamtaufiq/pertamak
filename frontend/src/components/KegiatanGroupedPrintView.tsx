@@ -9,7 +9,7 @@ interface KegiatanGroupedPrintViewProps {
 }
 
 export function KegiatanGroupedPrintView({ data, month, year }: KegiatanGroupedPrintViewProps) {
-    const monthName = month ? format(new Date(2024, parseInt(month) - 1), 'MMMM', { locale: id }).toUpperCase() : '';
+    const monthText = month ? `BULAN ${format(new Date(2024, parseInt(month) - 1), 'MMMM', { locale: id }).toUpperCase()}` : 'SEMUA BULAN';
     const displayYear = year || new Date().getFullYear().toString();
     const today = format(new Date(), 'dd MMMM yyyy', { locale: id });
 
@@ -26,7 +26,10 @@ export function KegiatanGroupedPrintView({ data, month, year }: KegiatanGroupedP
         return acc;
     }, {} as Record<number, { userInfo: { nama: string, nip: string | null, jabatan: string }, items: Kegiatan[] }>);
 
-    const userIds = Object.keys(groupedData).map(Number);
+    // Filter out rows with invalid user_id and group data
+    const userIds = Object.keys(groupedData)
+        .filter(key => key !== 'null' && key !== 'undefined' && groupedData[Number(key)])
+        .map(Number);
 
     return (
         <div className="bg-white text-black font-serif" id="print-area">
@@ -53,13 +56,22 @@ export function KegiatanGroupedPrintView({ data, month, year }: KegiatanGroupedP
                 `}
             </style>
 
+            {userIds.length === 0 && (
+                <div className="p-8 text-center text-gray-500 italic">
+                    Tidak ada data kegiatan yang dapat ditampilkan.
+                </div>
+            )}
+
             {userIds.map((userId, idx) => {
                 const group = groupedData[userId];
+                if (!group) return null;
+
                 return (
                     <div key={userId} className={`print-section ${idx < userIds.length - 1 ? 'page-break' : ''}`}>
                         <div className="header">
-                            <h1>JURNAL KEGIATAN SKP BULAN {monthName || '...'} {displayYear}</h1>
-                            <h1 className="mt-2">{group.userInfo.nama.toUpperCase()}</h1>
+                            <h1>JURNAL KEGIATAN SKP {monthText} {displayYear}</h1>
+                            <h1>UPTD PERTAMANAN DAN PEMAKAMAN</h1>
+                            <h1 className="mt-2 text-base">{(group.userInfo?.nama || 'Petugas').toUpperCase()}</h1>
                         </div>
 
                         <table>
