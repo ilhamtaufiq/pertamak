@@ -23,10 +23,11 @@ Replace unstable HeroUI v3 components with custom-built Tailwind CSS components 
   - Seeded sample users: `admin@pertamak.com` and `karyawan@pertamak.com`
   - Redesigned `BottomNav` into a floating glassmorphic island navigation. ✅
 - Now:
-  - Redesigning `App.tsx` header and quick stats section to be more dynamic and compact.
+  - Redesigning `App.tsx` header and quick stats section.
+  - Planning and implementing Media Library Organizer (Drive-like feature). ✅
 - Next:
-  - Implement chosen dashboard redesign (Bento-style or Floating Island).
-  - Update `LoginPage.tsx` (if needed) to use custom components.
+  - Phase 1 Backend Setup for Media Library (Migrations & Controllers).
+  - Implement chosen dashboard redesign.
 
 ## Open Questions
 - None

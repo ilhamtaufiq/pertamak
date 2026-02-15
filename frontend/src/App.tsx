@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Users, Calendar, ArrowLeft, LogOut, Shield, MapPin } from 'lucide-react';
+import { MediaProvider } from './contexts/MediaContext';
+import { MediaPage } from './pages/MediaPage';
+import {
+  ClipboardList,
+  Users,
+  User,
+  Calendar,
+  ArrowLeft,
+  LogOut,
+  Shield,
+  MapPin,
+  FolderOpen
+} from 'lucide-react';
 import { KegiatanPage, KegiatanFormModal } from './pages/KegiatanPage';
 import { KaryawanSection } from './components/KaryawanSection';
 import { JadwalPiketSection } from './components/JadwalPiketSection';
@@ -8,6 +20,7 @@ import { Button, Spinner } from './components/ui';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import UserManagementPage from './pages/UserManagementPage';
+import ProfilePage from './pages/ProfilePage';
 import { OnlineUsersWidget } from './components/OnlineUsersWidget';
 import { OnlineUsersMapPage } from './pages/OnlineUsersMapPage';
 import { LocationTracker } from './components/LocationTracker';
@@ -23,7 +36,7 @@ interface DashboardStats {
   date: string;
 }
 
-type PageType = 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map';
+type PageType = 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map' | 'profile' | 'media';
 
 const menuItems = [
   {
@@ -46,6 +59,20 @@ const menuItems = [
     description: 'Jadwal kerja',
     icon: Calendar,
     color: 'bg-orange-500',
+  },
+  {
+    id: 'media' as PageType,
+    label: 'Media',
+    description: 'File manager',
+    icon: FolderOpen,
+    color: 'bg-indigo-500',
+  },
+  {
+    id: 'profile' as PageType,
+    label: 'Profil Saya',
+    description: 'Atur akun',
+    icon: User,
+    color: 'bg-slate-500',
   },
 ];
 
@@ -113,6 +140,10 @@ function App() {
         return <UserManagementPage />;
       case 'map':
         return <OnlineUsersMapPage onBack={() => setCurrentPage('home')} />;
+      case 'profile':
+        return <ProfilePage />;
+      case 'media':
+        return <MediaPage />;
       default:
         return null;
     }
@@ -145,6 +176,11 @@ function App() {
                   />
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success border-2 border-white rounded-full shadow-sm"></div>
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className="absolute inset-0 z-10 rounded-full focus:outline-none"
+                  aria-label="Manage Profile"
+                />
               </div>
             )}
             <div className="flex flex-col min-w-0">
@@ -373,4 +409,10 @@ function App() {
   );
 }
 
-export default App;
+export default function Root() {
+  return (
+    <MediaProvider>
+      <App />
+    </MediaProvider>
+  );
+}

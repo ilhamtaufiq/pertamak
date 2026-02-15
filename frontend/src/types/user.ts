@@ -19,6 +19,8 @@ export interface User {
             thumb: string;
             url: string;
         };
+        nip?: string | null;
+        no_hp?: string | null;
     };
     created_at: string;
     updated_at: string;

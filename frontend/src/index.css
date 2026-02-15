@@ -80,13 +80,12 @@
     overflow: hidden;
   }
 
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
   }
 
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
+  .glass-dark {
+    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-xl;
   }
 }
 

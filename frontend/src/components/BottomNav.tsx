@@ -1,9 +1,9 @@
-import { Home, Plus, Calendar, ClipboardList, User } from 'lucide-react';
+import { Home, Plus, ClipboardList, User, FolderOpen } from 'lucide-react';
 import { Button } from './ui';
 
 interface BottomNavProps {
     onAddClick: () => void;
-    onPageChange: (page: 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map') => void;
+    onPageChange: (page: 'home' | 'kegiatan' | 'karyawan' | 'piket' | 'users' | 'map' | 'profile' | 'media') => void;
     activePage: string;
 }
 
@@ -16,24 +16,24 @@ export function BottomNav({ onAddClick, onPageChange, activePage }: BottomNavPro
                 <button
                     onClick={() => onPageChange('home')}
                     className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'home'
-                            ? 'text-primary scale-110'
-                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        ? 'text-primary scale-110'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
                     <Home className={`w-5 h-5 ${activePage === 'home' ? 'fill-primary/10' : ''}`} />
                     <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Beranda</span>
                 </button>
 
-                {/* Piket / Calendar */}
+                {/* Media Library */}
                 <button
-                    onClick={() => onPageChange('piket')}
-                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'piket'
-                            ? 'text-primary scale-110'
-                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    onClick={() => onPageChange('media')}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'media'
+                        ? 'text-primary scale-110'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
-                    <Calendar className={`w-5 h-5 ${activePage === 'piket' ? 'fill-primary/10' : ''}`} />
-                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Jadwal</span>
+                    <FolderOpen className={`w-5 h-5 ${activePage === 'media' ? 'fill-primary/10' : ''}`} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Media</span>
                 </button>
 
                 {/* FAB: Add */}
@@ -52,23 +52,23 @@ export function BottomNav({ onAddClick, onPageChange, activePage }: BottomNavPro
                 <button
                     onClick={() => onPageChange('kegiatan')}
                     className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'kegiatan'
-                            ? 'text-primary scale-110'
-                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        ? 'text-primary scale-110'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
                     <ClipboardList className={`w-5 h-5 ${activePage === 'kegiatan' ? 'fill-primary/10' : ''}`} />
                     <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Jurnal</span>
                 </button>
 
-                {/* Karyawan / Profile */}
+                {/* Profil */}
                 <button
-                    onClick={() => onPageChange('karyawan')}
-                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'karyawan'
-                            ? 'text-primary scale-110'
-                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    onClick={() => onPageChange('profile')}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 rounded-2xl ${activePage === 'profile'
+                        ? 'text-primary scale-110'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                         }`}
                 >
-                    <User className={`w-5 h-5 ${activePage === 'karyawan' ? 'fill-primary/10' : ''}`} />
+                    <User className={`w-5 h-5 ${activePage === 'profile' ? 'fill-primary/10' : ''}`} />
                     <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Profil</span>
                 </button>
 

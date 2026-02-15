@@ -26,4 +26,14 @@ Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
         Route::get('/users/online', [UserController::class, 'online']);
         Route::apiResource('users', UserController::class);
     });
+
+    // Media Library Organizer
+    Route::prefix('v1/media')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\MediaController::class, 'index']);
+        Route::get('/all-folders', [\App\Http\Controllers\Api\V1\MediaController::class, 'allFolders']);
+        Route::post('/upload', [\App\Http\Controllers\Api\V1\MediaController::class, 'upload']);
+        Route::post('/folders', [\App\Http\Controllers\Api\V1\MediaController::class, 'createFolder']);
+        Route::patch('/{type}/{id}', [\App\Http\Controllers\Api\V1\MediaController::class, 'rename']);
+        Route::delete('/{type}/{id}', [\App\Http\Controllers\Api\V1\MediaController::class, 'destroy']);
+    });
 });

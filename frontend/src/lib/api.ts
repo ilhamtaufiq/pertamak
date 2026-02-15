@@ -93,4 +93,20 @@ export const api = {
 
     delete: <T>(endpoint: string) =>
         request<T>(endpoint, { method: 'DELETE' }),
+
+    patch: <T>(endpoint: string, data: FormData | Record<string, unknown>) => {
+        const isFormData = data instanceof FormData;
+        if (isFormData) {
+            data.append('_method', 'PATCH');
+            return request<T>(endpoint, {
+                method: 'POST',
+                body: data,
+            });
+        }
+        return request<T>(endpoint, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' },
+        });
+    },
 };

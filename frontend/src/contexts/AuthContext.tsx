@@ -16,6 +16,7 @@ interface User {
             thumb: string;
             url: string;
         };
+        no_hp?: string | null;
     };
 }
 
