@@ -283,7 +283,7 @@ export function KegiatanPage() {
     return (
         <>
             {/* Premium Filter Bar */}
-            <section className="mb-6 animate-in fade-in slide-in-from-top-2 duration-500">
+            <section className="mb-6 animate-in fade-in slide-in-from-top-2 duration-500 relative z-30">
                 <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -365,6 +365,7 @@ export function KegiatanPage() {
                                 value={filterUser}
                                 onChange={setFilterUser}
                                 className="bg-background/50 border-none shadow-inner"
+                                showSearch
                             />
                         </div>
                     )}

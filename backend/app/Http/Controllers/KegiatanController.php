@@ -55,6 +55,10 @@ class KegiatanController extends Controller
      */
     public function exportDocx(Request $request)
     {
+        // Increase memory and time limit for large exports with many images
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
         $user = auth()->user();
         $query = Kegiatan::with(['media', 'user.karyawan'])
             ->orderBy('tanggal', 'asc');
