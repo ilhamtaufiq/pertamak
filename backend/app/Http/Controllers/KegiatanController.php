@@ -9,6 +9,10 @@ use Carbon\Carbon;
 use App\Models\Folder;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Table;
 
 class KegiatanController extends Controller
 {
@@ -44,6 +48,122 @@ class KegiatanController extends Controller
         $kegiatans = $query->paginate($perPage);
 
         return response()->json($kegiatans);
+    }
+
+    /**
+     * Export kegiatan to DOCX
+     */
+    public function exportDocx(Request $request)
+    {
+        $user = auth()->user();
+        $query = Kegiatan::with(['media', 'user.karyawan'])
+            ->orderBy('tanggal', 'asc');
+
+        if (!$user->hasRole('admin')) {
+            $query->where('user_id', $user->id);
+        }
+
+        // Filtering (same as index)
+        if ($request->has('day') && !empty($request->day)) {
+            $query->whereDay('tanggal', $request->day);
+        }
+        if ($request->has('month') && !empty($request->month)) {
+            $query->whereMonth('tanggal', $request->month);
+        }
+        if ($request->has('year') && !empty($request->year)) {
+            $query->whereYear('tanggal', $request->year);
+        }
+        if ($user->hasRole('admin') && $request->has('user_id') && !empty($request->user_id)) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $kegiatans = $query->get();
+
+        $phpWord = new PhpWord();
+        
+        // Define styles
+        $phpWord->addTitleStyle(1, ['bold' => true, 'size' => 16], ['alignment' => Jc::CENTER]);
+        $phpWord->addTableStyle('KegiatanTable', [
+            'borderSize' => 6,
+            'borderColor' => '000000',
+            'cellMargin' => 80,
+            'alignment' => Jc::CENTER,
+        ]);
+
+        $section = $phpWord->addSection([
+            'orientation' => 'landscape',
+            'marginTop' => 800,
+            'marginBottom' => 800,
+            'marginLeft' => 800,
+            'marginRight' => 800,
+        ]);
+
+        $section->addTitle('LAPORAN KEGIATAN', 1);
+        
+        if ($request->has('month') && $request->has('year')) {
+            $monthName = Carbon::createFromDate($request->year, $request->month, 1)->translatedFormat('F');
+            $section->addText("Periode: $monthName {$request->year}", ['bold' => true], ['alignment' => Jc::CENTER]);
+        }
+        
+        if ($user->hasRole('admin') && $request->has('user_id')) {
+            $exportUser = \App\Models\User::find($request->user_id);
+            if ($exportUser) {
+                $section->addText("Nama: {$exportUser->name}", ['bold' => true], ['alignment' => Jc::CENTER]);
+            }
+        } elseif (!$user->hasRole('admin')) {
+            $section->addText("Nama: {$user->name}", ['bold' => true], ['alignment' => Jc::CENTER]);
+        }
+
+        $section->addTextBreak(1);
+
+        $table = $section->addTable('KegiatanTable');
+
+        // Header
+        $table->addRow();
+        $table->addCell(500, ['bgColor' => 'EEEEEE'])->addText('No', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(2000, ['bgColor' => 'EEEEEE'])->addText('Hari/Tanggal', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(2000, ['bgColor' => 'EEEEEE'])->addText('Lokasi', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(4500, ['bgColor' => 'EEEEEE'])->addText('Uraian Kegiatan', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(3000, ['bgColor' => 'EEEEEE'])->addText('Dokumentasi', ['bold' => true], ['alignment' => Jc::CENTER]);
+
+        foreach ($kegiatans as $index => $kegiatan) {
+            $table->addRow();
+            $table->addCell(500)->addText($index + 1, null, ['alignment' => Jc::CENTER]);
+            $table->addCell(2000)->addText($kegiatan->hari . ', ' . $kegiatan->tanggal->format('d-m-Y'));
+            $table->addCell(2000)->addText($kegiatan->lokasi);
+            $table->addCell(4500)->addText($kegiatan->uraian_kegiatan);
+            
+            $docCell = $table->addCell(3000);
+            foreach ($kegiatan->media as $media) {
+                if (file_exists($media->getPath())) {
+                    try {
+                        $docCell->addImage($media->getPath(), [
+                            'width' => 120,
+                            'height' => 120,
+                            'marginTop' => 5,
+                            'marginBottom' => 5,
+                            'alignment' => Jc::CENTER
+                        ]);
+                        $docCell->addTextBreak(1);
+                    } catch (\Exception $e) {
+                        // Skip if image is invalid
+                    }
+                }
+            }
+        }
+
+        $filename = 'Laporan_Kegiatan';
+        if ($request->has('month') && $request->has('year')) {
+            $filename .= '_' . $request->year . '_' . str_pad($request->month, 2, '0', STR_PAD_LEFT);
+        }
+        $filename .= '_' . now()->format('His') . '.docx';
+
+        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+        
+        $tempFile = tempnam(sys_get_temp_dir(), 'docx');
+        $objWriter->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 
     /**

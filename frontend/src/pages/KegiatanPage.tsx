@@ -15,13 +15,14 @@ import type { Kegiatan, PaginatedResponse, ApiResponse, KegiatanFormData } from 
 import type { Karyawan } from '../types/karyawan';
 
 export function KegiatanPage() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingKegiatan, setEditingKegiatan] = useState<Kegiatan | null>(null);
     const [viewingKegiatan, setViewingKegiatan] = useState<Kegiatan | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+    const [isDownloadingDocx, setIsDownloadingDocx] = useState(false);
 
     // Filters
     const [filterDay, setFilterDay] = useState<string>('');
@@ -217,6 +218,49 @@ export function KegiatanPage() {
         }
     };
 
+    const handleDownloadDocx = async () => {
+        setIsDownloadingDocx(true);
+        try {
+            const params = new URLSearchParams();
+            if (filterDay) params.append('day', filterDay);
+            if (filterMonth) params.append('month', filterMonth);
+            if (filterYear) params.append('year', filterYear);
+            if (filterUser) params.append('user_id', filterUser);
+
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+            const response = await fetch(`${API_BASE_URL}/kegiatans/export/docx?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'Laporan_Kegiatan.docx';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                if (filenameMatch) filename = filenameMatch[1];
+            }
+
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Download DOCX failed:', error);
+            alert('Gagal mendownload file DOCX');
+        } finally {
+            setIsDownloadingDocx(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -257,16 +301,29 @@ export function KegiatanPage() {
                                     Reset
                                 </button>
                             )}
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                className="h-8 px-3 gap-2 text-[11px] font-bold bg-primary text-white border-none shadow-md shadow-primary/20 hover:scale-105 active:scale-95"
-                                onClick={() => setIsPrintModalOpen(true)}
-                                isDisabled={isLoading || !infiniteData || flattedData.length === 0}
-                            >
-                                <Printer className="w-3.5 h-3.5" />
-                                CETAK PDF
-                            </Button>
+                            <div className="flex gap-1.5">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="h-8 px-3 gap-2 text-[11px] font-bold bg-primary text-white border-none shadow-md shadow-primary/20 hover:scale-105 active:scale-95"
+                                    onClick={() => setIsPrintModalOpen(true)}
+                                    isDisabled={isLoading || !infiniteData || flattedData.length === 0}
+                                >
+                                    <Printer className="w-3.5 h-3.5" />
+                                    PDF
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="h-8 px-3 gap-2 text-[11px] font-bold bg-blue-600 text-white border-none shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95"
+                                    onClick={handleDownloadDocx}
+                                    isLoading={isDownloadingDocx}
+                                    isDisabled={isLoading || !infiniteData || flattedData.length === 0 || isDownloadingDocx}
+                                >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    DOCX
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
