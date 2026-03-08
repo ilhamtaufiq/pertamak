@@ -141,9 +141,16 @@ class KegiatanController extends Controller
             
             $docCell = $table->addCell(2700);
             foreach ($kegiatan->media as $media) {
-                if (file_exists($media->getPath())) {
+                $imagePath = $media->getPath('optimized');
+                
+                // Fallback to original if optimized doesn't exist
+                if (!file_exists($imagePath)) {
+                    $imagePath = $media->getPath();
+                }
+
+                if (file_exists($imagePath)) {
                     try {
-                        $docCell->addImage($media->getPath(), [
+                        $docCell->addImage($imagePath, [
                             'width' => 120,
                             'height' => 120,
                             'marginTop' => 5,
