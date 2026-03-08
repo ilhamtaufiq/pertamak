@@ -45,7 +45,7 @@ export function JadwalPiketPrintView({ data, month, year }: JadwalPiketPrintView
             <style>
                 {`
                 @media print {
-                    @page { size: portrait; margin: 1cm; }
+                    @page { size: 210mm 330mm; margin: 1cm; orientation: portrait; }
                     body { background: white; }
                     #print-area { padding: 0; }
                 }

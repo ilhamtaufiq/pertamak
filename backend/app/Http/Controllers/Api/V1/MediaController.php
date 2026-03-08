@@ -116,7 +116,7 @@ class MediaController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file',
+            'file' => 'required|file|max:51200',
             'folder_id' => 'nullable|exists:folders,id'
         ]);
 

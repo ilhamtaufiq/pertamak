@@ -95,7 +95,9 @@ class KegiatanController extends Controller
         ]);
 
         $section = $phpWord->addSection([
-            'orientation' => 'landscape',
+            'orientation' => 'portrait',
+            'pageSizeW' => 11906,
+            'pageSizeH' => 18709,
             'marginTop' => 800,
             'marginBottom' => 800,
             'marginLeft' => 800,
@@ -125,19 +127,19 @@ class KegiatanController extends Controller
         // Header
         $table->addRow();
         $table->addCell(500, ['bgColor' => 'EEEEEE'])->addText('No', ['bold' => true], ['alignment' => Jc::CENTER]);
-        $table->addCell(2000, ['bgColor' => 'EEEEEE'])->addText('Hari/Tanggal', ['bold' => true], ['alignment' => Jc::CENTER]);
-        $table->addCell(2000, ['bgColor' => 'EEEEEE'])->addText('Lokasi', ['bold' => true], ['alignment' => Jc::CENTER]);
-        $table->addCell(4500, ['bgColor' => 'EEEEEE'])->addText('Uraian Kegiatan', ['bold' => true], ['alignment' => Jc::CENTER]);
-        $table->addCell(3000, ['bgColor' => 'EEEEEE'])->addText('Dokumentasi', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(1800, ['bgColor' => 'EEEEEE'])->addText('Hari/Tanggal', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(1800, ['bgColor' => 'EEEEEE'])->addText('Lokasi', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(3500, ['bgColor' => 'EEEEEE'])->addText('Uraian Kegiatan', ['bold' => true], ['alignment' => Jc::CENTER]);
+        $table->addCell(2700, ['bgColor' => 'EEEEEE'])->addText('Dokumentasi', ['bold' => true], ['alignment' => Jc::CENTER]);
 
         foreach ($kegiatans as $index => $kegiatan) {
             $table->addRow();
             $table->addCell(500)->addText($index + 1, null, ['alignment' => Jc::CENTER]);
-            $table->addCell(2000)->addText($kegiatan->hari . ', ' . $kegiatan->tanggal->format('d-m-Y'));
-            $table->addCell(2000)->addText($kegiatan->lokasi);
-            $table->addCell(4500)->addText($kegiatan->uraian_kegiatan);
+            $table->addCell(1800)->addText($kegiatan->hari . ', ' . $kegiatan->tanggal->format('d-m-Y'));
+            $table->addCell(1800)->addText($kegiatan->lokasi);
+            $table->addCell(3500)->addText($kegiatan->uraian_kegiatan);
             
-            $docCell = $table->addCell(3000);
+            $docCell = $table->addCell(2700);
             foreach ($kegiatan->media as $media) {
                 if (file_exists($media->getPath())) {
                     try {
@@ -182,7 +184,7 @@ class KegiatanController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'uraian_kegiatan' => 'required|string',
             'dokumentasi' => 'nullable|array',
-            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:51200',
         ]);
 
         // Auto-generate hari from tanggal
@@ -246,7 +248,7 @@ class KegiatanController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'uraian_kegiatan' => 'sometimes|required|string',
             'dokumentasi' => 'nullable|array',
-            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'dokumentasi.*' => 'image|mimes:jpeg,png,jpg,gif|max:51200',
             'delete_dokumentasi' => 'nullable|array',
             'delete_dokumentasi.*' => 'integer',
         ]);

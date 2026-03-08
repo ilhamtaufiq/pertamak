@@ -9,7 +9,9 @@ use App\Traits\HasCompressedMedia;
 
 class Folder extends Model implements HasMedia
 {
-    use InteractsWithMedia, HasCompressedMedia;
+    use InteractsWithMedia, HasCompressedMedia {
+        HasCompressedMedia::registerMediaConversions insteadof InteractsWithMedia;
+    }
 
     protected $fillable = ['name', 'parent_id', 'user_id'];
 

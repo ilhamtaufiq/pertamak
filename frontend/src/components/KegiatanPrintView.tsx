@@ -23,21 +23,21 @@ export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrint
             <style>
                 {`
                 @media print {
-                    @page { size: landscape; margin: 1cm; }
+                    @page { size: 210mm 330mm; margin: 1cm; orientation: portrait; }
                     body { background: white; }
                     #print-area { padding: 0; }
                 }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-                th, td { border: 1px solid black; padding: 12px 8px; vertical-align: top; font-size: 12px; word-wrap: break-word; }
+                th, td { border: 1px solid black; padding: 10px 6px; vertical-align: top; font-size: 11px; word-wrap: break-word; }
                 th { background-color: #f3f4f6; font-weight: bold; text-align: center; text-transform: uppercase; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { font-size: 18px; font-weight: bold; margin: 0; padding: 0; text-transform: uppercase; line-height: 1.5; }
-                .no-col { width: 40px; text-align: center; }
-                .date-col { width: 120px; text-align: center; }
-                .location-col { width: 150px; }
+                .header { text-align: center; margin-bottom: 25px; }
+                .header h1 { font-size: 16px; font-weight: bold; margin: 0; padding: 0; text-transform: uppercase; line-height: 1.4; }
+                .no-col { width: 35px; text-align: center; }
+                .date-col { width: 100px; text-align: center; }
+                .location-col { width: 130px; }
                 .content-col { width: auto; }
-                .image-col { width: 220px; }
-                .doc-image { width: 100%; max-height: 150px; object-fit: cover; margin-bottom: 5px; border: 1px solid #ddd; }
+                .image-col { width: 180px; }
+                .doc-image { width: 100%; max-height: 120px; object-fit: cover; margin-bottom: 5px; border: 1px solid #ddd; }
                 `}
             </style>
 
@@ -105,7 +105,7 @@ export function KegiatanPrintView({ data, month, year, userInfo }: KegiatanPrint
                 <div className="mt-12 flex justify-end">
                     <div className="text-center w-[300px]">
                         <p>Cianjur, {today}</p>
-                        <p className="mt-1">Petugas,</p>
+                        <p className="mt-1">Yang Melaporkan,</p>
                         <div className="h-[100px]" />
                         <p className="font-bold underline">{userInfo.nama}</p>
                         <p>NIP. {userInfo.nip || '-'}</p>

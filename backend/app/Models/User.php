@@ -17,7 +17,9 @@ use App\Traits\HasCompressedMedia;
 class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia, HasCompressedMedia;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, InteractsWithMedia, HasCompressedMedia {
+        HasCompressedMedia::registerMediaConversions insteadof InteractsWithMedia;
+    }
 
     /**
      * The attributes that are mass assignable.

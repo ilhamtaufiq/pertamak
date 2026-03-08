@@ -12,7 +12,9 @@ use App\Traits\HasCompressedMedia;
 
 class Karyawan extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, HasCompressedMedia;
+    use HasFactory, InteractsWithMedia, HasCompressedMedia {
+        HasCompressedMedia::registerMediaConversions insteadof InteractsWithMedia;
+    }
 
     /**
      * Disable queued media conversions - process synchronously

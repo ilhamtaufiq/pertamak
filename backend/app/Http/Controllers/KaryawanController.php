@@ -30,7 +30,7 @@ class KaryawanController extends Controller
             'jabatan' => 'required|string|max:255',
             'nip' => 'nullable|string|max:50',
             'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|max:10240',
+            'foto' => 'nullable|image|max:51200',
         ]);
 
         $karyawan = Karyawan::create($validated);
@@ -67,7 +67,7 @@ class KaryawanController extends Controller
             'jabatan' => 'sometimes|required|string|max:255',
             'nip' => 'nullable|string|max:50',
             'no_hp' => 'nullable|string|max:20',
-            'foto' => 'nullable|image|max:10240',
+            'foto' => 'nullable|image|max:51200',
             'delete_foto' => 'nullable|boolean',
         ]);
 
