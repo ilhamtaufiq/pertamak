@@ -68,12 +68,17 @@ class MediaController extends Controller
                 }
             }
             
+            $isImage = str_starts_with($media->mime_type, 'image/');
+            
             return [
                 'id' => $media->id,
                 'name' => $media->file_name,
                 'size' => $media->size,
+                'human_size' => $media->human_readable_size,
                 'mime_type' => $media->mime_type,
-                'url' => $media->getFullUrl(),
+                'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
+                'original_url' => $media->getUrl(),
+                'thumb' => $isImage ? $media->getUrl('thumb') : null,
                 'created_at' => $media->created_at,
                 'owner_name' => $ownerName
             ];
@@ -133,12 +138,17 @@ class MediaController extends Controller
         $media->folder_id = $folderId;
         $media->save();
 
+        $isImage = str_starts_with($media->mime_type, 'image/');
+
         return response()->json([
             'id' => $media->id,
             'name' => $media->file_name,
             'size' => $media->size,
+            'human_size' => $media->human_readable_size,
             'mime_type' => $media->mime_type,
-            'url' => $media->getFullUrl(),
+            'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
+            'original_url' => $media->getUrl(),
+            'thumb' => $isImage ? $media->getUrl('thumb') : null,
             'created_at' => $media->created_at,
         ]);
     }

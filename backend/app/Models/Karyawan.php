@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Traits\HasCompressedMedia;
 
 class Karyawan extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, HasCompressedMedia;
 
     /**
      * Disable queued media conversions - process synchronously
@@ -39,17 +40,6 @@ class Karyawan extends Model implements HasMedia
     }
 
     /**
-     * Register media conversions for thumbnails
-     */
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(150)
-            ->height(150)
-            ->sharpen(10);
-    }
-
-    /**
      * Get foto URL
      */
     public function getFotoAttribute(): ?array
@@ -62,7 +52,8 @@ class Karyawan extends Model implements HasMedia
 
         return [
             'id' => $media->id,
-            'url' => $media->getUrl(),
+            'url' => $media->getUrl('optimized'),
+            'original_url' => $media->getUrl(),
             'thumb' => $media->getUrl('thumb'),
         ];
     }

@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Traits\HasCompressedMedia;
 
 class Folder extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, HasCompressedMedia;
 
     protected $fillable = ['name', 'parent_id', 'user_id'];
 

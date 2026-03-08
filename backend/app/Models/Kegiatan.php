@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Traits\HasCompressedMedia;
 
 class Kegiatan extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, HasCompressedMedia;
 
     /**
      * Disable queued media conversions - process synchronously
@@ -45,17 +46,6 @@ class Kegiatan extends Model implements HasMedia
     }
 
     /**
-     * Register media conversions for thumbnails
-     */
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(200)
-            ->height(200)
-            ->sharpen(10);
-    }
-
-    /**
      * Get dokumentasi URLs
      */
     public function getDokumentasiAttribute(): array
@@ -63,9 +53,11 @@ class Kegiatan extends Model implements HasMedia
         return $this->getMedia('dokumentasi')->map(function ($media) {
             return [
                 'id' => $media->id,
-                'url' => $media->getUrl(),
+                'url' => $media->getUrl('optimized'),
+                'original_url' => $media->getUrl(),
                 'thumb' => $media->getUrl('thumb'),
                 'name' => $media->name,
+                'size' => $media->human_readable_size,
             ];
         })->toArray();
     }

@@ -22,6 +22,7 @@ Replace unstable HeroUI v3 components with custom-built Tailwind CSS components 
   - Created `RoleSeeder` and defined `admin` & `karyawan` roles
   - Seeded sample users: `admin@pertamak.com` and `karyawan@pertamak.com`
   - Redesigned `BottomNav` into a floating glassmorphic island navigation. ✅
+  - Implemented automatic image compression using Spatie Media Library and custom `HasCompressedMedia` trait (supporting thumb, optimized, and webp formats). ✅
 - Now:
   - Redesigning `App.tsx` header and quick stats section.
   - Planning and implementing Media Library Organizer (Drive-like feature). ✅
