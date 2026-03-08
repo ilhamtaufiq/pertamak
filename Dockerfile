@@ -29,6 +29,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     zip \
     unzip \
+    jpegoptim \
+    optipng \
+    pngquant \
+    gifsicle \
+    webp \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions

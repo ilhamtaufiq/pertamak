@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Image\Enums\Fit;
 
 trait HasCompressedMedia
 {
@@ -22,7 +23,7 @@ trait HasCompressedMedia
         $this->addMediaConversion('optimized')
             ->width(1200)
             ->height(1200)
-            ->fit('max', 1200, 1200)
+            ->fit(Fit::Max, 1200, 1200)
             ->quality(60)
             ->sharpen(10)
             ->nonQueued();
