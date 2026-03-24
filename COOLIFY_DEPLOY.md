@@ -1,6 +1,6 @@
 # Coolify Deployment Guide - Pertamak
 
-Domain: `pertamak.ilham.wtf`
+Domain: `pertamak.cianjur.space`
 
 ## Prerequisites
 - Push code ke GitHub/GitLab repository
@@ -21,7 +21,7 @@ APP_NAME=Pertamak
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:xxx  # Generate dengan: php artisan key:generate --show
-APP_URL=https://pertamak.ilham.wtf
+APP_URL=https://pertamak.cianjur.space
 
 DB_CONNECTION=mysql
 DB_HOST=db
@@ -34,7 +34,7 @@ MYSQL_ROOT_PASSWORD=your_root_password
 ```
 
 ### 3. Network & Domain
-- Set domain: `pertamak.ilham.wtf`
+- Set domain: `pertamak.cianjur.space`
 - Exposed port: **80**
 - Enable HTTPS (Coolify will auto-provision SSL)
 
