@@ -25,9 +25,11 @@ Replace unstable HeroUI v3 components with custom-built Tailwind CSS components 
     - Kegiatan Tab: Dedicated report catalog with search and filters. ✅
     - Create Report Screen: Redesigned with resilient GPS location & multi-image documentation. ✅
     - Added `expo-image-picker` for field-ready reporting. ✅
-  - **Fixed Android CSS Bundling Error:** ✅
-    - Simplified `global.css` imports by removing `layer()` specifiers that were failing in `lightningcss`.
-    - Unwrapped `@theme` block for better parser compatibility.
+  - **Fixed Android Build Dependency Conflict (ERESOLVE):** ✅
+    - Removed legacy `react-native-css-interop` which was locked to Tailwind v3.
+    - Upgraded `nativewind` to `5.0.0-preview.3` (NativeWind v5) to support Tailwind CSS v4.
+    - Verified `metro.config.js` and `global.css` are aligned with the new architecture.
+    - Successfully regenerated `package-lock.json` via local `npm install`.
 - Now:
   - Testing real API connectivity for batch image uploads on mobile.
   - Finalizing "Organisator" (Media Gallery) UI for Phase 3.

@@ -1,3 +1,3 @@
-.test-bundling {
-  color: red;
-}
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";

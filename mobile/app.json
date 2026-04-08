@@ -11,7 +11,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/YOUR-PROJECT-ID"
+      "url": "https://u.expo.dev/70dcd093-a357-46f7-9c37-e4f8b7ab25b2"
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -31,6 +31,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ]
