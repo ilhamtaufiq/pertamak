@@ -1,17 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Dimensions, TextInput as RNTextInput, StatusBar, StyleSheet } from 'react-native';
-import { View, Text, TextInput, TouchableOpacity, LinearGradient, BlurView, Image } from '../../tw';
+import { KeyboardAvoidingView, Platform, Alert, Dimensions, TextInput as RNTextInput, StatusBar, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, LinearGradient, BlurView, Image, ScrollView, ActivityIndicator } from '../../tw';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { Camera, MapPin, Calendar, X, Plus, Save, ChevronLeft, Image as ImageIcon, Map as MapIcon, Send, LocateFixed, Search, RefreshCcw, FileText, LayoutList } from 'lucide-react-native';
+import { Camera, MapPin, Calendar, X, Plus, ChevronLeft, Map as MapIcon, Send, RefreshCcw, FileText } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { useCreateKegiatan, useUpdateKegiatan, useKegiatanById } from '../../hooks/useKegiatan';
 import { haptics } from '../../services/haptics';
 import { Animated } from '../../tw/animated';
-import { FadeInDown, FadeInUp, SlideInRight, ZoomIn } from 'react-native-reanimated';
+import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { format } from 'date-fns';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#38BDF8',
+  primarySolid: '#0EA5E9',
+  darkBg: '#020617',
+  darkSurface: '#0F172A',
+  emerald: '#10B981',
+  amber: '#F59E0B',
+};
 
 const MOCK_PLACES = [
   "Masjid Agung Cianjur, Pamoyanan, Cianjur",
@@ -179,49 +188,40 @@ export default function CreateKegiatanScreen() {
 
   if (isEdit && isLoadingPrev) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center">
-        <ActivityIndicator color="#0EA5E9" size="large" />
-        <Text className="text-slate-400 mt-4 font-black uppercase tracking-[4px]">Draf di Sinkronkan...</Text>
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator color={COLORS.primarySolid} size="large" />
+        <Text style={styles.loadingText}>Draf di Sinkronkan...</Text>
       </View>
-    )
+    );
   }
 
   return (
-    <View className="flex-1 bg-[#020617]">
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={['#020617', '#0F172A']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={StyleSheet.absoluteFill} />
 
-      {/* Premium Header - Matching Media & Home Pattern */}
-      <View className="h-48 border-b border-white/5 overflow-hidden">
-        <LinearGradient
-          colors={['#020617', '#0F172A']}
-          style={{ flex: 1, paddingTop: 64, paddingHorizontal: 24 }}
-        >
-          <View className="flex-row items-center justify-between mb-8">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="bg-white/20 p-4 rounded-[24px] border border-white/30 shadow-sm"
-            >
+      {/* Premium Header */}
+      <View style={styles.headerWrapper}>
+        <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={styles.headerGradient}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <ChevronLeft color="white" size={24} />
             </TouchableOpacity>
-            <View className="items-center">
-              <Text className="text-[#38BDF8] font-black text-[10px] uppercase tracking-[4px] mb-2">{isEdit ? 'Ubah Jurnal' : 'Entri Laporan'}</Text>
-              <Text className="text-white text-3xl font-black tracking-tight">{isEdit ? 'Update Kegiatan' : 'Laporan Baru'}</Text>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerLabel}>{isEdit ? 'Ubah Jurnal' : 'Entri Laporan'}</Text>
+              <Text style={styles.headerTitle}>{isEdit ? 'Update Kegiatan' : 'Laporan Baru'}</Text>
             </View>
-            <View className="w-14" />
+            <View style={{ width: 56 }} />
           </View>
         </LinearGradient>
       </View>
 
       {/* Floating Info Pill */}
-      <View style={{ marginTop: -32, paddingHorizontal: 32, zIndex: 10 }}>
-        <Animated.View
-          entering={ZoomIn.delay(300)}
-          className="bg-slate-900 rounded-full py-4 px-8 flex-row items-center justify-center border border-white/10 shadow-2xl shadow-slate-950/50"
-        >
-          <Calendar color="#38BDF8" size={16} className="mr-3" />
-          <Text className="text-white font-black text-[10px] uppercase tracking-[2px]">{format(new Date(tanggal), 'EEEE, dd MMMM yyyy')}</Text>
+      <View style={styles.pillWrapper}>
+        <Animated.View entering={ZoomIn.delay(300)} style={styles.datePill}>
+          <Calendar color={COLORS.primary} size={16} style={{ marginRight: 12 }} />
+          <Text style={styles.datePillText}>{format(new Date(tanggal), 'EEEE, dd MMMM yyyy')}</Text>
         </Animated.View>
       </View>
 
@@ -230,56 +230,47 @@ export default function CreateKegiatanScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          className="flex-1"
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 150, paddingTop: 40, paddingHorizontal: 24 }}
         >
           {/* Section 1: Lokasi */}
-          <Animated.View entering={FadeInDown.delay(100)} className="mb-10" style={{ zIndex: 100 }}>
-            <View className="flex-row items-center mb-6 pl-2">
-              <View className="w-1.5 h-6 bg-sky-500 rounded-full mr-4" />
-              <Text className="text-white font-black text-xs uppercase tracking-widest">Dimana Anda bekerja?</Text>
+          <Animated.View entering={FadeInDown.delay(100)} style={[styles.section, { zIndex: 100 }]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: COLORS.primarySolid }]} />
+              <Text style={styles.sectionTitle}>Dimana Anda bekerja?</Text>
             </View>
 
-            <View className="bg-[#0F172A] px-3 py-8 rounded-[48px] border border-white/5 shadow-2xl">
-              <View className="flex-row items-center justify-between mb-8 px-4">
-                <View className="bg-sky-500/10 px-4 py-2 rounded-full border border-sky-500/20">
-                  <Text className="text-sky-600 font-black text-[9px] uppercase tracking-widest">AUTOMATIC GPS</Text>
+            <View style={styles.formCard}>
+              <View style={styles.gpsRow}>
+                <View style={styles.gpsBadge}>
+                  <Text style={styles.gpsBadgeText}>AUTOMATIC GPS</Text>
                 </View>
-                <TouchableOpacity
-                  onPress={detectLocation}
-                  disabled={isLocating}
-                  className="flex-row items-center"
-                >
-                    {isLocating ? <ActivityIndicator size="small" color="#38BDF8" /> : <RefreshCcw color="#64748B" size={14} />}
+                <TouchableOpacity onPress={detectLocation} disabled={isLocating}>
+                  {isLocating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <RefreshCcw color="#64748B" size={14} />}
                 </TouchableOpacity>
               </View>
 
-              <View className="relative">
-                <View className="flex-row items-center bg-[#020617] px-8 rounded-[40px] border border-white/10 shadow-inner h-24">
-                  <MapPin color="#0EA5E9" size={24} className="mr-6" />
+              <View style={{ position: 'relative' }}>
+                <View style={styles.locationInputRow}>
+                  <MapPin color={COLORS.primarySolid} size={24} style={{ marginRight: 24 }} />
                   <RNTextInput
                     value={lokasi}
                     onChangeText={handleLocationChange}
                     placeholder="Cari lokasi atau ketik..."
                     placeholderTextColor="#475569"
-                    className="flex-1 text-white font-black text-xl"
                     underlineColorAndroid="transparent"
-                    style={{ flex: 1, height: '100%', color: 'white' }}
+                    style={styles.locationInput}
                   />
                 </View>
 
                 {suggestions.length > 0 && (
-                  <Animated.View entering={FadeInUp} className="absolute top-[88px] left-0 right-0 z-50 bg-[#0F172A] rounded-[32px] shadow-2xl border border-white/10 overflow-hidden">
+                  <Animated.View entering={FadeInUp} style={styles.suggestionsBox}>
                     {suggestions.map((p, idx) => (
-                      <TouchableOpacity
-                        key={idx}
-                        onPress={() => selectPlace(p)}
-                        className="p-6 border-b border-slate-50 flex-row items-center"
-                      >
-                        <MapIcon color="#38BDF8" size={16} className="mr-4" />
-                        <Text className="text-white font-bold" numberOfLines={1}>{p}</Text>
+                      <TouchableOpacity key={idx} onPress={() => selectPlace(p)} style={styles.suggestionItem}>
+                        <MapIcon color={COLORS.primary} size={16} style={{ marginRight: 16 }} />
+                        <Text style={styles.suggestionText} numberOfLines={1}>{p}</Text>
                       </TouchableOpacity>
                     ))}
                   </Animated.View>
@@ -289,16 +280,16 @@ export default function CreateKegiatanScreen() {
           </Animated.View>
 
           {/* Section 2: Uraian */}
-          <Animated.View entering={FadeInDown.delay(200)} className="mb-10" style={{ zIndex: 1 }}>
-            <View className="flex-row items-center mb-6 pl-2">
-              <View className="w-1.5 h-6 bg-emerald-500 rounded-full mr-4" />
-              <Text className="text-white font-black text-xs uppercase tracking-widest">Apa yang dilakukan?</Text>
+          <Animated.View entering={FadeInDown.delay(200)} style={[styles.section, { zIndex: 1 }]}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionDot, { backgroundColor: COLORS.emerald }]} />
+              <Text style={styles.sectionTitle}>Apa yang dilakukan?</Text>
             </View>
 
-            <View className="bg-[#0F172A] px-3 py-8 rounded-[48px] border border-white/5 shadow-2xl">
-              <View className="flex-row items-center mb-6">
-                <FileText color="#10B981" size={20} className="mr-4" />
-                <Text className="text-slate-400 font-black text-[10px] uppercase tracking-[2px]">DESKRIPSI RINCI</Text>
+            <View style={styles.formCard}>
+              <View style={styles.descLabelRow}>
+                <FileText color={COLORS.emerald} size={20} style={{ marginRight: 16 }} />
+                <Text style={styles.descLabel}>DESKRIPSI RINCI</Text>
               </View>
               <RNTextInput
                 multiline
@@ -309,51 +300,41 @@ export default function CreateKegiatanScreen() {
                 placeholderTextColor="#475569"
                 textAlignVertical="top"
                 underlineColorAndroid="transparent"
-                className="bg-[#020617] p-8 rounded-[32px] text-white font-bold text-lg h-60 border border-white/10 shadow-inner"
-                style={{ padding: 24, color: 'white' }}
+                style={styles.uraianInput}
               />
             </View>
           </Animated.View>
 
           {/* Section 3: Dokumentasi */}
-          <Animated.View entering={FadeInDown.delay(300)} className="mb-10">
-            <View className="flex-row items-center justify-between mb-6 pl-2 pr-4">
-              <View className="flex-row items-center">
-                <View className="w-1.5 h-6 bg-amber-500 rounded-full mr-4" />
-                <Text className="text-white font-black text-xs uppercase tracking-widest">Bukti Lapangan</Text>
+          <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+            <View style={styles.sectionHeaderBetween}>
+              <View style={styles.sectionHeaderLeft}>
+                <View style={[styles.sectionDot, { backgroundColor: COLORS.amber }]} />
+                <Text style={styles.sectionTitle}>Bukti Lapangan</Text>
               </View>
-              <View className="bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                <Text className="text-[#38BDF8] font-black text-[9px] uppercase tracking-tighter">{images.length}/5 FOTO</Text>
+              <View style={styles.photoCountPill}>
+                <Text style={styles.photoCountText}>{images.length}/5 FOTO</Text>
               </View>
             </View>
 
-            <View className="flex-row flex-wrap gap-4 px-2">
-              <TouchableOpacity
-                onPress={takePhoto}
-                className="w-[30%] aspect-square bg-sky-500 rounded-[32px] items-center justify-center shadow-lg shadow-sky-500/40"
-              >
+            <View style={styles.mediaGrid}>
+              <TouchableOpacity onPress={takePhoto} style={styles.cameraBtn}>
                 <Camera color="white" size={32} />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={pickImage}
-                className="w-[30%] aspect-square bg-[#0F172A] rounded-[32px] border border-dashed border-white/10 items-center justify-center"
-              >
-                <Plus color="#38BDF8" size={32} />
+              <TouchableOpacity onPress={pickImage} style={styles.addPhotoBtn}>
+                <Plus color={COLORS.primary} size={32} />
               </TouchableOpacity>
 
               {images.map((img, idx) => (
-                <View key={idx} className="w-[30%] aspect-square rounded-[32px] overflow-hidden shadow-md bg-[#0F172A]">
-                  <Image source={{ uri: img.uri }} className="w-full h-full" />
-                  <TouchableOpacity
-                    onPress={() => removeImage(idx)}
-                    className="absolute top-2 right-2 bg-black/60 w-8 h-8 rounded-full items-center justify-center"
-                  >
+                <View key={idx} style={styles.imageThumb}>
+                  <Image source={{ uri: img.uri }} style={styles.imageThumbImg} />
+                  <TouchableOpacity onPress={() => removeImage(idx)} style={styles.removeImageBtn}>
                     <X color="white" size={14} />
                   </TouchableOpacity>
                   {img.isExisting && (
-                    <View className="absolute bottom-0 inset-x-0 bg-sky-500 py-1 items-center">
-                      <Text className="text-[7px] text-white font-black uppercase tracking-tighter">CLOUD ASSET</Text>
+                    <View style={styles.cloudAssetBadge}>
+                      <Text style={styles.cloudAssetText}>CLOUD ASSET</Text>
                     </View>
                   )}
                 </View>
@@ -362,21 +343,21 @@ export default function CreateKegiatanScreen() {
           </Animated.View>
 
           {/* Final Action Button */}
-          <Animated.View entering={FadeInUp.delay(500)} className="mt-8">
+          <Animated.View entering={FadeInUp.delay(500)} style={styles.submitSection}>
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={handleSubmit}
               disabled={isSubmitting}
-              className="bg-slate-900 py-8 rounded-[48px] items-center justify-center shadow-2xl shadow-slate-950/50"
+              style={styles.submitBtnWrapper}
             >
               <LinearGradient
-                colors={['#0EA5E9', '#0284C7']}
+                colors={[COLORS.primarySolid, '#0284C7']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="absolute inset-0 rounded-[48px]"
+                style={styles.submitBtnGradient}
               />
-              <View className="flex-row items-center">
-                <Text className="text-white font-black text-xl uppercase tracking-[4px] mr-4">
+              <View style={styles.submitBtnContent}>
+                <Text style={styles.submitBtnText}>
                   {isEdit ? 'SIMPAN PERUBAHAN' : 'KIRIM LAPORAN'}
                 </Text>
                 <Send color="white" size={24} />
@@ -388,13 +369,124 @@ export default function CreateKegiatanScreen() {
 
       {/* Full Screen Loading Overlay */}
       {isSubmitting && (
-        <BlurView intensity={30} tint="dark" className="absolute inset-0 items-center justify-center z-[100]">
-          <View className="bg-slate-900/90 p-12 rounded-[56px] border border-white/10 items-center">
-            <ActivityIndicator color="#38BDF8" size="large" />
-            <Text className="text-white mt-6 font-black text-[10px] uppercase tracking-[6px]">Mengunggah Data...</Text>
+        <BlurView intensity={30} tint="dark" style={styles.loadingOverlay}>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator color={COLORS.primary} size="large" />
+            <Text style={styles.loadingOverlayText}>Mengunggah Data...</Text>
           </View>
         </BlurView>
       )}
     </View>
   );
 }
+
+const ITEM_WIDTH = (SCREEN_WIDTH - 48 - 32) / 3; // 3 columns with gaps
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.darkBg },
+  loadingScreen: { flex: 1, backgroundColor: COLORS.darkBg, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { color: '#94A3B8', marginTop: 16, fontWeight: '900', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
+  headerWrapper: { height: 192, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' },
+  headerGradient: { flex: 1, paddingTop: 64, paddingHorizontal: 24 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+  backBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)', padding: 16, borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  headerCenter: { alignItems: 'center' },
+  headerLabel: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 8, textTransform: 'uppercase' },
+  headerTitle: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
+  pillWrapper: { marginTop: -32, paddingHorizontal: 32, zIndex: 10 },
+  datePill: {
+    backgroundColor: COLORS.darkSurface, borderRadius: 32, paddingVertical: 16, paddingHorizontal: 32,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 15, elevation: 8,
+  },
+  datePillText: { color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
+  section: { marginBottom: 40 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, paddingLeft: 8 },
+  sectionHeaderBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingLeft: 8, paddingRight: 16 },
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
+  sectionDot: { width: 6, height: 24, borderRadius: 3, marginRight: 16 },
+  sectionTitle: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
+  formCard: {
+    backgroundColor: COLORS.darkSurface, paddingHorizontal: 12, paddingVertical: 32,
+    borderRadius: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 15, elevation: 5,
+  },
+  gpsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, paddingHorizontal: 16 },
+  gpsBadge: {
+    backgroundColor: 'rgba(56,189,248,0.1)', paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)',
+  },
+  gpsBadgeText: { color: '#0284C7', fontWeight: '900', fontSize: 9, letterSpacing: 2 },
+  locationInputRow: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.darkBg,
+    paddingHorizontal: 32, borderRadius: 40, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', height: 96,
+  },
+  locationInput: { flex: 1, height: '100%', color: 'white', fontWeight: '900', fontSize: 20 },
+  suggestionsBox: {
+    position: 'absolute', top: 88, left: 0, right: 0, zIndex: 50,
+    backgroundColor: COLORS.darkSurface, borderRadius: 32, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)', overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+  },
+  suggestionItem: { padding: 24, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', flexDirection: 'row', alignItems: 'center' },
+  suggestionText: { color: 'white', fontWeight: '700' },
+  descLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  descLabel: { color: '#94A3B8', fontWeight: '900', fontSize: 10, letterSpacing: 2 },
+  uraianInput: {
+    backgroundColor: COLORS.darkBg, padding: 24, borderRadius: 32, color: 'white',
+    fontWeight: '700', fontSize: 18, height: 240, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    textAlignVertical: 'top',
+  },
+  photoCountPill: {
+    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 4,
+    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  photoCountText: { color: COLORS.primary, fontWeight: '900', fontSize: 9, letterSpacing: -0.3 },
+  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingHorizontal: 8 },
+  cameraBtn: {
+    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.primarySolid, borderRadius: 32,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: COLORS.primarySolid, shadowOpacity: 0.4, shadowRadius: 15, elevation: 8,
+  },
+  addPhotoBtn: {
+    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.darkSurface, borderRadius: 32,
+    borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  imageThumb: {
+    width: ITEM_WIDTH, aspectRatio: 1, borderRadius: 32, overflow: 'hidden',
+    backgroundColor: COLORS.darkSurface,
+  },
+  imageThumbImg: { width: '100%', height: '100%' },
+  removeImageBtn: {
+    position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+  },
+  cloudAssetBadge: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: COLORS.primarySolid, paddingVertical: 4, alignItems: 'center',
+  },
+  cloudAssetText: { fontSize: 7, color: 'white', fontWeight: '900', letterSpacing: -0.3, textTransform: 'uppercase' },
+  submitSection: { marginTop: 32 },
+  submitBtnWrapper: {
+    backgroundColor: COLORS.darkSurface, paddingVertical: 32, borderRadius: 48,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+  },
+  submitBtnGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 48 },
+  submitBtnContent: { flexDirection: 'row', alignItems: 'center' },
+  submitBtnText: { color: 'white', fontWeight: '900', fontSize: 20, letterSpacing: 4, marginRight: 16 },
+  loadingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center', justifyContent: 'center', zIndex: 100,
+  },
+  loadingCard: {
+    backgroundColor: 'rgba(15,23,42,0.9)', padding: 48, borderRadius: 56,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center',
+  },
+  loadingOverlayText: { color: 'white', marginTop: 24, fontWeight: '900', fontSize: 10, letterSpacing: 6, textTransform: 'uppercase' },
+});

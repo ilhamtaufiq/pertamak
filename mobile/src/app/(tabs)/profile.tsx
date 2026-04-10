@@ -1,11 +1,21 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, LinearGradient, BlurView, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
-import { LogOut, User, Shield, Info, ChevronRight, Settings, Smartphone, Bell, Heart } from 'lucide-react-native';
+import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Bell, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Alert, StatusBar } from 'react-native';
+import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
+
+const COLORS = {
+  primary: '#38BDF8',
+  primarySolid: '#0EA5E9',
+  darkBg: '#020617',
+  darkSurface: '#0F172A',
+  text: '#FFFFFF',
+  textSecondary: '#64748B',
+  border: 'rgba(255,255,255,0.1)',
+};
 
 export default function ProfileTab() {
   const { user, clearAuth } = useAuthStore();
@@ -29,43 +39,43 @@ export default function ProfileTab() {
     );
   };
 
-  const ProfileItem = ({ icon: Icon, title, value, color = "#38BDF8" }: { icon: any, title: string, value: string, color?: string }) => (
-    <TouchableOpacity className="flex-row items-center bg-white/5 p-5 rounded-[28px] mb-4 border border-white/10">
-      <View className="bg-white/10 p-3 rounded-2xl mr-4">
+  const ProfileItem = ({ icon: Icon, title, value, color = COLORS.primary }: { icon: any, title: string, value: string, color?: string }) => (
+    <TouchableOpacity style={styles.profileItem}>
+      <View style={[styles.profileItemIcon, { backgroundColor: `${color}15` }]}>
         <Icon color={color} size={22} />
       </View>
-      <View className="flex-1">
-        <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{title}</Text>
-        <Text className="text-white text-base font-bold">{value}</Text>
+      <View style={styles.profileItemText}>
+        <Text style={styles.profileItemLabel}>{title}</Text>
+        <Text style={styles.profileItemValue}>{value}</Text>
       </View>
       <ChevronRight color="#475569" size={20} />
     </TouchableOpacity>
   );
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <LinearGradient 
-        colors={['#020617', '#0F172A']} 
-        className="absolute inset-0"
+        colors={[COLORS.darkBg, COLORS.darkSurface]} 
+        style={StyleSheet.absoluteFill}
       />
       
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header/Banner Area */}
-        <View className="pt-24 pb-12 items-center">
+        <View style={styles.headerArea}>
             <Animated.View entering={FadeInDown.duration(800)}>
-              <View className="w-32 h-32 rounded-[40px] border-4 border-sky-400/30 overflow-hidden shadow-2xl shadow-sky-500/20 mb-6">
+              <View style={styles.avatarFrame}>
                 <Image 
                   source={{ uri: `https://ui-avatars.com/api/?name=${user?.name}&background=0EA5E9&color=fff&bold=true&size=256` }}
-                  className="w-full h-full"
+                  style={styles.avatarImage}
                 />
               </View>
             </Animated.View>
             
-            <Animated.View entering={FadeInUp.delay(200)} className="items-center">
-              <Text className="text-white text-3xl font-black tracking-tight mb-2">{user?.name}</Text>
-              <View className="bg-sky-500/20 px-4 py-1.5 rounded-full border border-sky-400/30">
-                <Text className="text-sky-300 font-bold text-[10px] uppercase tracking-[4px]">
+            <Animated.View entering={FadeInUp.delay(200)} style={styles.userInfoCenter}>
+              <Text style={styles.userName}>{user?.name}</Text>
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleText}>
                   {user?.role} Enterprise
                 </Text>
               </View>
@@ -73,17 +83,17 @@ export default function ProfileTab() {
         </View>
 
         {/* Content Section */}
-        <View className="px-6 pb-40">
+        <View style={styles.contentArea}>
            <Animated.View entering={FadeInUp.delay(400)}>
-              <Text className="text-sky-400 font-black text-[10px] uppercase tracking-[4px] mb-5 ml-2">Akun Saya</Text>
+              <Text style={styles.sectionLabel}>AKUN SAYA</Text>
               
               <ProfileItem icon={User} title="Nama Lengkap" value={user?.name || '-'} />
               <ProfileItem icon={Shield} title="Hak Akses" value={user?.role?.toUpperCase() || '-'} />
               <ProfileItem icon={Smartphone} title="Versi Aplikasi" value="1.0.0 (Alpha)" />
            </Animated.View>
 
-           <Animated.View entering={FadeInUp.delay(600)} className="mt-8">
-              <Text className="text-slate-500 font-black text-[10px] uppercase tracking-[4px] mb-5 ml-2">Preferensi</Text>
+           <Animated.View entering={FadeInUp.delay(600)} style={styles.preferencesSection}>
+              <Text style={styles.sectionLabelSecondary}>PREFERENSI</Text>
               
               <ProfileItem icon={Bell} title="Notifikasi" value="Aktif" color="#6366F1" />
               <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" color="#F43F5E" />
@@ -91,17 +101,17 @@ export default function ProfileTab() {
            </Animated.View>
 
            {/* Logout Button */}
-           <Animated.View entering={FadeInUp.delay(800)} className="mt-12">
-              <TouchableOpacity 
+           <Animated.View entering={FadeInUp.delay(800)} style={styles.logoutSection}>
+              <NativeTouchableOpacity 
                 activeOpacity={0.8}
                 onPress={handleLogout}
-                className="bg-rose-500/10 h-16 rounded-[28px] border border-rose-500/20 items-center justify-center flex-row shadow-lg shadow-rose-950/20"
+                style={styles.logoutButton}
               >
-                 <LogOut color="#FB7185" size={24} className="mr-3" />
-                 <Text className="text-rose-400 text-xl font-black">Keluar Akun</Text>
-              </TouchableOpacity>
+                 <LogOut color="#FB7185" size={24} style={{ marginRight: 12 }} />
+                 <Text style={styles.logoutText}>Keluar Akun</Text>
+              </NativeTouchableOpacity>
               
-              <Text className="text-slate-700 text-center text-[10px] font-black uppercase tracking-[5px] mt-8">
+              <Text style={styles.footerText}>
                 Pertamak Mobile Hub
               </Text>
            </Animated.View>
@@ -110,3 +120,54 @@ export default function ProfileTab() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#020617' },
+  scroll: { flex: 1 },
+  headerArea: { paddingTop: 96, paddingBottom: 48, alignItems: 'center' },
+  avatarFrame: {
+    width: 128, height: 128, borderRadius: 40, borderWidth: 4,
+    borderColor: 'rgba(56, 189, 248, 0.3)', overflow: 'hidden',
+    shadowColor: '#0EA5E9', shadowOpacity: 0.2, shadowRadius: 20, elevation: 10,
+    marginBottom: 24,
+  },
+  avatarImage: { width: '100%', height: '100%' },
+  userInfoCenter: { alignItems: 'center' },
+  userName: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, marginBottom: 8 },
+  roleBadge: {
+    backgroundColor: 'rgba(14, 165, 233, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  roleText: { color: '#7DD3FC', fontWeight: '700', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
+  contentArea: { paddingHorizontal: 24, paddingBottom: 160 },
+  sectionLabel: { color: '#38BDF8', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 20, marginLeft: 8 },
+  sectionLabelSecondary: { color: '#475569', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 20, marginLeft: 8 },
+  profileItem: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)', padding: 20,
+    borderRadius: 28, marginBottom: 16,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  profileItemIcon: { padding: 12, borderRadius: 16, marginRight: 16 },
+  profileItemText: { flex: 1 },
+  profileItemLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4, textTransform: 'uppercase' },
+  profileItemValue: { color: 'white', fontSize: 16, fontWeight: '700' },
+  preferencesSection: { marginTop: 32 },
+  logoutSection: { marginTop: 48 },
+  logoutButton: {
+    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+    height: 64,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(244, 63, 94, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  logoutText: { color: '#FB7185', fontSize: 20, fontWeight: '900' },
+  footerText: { color: '#334155', textAlign: 'center', fontSize: 10, fontWeight: '900', letterSpacing: 5, marginTop: 32, textTransform: 'uppercase' },
+});

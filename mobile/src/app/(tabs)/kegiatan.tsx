@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { View, Text, ActivityIndicator, RefreshControl, StatusBar, TextInput, Dimensions, Platform, TouchableOpacity, Modal } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { StatusBar, Dimensions, RefreshControl, Modal, TextInput as RNTextInput } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, LinearGradient, BlurView, StyleSheet, Platform } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useRouter, Redirect, useFocusEffect } from 'expo-router';
@@ -133,7 +132,7 @@ export default function KegiatanListTab() {
           elevation: 10
         }}>
           <Search color="#38BDF8" size={20} style={{ marginRight: 12 }} />
-          <TextInput 
+          <RNTextInput 
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Cari deskripsi atau lokasi..."

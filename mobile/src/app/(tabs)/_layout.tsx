@@ -1,9 +1,7 @@
 import React from 'react';
 import { Tabs, useRouter, Redirect } from 'expo-router';
-import { Home, ClipboardList, User, Plus, FolderOpen, Map as MapIcon } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
-import { View, Platform, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Home, ClipboardList, User, Plus, FolderOpen } from 'lucide-react-native';
+import { View, Platform, TouchableOpacity, BlurView } from '@/tw';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function TabLayout() {
@@ -52,16 +50,10 @@ export default function TabLayout() {
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
-            <BlurView 
-              intensity={40} 
-              tint="dark" 
-              style={{ 
-                position: 'absolute', 
-                top: 0, 
-                left: 0, 
-                right: 0, 
-                bottom: 0,
-              }} 
+            <BlurView
+              intensity={40}
+              tint="dark"
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             />
           ) : null
         ),
@@ -101,27 +93,27 @@ export default function TabLayout() {
           title: '',
           tabBarIcon: () => (
             <View style={{
-                top: -20,
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                backgroundColor: '#0EA5E9',
-                justifyContent: 'center',
-                alignItems: 'center',
-                shadowColor: '#0EA5E9',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.5,
-                shadowRadius: 15,
-                elevation: 12,
-                borderWidth: 4,
-                borderColor: '#0F172A',
+              top: -20,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: '#0EA5E9',
+              justifyContent: 'center',
+              alignItems: 'center',
+              shadowColor: '#0EA5E9',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.5,
+              shadowRadius: 15,
+              elevation: 12,
+              borderWidth: 4,
+              borderColor: '#0F172A',
             }}>
-               <Plus color="white" size={32} strokeWidth={3} />
+              <Plus color="white" size={32} strokeWidth={3} />
             </View>
           ),
           tabBarButton: (props) => {
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => router.push('/kegiatan/create')}
                 style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
@@ -156,10 +148,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="maps"
         options={{
-          title: 'Peta',
-          tabBarIcon: ({ color, focused }) => (
-            <MapIcon color={color} size={22} strokeWidth={focused ? 2.5 : 2} />
-          ),
+          href: null,
         }}
       />
     </Tabs>

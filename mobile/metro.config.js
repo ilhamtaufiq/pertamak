@@ -5,6 +5,7 @@ const { withNativewind } = require("nativewind/metro");
 const config = getDefaultConfig(__dirname);
 
 module.exports = withNativewind(config, {
+  input: "./src/global.css",
   // inline variables break PlatformColor in CSS variables
   inlineVariables: false,
   // We add className support manually

@@ -49,12 +49,23 @@ declare module "lucide-react-native" {
   export const Bell: LucideIcon;
   export const ChevronRight: LucideIcon;
   export const Folder: LucideIcon;
+  export const FolderOpen: LucideIcon;
   export const HardDrive: LucideIcon;
   export const Filter: LucideIcon;
   export const Plus: LucideIcon;
   export const MapPin: LucideIcon;
   export const Layers: LucideIcon;
   export const Navigation: LucideIcon;
+  export const ClipboardList: LucideIcon;
+  export const Clipboard: LucideIcon;
+  export const Search: LucideIcon;
+  export const ArrowLeft: LucideIcon;
+  export const Camera: LucideIcon;
+  export const Trash2: LucideIcon;
+  export const CheckCircle2: LucideIcon;
+  export const AlertCircle: LucideIcon;
+  export const Clock: LucideIcon;
+  export const Calendar: LucideIcon;
 }
 
 declare module "@tanstack/query-async-storage-persister" {

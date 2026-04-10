@@ -20,7 +20,10 @@ import {
   Image as RNImage,
   Switch as RNSwitch,
   StyleSheet,
+  Platform,
 } from "react-native";
+
+export { Platform, StyleSheet };
 
 
 // CSS-enabled Link

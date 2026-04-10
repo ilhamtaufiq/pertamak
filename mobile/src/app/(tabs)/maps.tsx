@@ -1,16 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, ActivityIndicator, Alert, Dimensions, Platform } from 'react-native';
-import { View, Text, TouchableOpacity, LinearGradient, BlurView } from '../../tw';
+import { StyleSheet, Alert, Dimensions, Platform, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
+import { View, Text, LinearGradient, BlurView, ActivityIndicator } from '../../tw';
 import { MapPin, Layers, Navigation, LocateFixed, Zap, ShieldCheck, Activity } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 import { Animated } from '../../tw/animated';
-import { FadeInDown, FadeInUp, ZoomIn, SlideInRight } from 'react-native-reanimated';
+import { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Leaflet HTML Template with Premium Dark Theme (CartoDB Dark Matter)
+// Center: Alun-Alun Kabupaten Cianjur
+const CIANJUR_LAT = -6.8204;
+const CIANJUR_LON = 107.1403;
+
+const COLORS = {
+  primary: '#38BDF8',
+  primarySolid: '#0EA5E9',
+  darkBg: '#020617',
+  darkSurface: '#0F172A',
+  emerald: '#10B981',
+  rose: '#EF4444',
+};
+
 const LEAFLET_HTML = `
 <!DOCTYPE html>
 <html>
@@ -23,21 +35,17 @@ const LEAFLET_HTML = `
         #map { height: 100vh; width: 100vw; }
         .leaflet-control-attribution { display: none; }
         .user-marker {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             background-color: #0EA5E9;
             border: 3px solid white;
             border-radius: 50%;
             box-shadow: 0 0 15px rgba(14, 165, 233, 0.8);
         }
         .pulse {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 2px solid #0EA5E9;
             border-radius: 50%;
-            position: absolute;
-            top: -10px;
-            left: -10px;
+            position: absolute; top: -10px; left: -10px;
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
@@ -49,7 +57,7 @@ const LEAFLET_HTML = `
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map', { zoomControl: false }).setView([-6.8167, 107.1417], 13);
+        var map = L.map('map', { zoomControl: false }).setView([${CIANJUR_LAT}, ${CIANJUR_LON}], 13);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 20
@@ -62,27 +70,21 @@ const LEAFLET_HTML = `
             iconAnchor: [10, 10]
         });
 
-        var userMarker = L.marker([-6.8167, 107.1417], { icon: marker }).addTo(map);
+        var userMarker = L.marker([${CIANJUR_LAT}, ${CIANJUR_LON}], { icon: marker }).addTo(map);
 
-        document.addEventListener('message', function(event) {
-            var data = JSON.parse(event.data);
-            if (data.type === 'UPDATE_LOCATION') {
-                userMarker.setLatLng([data.lat, data.lon]);
-                if (data.center) {
-                    map.setView([data.lat, data.lon], data.zoom || 16);
+        function handleMsg(event) {
+            try {
+                var data = JSON.parse(event.data);
+                if (data.type === 'UPDATE_LOCATION') {
+                    userMarker.setLatLng([data.lat, data.lon]);
+                    if (data.center) {
+                        map.setView([data.lat, data.lon], data.zoom || 16);
+                    }
                 }
-            }
-        });
-        
-        window.addEventListener('message', function(event) {
-             var data = JSON.parse(event.data);
-             if (data.type === 'UPDATE_LOCATION') {
-                userMarker.setLatLng([data.lat, data.lon]);
-                if (data.center) {
-                    map.setView([data.lat, data.lon], data.zoom || 16);
-                }
-            }
-        });
+            } catch(e) {}
+        }
+        document.addEventListener('message', handleMsg);
+        window.addEventListener('message', handleMsg);
     </script>
 </body>
 </html>
@@ -92,10 +94,9 @@ export default function MapsTab() {
   const webViewRef = useRef<WebView>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [isTracking, setIsTracking] = useState(false);
-  const [address, setAddress] = useState('Mencari lokasi...');
+  const [address, setAddress] = useState('Kabupaten Cianjur');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initial Location Fetch
   useEffect(() => {
     (async () => {
       try {
@@ -105,7 +106,6 @@ export default function MapsTab() {
           setIsLoading(false);
           return;
         }
-
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         setLocation(loc);
         reverseGeocode(loc.coords.latitude, loc.coords.longitude);
@@ -117,10 +117,8 @@ export default function MapsTab() {
     })();
   }, []);
 
-  // Tracking Logic
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
-
     if (isTracking) {
       (async () => {
         subscription = await Location.watchPositionAsync(
@@ -132,10 +130,7 @@ export default function MapsTab() {
         );
       })();
     }
-
-    return () => {
-      if (subscription) subscription.remove();
-    };
+    return () => { if (subscription) subscription.remove(); };
   }, [isTracking]);
 
   const reverseGeocode = async (lat: number, lon: number) => {
@@ -144,7 +139,7 @@ export default function MapsTab() {
       if (geo && geo.length > 0) {
         const addr = geo[0];
         const formatted = [addr.street, addr.district, addr.city].filter(Boolean).join(', ');
-        setAddress(formatted || 'Lokasi tidak dikenal');
+        setAddress(formatted || 'Kabupaten Cianjur');
       }
     } catch (e) {
       setAddress('Gagal mendapatkan alamat');
@@ -152,15 +147,9 @@ export default function MapsTab() {
   };
 
   const updateMap = (lat: number, lon: number, center: boolean = false) => {
-    const script = `
-        window.postMessage(JSON.stringify({
-            type: 'UPDATE_LOCATION',
-            lat: ${lat},
-            lon: ${lon},
-            center: ${center}
-        }), '*');
-    `;
-    webViewRef.current?.injectJavaScript(script);
+    webViewRef.current?.injectJavaScript(`
+      window.postMessage(JSON.stringify({ type:'UPDATE_LOCATION', lat:${lat}, lon:${lon}, center:${center} }), '*');
+    `);
   };
 
   const recenter = () => {
@@ -172,122 +161,175 @@ export default function MapsTab() {
 
   const toggleTracking = () => {
     haptics.impactMedium();
-    if (isTracking) {
-        haptics.success();
-    }
+    if (isTracking) haptics.success();
     setIsTracking(!isTracking);
   };
 
-  // If web, the override file maps.web.tsx handles it.
-  // react-native-webview might still cause issues on web if bundled incorrectly,
-  // but it's usually polyfilled or excluded.
-
   return (
-    <View className="flex-1 bg-[#020617]">
-      {/* Background Map (Leaflet via WebView) */}
+    <View style={s.container}>
+      {/* Map WebView */}
       <View style={StyleSheet.absoluteFill}>
         <WebView
-            ref={webViewRef}
-            originWhitelist={['*']}
-            source={{ html: LEAFLET_HTML }}
-            scrollEnabled={false}
-            overScrollMode="never"
-            style={{ backgroundColor: '#020617' }}
-            onLoadEnd={() => {
-                if (location) {
-                    updateMap(location.coords.latitude, location.coords.longitude, true);
-                }
-            }}
+          ref={webViewRef}
+          originWhitelist={['*']}
+          source={{ html: LEAFLET_HTML }}
+          scrollEnabled={false}
+          overScrollMode="never"
+          style={{ backgroundColor: COLORS.darkBg }}
+          onLoadEnd={() => {
+            if (location) updateMap(location.coords.latitude, location.coords.longitude, true);
+          }}
         />
       </View>
 
-      {/* Top Header Overlays */}
-      <View className="absolute top-0 inset-x-0 h-40">
-        <LinearGradient colors={['rgba(2,6,23,0.9)', 'transparent']} className="flex-1 pt-16 px-6">
-            <Animated.View entering={FadeInDown} className="flex-row items-center justify-between">
-                <View>
-                    <Text className="text-[#38BDF8] font-black text-[10px] uppercase tracking-[4px] mb-1">Leaflet Intelligence</Text>
-                    <Text className="text-white text-3xl font-black tracking-tight">Geo Tracking</Text>
-                </View>
-                <TouchableOpacity onPress={recenter} className="bg-white/10 p-4 rounded-3xl border border-white/20">
-                    <LocateFixed color="white" size={24} />
-                </TouchableOpacity>
-            </Animated.View>
+      {/* Top Header */}
+      <View style={s.topOverlay}>
+        <LinearGradient colors={['rgba(2,6,23,0.9)', 'transparent']} style={s.topGradient}>
+          <Animated.View entering={FadeInDown} style={s.topRow}>
+            <View>
+              <Text style={s.topLabel}>LEAFLET INTELLIGENCE</Text>
+              <Text style={s.topTitle}>Geo Tracking</Text>
+            </View>
+            <NativeTouchableOpacity onPress={recenter} style={s.recenterBtn}>
+              <LocateFixed color="white" size={24} />
+            </NativeTouchableOpacity>
+          </Animated.View>
         </LinearGradient>
       </View>
 
       {/* Side Controls */}
-      <View className="absolute top-48 right-6 gap-4">
-          <Animated.View entering={SlideInRight.delay(200)}>
-            <MapControl icon={<Layers color="white" size={20} />} />
-          </Animated.View>
-          <Animated.View entering={SlideInRight.delay(300)}>
-            <MapControl icon={<ShieldCheck color="#10B981" size={20} />} />
-          </Animated.View>
+      <View style={s.sideControls}>
+        <Animated.View entering={SlideInRight.delay(200)}>
+          <NativeTouchableOpacity style={s.mapControlBtn}>
+            <Layers color="white" size={20} />
+          </NativeTouchableOpacity>
+        </Animated.View>
+        <Animated.View entering={SlideInRight.delay(300)}>
+          <NativeTouchableOpacity style={s.mapControlBtn}>
+            <ShieldCheck color={COLORS.emerald} size={20} />
+          </NativeTouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Bottom Tracking Card */}
-      <View style={{ position: 'absolute', bottom: 120, left: 16, right: 16 }}>
+      <View style={s.bottomCardWrapper}>
         <Animated.View entering={FadeInUp.delay(400)}>
-            <BlurView intensity={40} tint="dark" className="bg-[#020617]/60 rounded-[40px] border border-white/10 p-8 shadow-2xl overflow-hidden">
-                <View className="flex-row items-center justify-between mb-8">
-                    <View className="flex-row items-center">
-                        <View className="w-14 h-14 rounded-[20px] bg-sky-500 items-center justify-center mr-4 shadow-lg shadow-sky-500/40">
-                            {isTracking ? <Activity color="white" size={28} /> : <MapPin color="white" size={28} />}
-                        </View>
-                        <View className="max-w-[180px]">
-                            <Text className="text-white/60 font-black text-[9px] uppercase tracking-widest mb-1">Lokasi Presisi</Text>
-                            <Text className="text-white font-black text-lg leading-tight" numberOfLines={2}>{address}</Text>
-                        </View>
-                    </View>
-                    <View className={`px-4 py-2 rounded-full border ${isTracking ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-white/10'}`}>
-                        <View className="flex-row items-center">
-                            <View className={`w-2 h-2 rounded-full mr-2 ${isTracking ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                            <Text className={`font-black text-[9px] uppercase tracking-widest ${isTracking ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                {isTracking ? 'Active' : 'Standby'}
-                            </Text>
-                        </View>
-                    </View>
+          <BlurView intensity={40} tint="dark" style={s.trackingCard}>
+            {/* Header Row */}
+            <View style={s.trackingHeader}>
+              <View style={s.trackingLeft}>
+                <View style={s.trackingIconBox}>
+                  {isTracking ? <Activity color="white" size={28} /> : <MapPin color="white" size={28} />}
                 </View>
-
-                {/* Tracking Metrics */}
-                <View className="flex-row justify-between mb-8 px-2">
-                    <Metric label="Sinyal Open" value="Leaflet" icon={<Zap color="#38BDF8" size={12} />} />
-                    <Metric label="Akurasi" value="+/- 10m" icon={<ShieldCheck color="#10B981" size={12} />} />
+                <View style={s.trackingAddrBox}>
+                  <Text style={s.trackingLabel}>LOKASI PRESISI</Text>
+                  <Text style={s.trackingAddr} numberOfLines={2}>{address}</Text>
                 </View>
+              </View>
+              <View style={[s.statusPill, isTracking ? s.statusActive : s.statusIdle]}>
+                <View style={s.statusRow}>
+                  <View style={[s.statusDot, { backgroundColor: isTracking ? COLORS.emerald : '#94A3B8' }]} />
+                  <Text style={[s.statusPillText, { color: isTracking ? COLORS.emerald : '#94A3B8' }]}>
+                    {isTracking ? 'Active' : 'Standby'}
+                  </Text>
+                </View>
+              </View>
+            </View>
 
-                <TouchableOpacity 
-                    onPress={toggleTracking}
-                    className={`h-20 rounded-3xl items-center justify-center flex-row shadow-xl ${isTracking ? 'bg-rose-500 shadow-rose-500/30' : 'bg-sky-500 shadow-sky-500/30'}`}
-                >
-                    <Text className="text-white font-black text-lg uppercase tracking-[3px] mr-3">
-                        {isTracking ? 'HENTIKAN PELACAKAN' : 'MULAI PELACAKAN'}
-                    </Text>
-                    {isTracking ? <ShieldCheck color="white" size={20} /> : <Navigation color="white" size={20} />}
-                </TouchableOpacity>
-            </BlurView>
+            {/* Metrics */}
+            <View style={s.metricsRow}>
+              <View style={s.metricItem}>
+                <Zap color={COLORS.primary} size={12} />
+                <View style={s.metricText}>
+                  <Text style={s.metricLabel}>SINYAL OPEN</Text>
+                  <Text style={s.metricValue}>Leaflet</Text>
+                </View>
+              </View>
+              <View style={s.metricItem}>
+                <ShieldCheck color={COLORS.emerald} size={12} />
+                <View style={s.metricText}>
+                  <Text style={s.metricLabel}>AKURASI</Text>
+                  <Text style={s.metricValue}>+/- 10m</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Track Button */}
+            <NativeTouchableOpacity
+              onPress={toggleTracking}
+              style={[s.trackBtn, { backgroundColor: isTracking ? COLORS.rose : COLORS.primarySolid }]}
+            >
+              <Text style={s.trackBtnText}>
+                {isTracking ? 'HENTIKAN PELACAKAN' : 'MULAI PELACAKAN'}
+              </Text>
+              {isTracking ? <ShieldCheck color="white" size={20} /> : <Navigation color="white" size={20} />}
+            </NativeTouchableOpacity>
+          </BlurView>
         </Animated.View>
       </View>
     </View>
   );
 }
 
-function MapControl({ icon }: { icon: React.ReactNode }) {
-    return (
-        <TouchableOpacity className="w-16 h-16 rounded-[24px] bg-[#020617]/80 shadow-2xl items-center justify-center border border-white/10">
-            {icon}
-        </TouchableOpacity>
-    );
-}
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.darkBg },
 
-function Metric({ label, value, icon }: { label: string, value: string, icon: React.ReactNode }) {
-    return (
-        <View className="flex-row items-center">
-            <View className="mr-3">{icon}</View>
-            <View>
-                <Text className="text-white/40 font-black text-[8px] uppercase tracking-widest">{label}</Text>
-                <Text className="text-white font-bold text-xs uppercase">{value}</Text>
-            </View>
-        </View>
-    );
-}
+  // Top overlay
+  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 160, zIndex: 10 },
+  topGradient: { flex: 1, paddingTop: 64, paddingHorizontal: 24 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topLabel: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 4 },
+  topTitle: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
+  recenterBtn: {
+    backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+  },
+
+  // Side controls
+  sideControls: { position: 'absolute', top: 192, right: 24, gap: 16, zIndex: 10 },
+  mapControlBtn: {
+    width: 64, height: 64, borderRadius: 24,
+    backgroundColor: 'rgba(2,6,23,0.8)', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5,
+  },
+
+  // Bottom card
+  bottomCardWrapper: { position: 'absolute', bottom: 120, left: 16, right: 16, zIndex: 10 },
+  trackingCard: {
+    backgroundColor: 'rgba(2,6,23,0.6)', borderRadius: 40,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    padding: 32, overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+  },
+  trackingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+  trackingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  trackingIconBox: {
+    width: 56, height: 56, borderRadius: 20, backgroundColor: COLORS.primarySolid,
+    alignItems: 'center', justifyContent: 'center', marginRight: 16,
+    shadowColor: COLORS.primarySolid, shadowOpacity: 0.4, shadowRadius: 10, elevation: 5,
+  },
+  trackingAddrBox: { flex: 1, maxWidth: 180 },
+  trackingLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '900', fontSize: 9, letterSpacing: 2, marginBottom: 4 },
+  trackingAddr: { color: 'white', fontWeight: '900', fontSize: 18, lineHeight: 22 },
+  statusPill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginLeft: 12 },
+  statusActive: { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.2)' },
+  statusIdle: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  statusRow: { flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  statusPillText: { fontWeight: '900', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase' },
+
+  // Metrics
+  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32, paddingHorizontal: 8 },
+  metricItem: { flexDirection: 'row', alignItems: 'center' },
+  metricText: { marginLeft: 12 },
+  metricLabel: { color: 'rgba(255,255,255,0.4)', fontWeight: '900', fontSize: 8, letterSpacing: 2 },
+  metricValue: { color: 'white', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
+
+  // Track button
+  trackBtn: {
+    height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
+    shadowColor: COLORS.primarySolid, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8,
+  },
+  trackBtnText: { color: 'white', fontWeight: '900', fontSize: 18, letterSpacing: 3, marginRight: 12 },
+});

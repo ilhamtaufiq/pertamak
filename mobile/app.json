@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Pertamak Mobile Hub",
+    "slug": "pertamak",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/YOUR-PROJECT-ID"
+      "url": "https://u.expo.dev/70dcd093-a357-46f7-9c37-e4f8b7ab25b2"
     },
     "splash": {
       "image": "./assets/splash-icon.png",
