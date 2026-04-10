@@ -11,6 +11,7 @@
     "src",
     "**/*.ts",
     "**/*.tsx",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "react-native-css-env.d.ts"
   ]
 }
