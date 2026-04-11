@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Alert, Dimensions, Platform, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
 import { View, Text, LinearGradient, BlurView, ActivityIndicator } from '../../tw';
-import { MapPin, Layers, Navigation, LocateFixed, Zap, ShieldCheck, Activity } from 'lucide-react-native';
+import { MapPin, Layers, Navigation, LocateFixed, Zap, ShieldCheck, Activity, Users } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '../../stores/authStore';
+import { APP_CONFIG } from '../../config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -71,6 +74,7 @@ const LEAFLET_HTML = `
         });
 
         var userMarker = L.marker([${CIANJUR_LAT}, ${CIANJUR_LON}], { icon: marker }).addTo(map);
+        var onlineMarkers = {};
 
         function handleMsg(event) {
             try {
@@ -80,6 +84,30 @@ const LEAFLET_HTML = `
                     if (data.center) {
                         map.setView([data.lat, data.lon], data.zoom || 16);
                     }
+                } else if (data.type === 'UPDATE_ONLINE_USERS') {
+                    var newIds = new Set(data.users.map(u => u.id));
+                    for (var id in onlineMarkers) {
+                        if (!newIds.has(Number(id))) {
+                            map.removeLayer(onlineMarkers[id]);
+                            delete onlineMarkers[id];
+                        }
+                    }
+                    data.users.forEach(u => {
+                        if (onlineMarkers[u.id]) {
+                            onlineMarkers[u.id].setLatLng([u.lat, u.lon]);
+                        } else {
+                            var initial = u.name ? u.name.charAt(0).toUpperCase() : '?';
+                            var teamIcon = L.divIcon({
+                                className: 'custom-div-icon',
+                                html: '<div style="width:28px;height:28px;background-color:#10B981;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(16,185,129,0.8);"><span style="color:white;font-size:12px;font-weight:bold;font-family:sans-serif;">' + initial + '</span></div>',
+                                iconSize: [28, 28],
+                                iconAnchor: [14, 14]
+                            });
+                            var remoteMarker = L.marker([u.lat, u.lon], { icon: teamIcon }).addTo(map);
+                            remoteMarker.bindPopup('<div style="font-family:sans-serif;text-align:center;padding:4px;"><b style="color:#0F172A;font-size:14px;display:block;margin-bottom:2px;">' + u.name + '</b><span style="color:#64748B;font-size:11px;">Tim Lapangan</span></div>');
+                            onlineMarkers[u.id] = remoteMarker;
+                        }
+                    });
                 }
             } catch(e) {}
         }
@@ -96,6 +124,23 @@ export default function MapsTab() {
   const [isTracking, setIsTracking] = useState(false);
   const [address, setAddress] = useState('Kabupaten Cianjur');
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { token, user } = useAuthStore();
+
+  const { data: onlineUsersData } = useQuery({
+    queryKey: ['online-users'],
+    queryFn: async () => {
+      const res = await fetch(`${APP_CONFIG.API_URL}/users/online`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Network error');
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  const onlineUsers = onlineUsersData?.data || [];
+  const otherUsers = onlineUsers.filter((u: any) => u.id !== user?.id && u.latitude && u.longitude);
 
   useEffect(() => {
     (async () => {
@@ -132,6 +177,20 @@ export default function MapsTab() {
     }
     return () => { if (subscription) subscription.remove(); };
   }, [isTracking]);
+
+  useEffect(() => {
+    if (otherUsers.length > 0) {
+      const usersPayload = otherUsers.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        lat: Number(u.latitude),
+        lon: Number(u.longitude)
+      }));
+      webViewRef.current?.injectJavaScript(`
+        window.postMessage(JSON.stringify({ type:'UPDATE_ONLINE_USERS', users: ${JSON.stringify(usersPayload)} }), '*');
+      `);
+    }
+  }, [onlineUsersData]);
 
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
@@ -178,6 +237,17 @@ export default function MapsTab() {
           style={{ backgroundColor: COLORS.darkBg }}
           onLoadEnd={() => {
             if (location) updateMap(location.coords.latitude, location.coords.longitude, true);
+            if (otherUsers.length > 0) {
+              const usersPayload = otherUsers.map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                lat: Number(u.latitude),
+                lon: Number(u.longitude)
+              }));
+              webViewRef.current?.injectJavaScript(`
+                window.postMessage(JSON.stringify({ type:'UPDATE_ONLINE_USERS', users: ${JSON.stringify(usersPayload)} }), '*');
+              `);
+            }
           }}
         />
       </View>
@@ -239,10 +309,10 @@ export default function MapsTab() {
             {/* Metrics */}
             <View style={s.metricsRow}>
               <View style={s.metricItem}>
-                <Zap color={COLORS.primary} size={12} />
+                <Users color={COLORS.primary} size={12} />
                 <View style={s.metricText}>
-                  <Text style={s.metricLabel}>SINYAL OPEN</Text>
-                  <Text style={s.metricValue}>Leaflet</Text>
+                  <Text style={s.metricLabel}>TIM AKTIF</Text>
+                  <Text style={s.metricValue}>{otherUsers.length} Petugas</Text>
                 </View>
               </View>
               <View style={s.metricItem}>

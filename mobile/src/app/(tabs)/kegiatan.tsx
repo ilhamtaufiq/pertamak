@@ -86,7 +86,7 @@ export default function KegiatanListTab() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#38BDF8', fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>Audit Lapangan</Text>
-              <Text style={{ color: 'white', fontSize: 32, fontWeight: '900', letterSpacing: -1 }}>Katalog Kerja</Text>
+              <Text style={{ color: 'white', fontSize: 32, fontWeight: '900', letterSpacing: -1 }}>Laporan</Text>
             </View>
           </View>
 
@@ -126,7 +126,7 @@ export default function KegiatanListTab() {
           elevation: 10
         }}>
           <Search color="#38BDF8" size={20} style={{ marginRight: 12 }} />
-          <RNTextInput 
+          <RNTextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Cari deskripsi atau lokasi..."

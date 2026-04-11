@@ -5,7 +5,8 @@ import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Bell, Heart } fro
 import { useRouter } from 'expo-router';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
+import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity, ActivityIndicator } from 'react-native';
+import * as Updates from 'expo-updates';
 
 const COLORS = {
   primary: '#38BDF8',
@@ -39,8 +40,30 @@ export default function ProfileTab() {
     );
   };
 
-  const ProfileItem = ({ icon: Icon, title, value, color = COLORS.primary }: { icon: any, title: string, value: string, color?: string }) => (
-    <TouchableOpacity style={styles.profileItem}>
+  const [isCheckingUpdate, setIsCheckingUpdate] = React.useState(false);
+
+  const handleCheckUpdate = async () => {
+    try {
+      setIsCheckingUpdate(true);
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        Alert.alert('Update Tersedia', 'Update OTA baru sedang diunduh. Tunggu sebentar...');
+        await Updates.fetchUpdateAsync();
+        Alert.alert('Update Selesai', 'Akses fitur terbaru sekarang! Aplikasi akan dimuat ulang.', [
+          { text: 'Muat Ulang', style: 'default', onPress: () => Updates.reloadAsync() }
+        ]);
+      } else {
+        Alert.alert('Versi Terbaru', 'Tidak ada update OTA (EAS Update) baru saat ini.');
+      }
+    } catch (e: any) {
+      Alert.alert('Gagal Cek Update', 'Terjadi kesalahan koneksi atau aplikasi berjalan di mode development (Expo Go).\n\nDetails: ' + e.message);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  const ProfileItem = ({ icon: Icon, title, value, color = COLORS.primary, onPress, isLoading = false }: { icon: any, title: string, value: string, color?: string, onPress?: () => void, isLoading?: boolean }) => (
+    <TouchableOpacity style={styles.profileItem} onPress={onPress} activeOpacity={onPress ? 0.7 : 1} disabled={!onPress || isLoading}>
       <View style={[styles.profileItemIcon, { backgroundColor: `${color}15` }]}>
         <Icon color={color} size={22} />
       </View>
@@ -48,7 +71,7 @@ export default function ProfileTab() {
         <Text style={styles.profileItemLabel}>{title}</Text>
         <Text style={styles.profileItemValue}>{value}</Text>
       </View>
-      <ChevronRight color="#475569" size={20} />
+      {isLoading ? <ActivityIndicator color={color} /> : <ChevronRight color="#475569" size={20} />}
     </TouchableOpacity>
   );
 
@@ -93,9 +116,17 @@ export default function ProfileTab() {
            </Animated.View>
 
            <Animated.View entering={FadeInUp.delay(600)} style={styles.preferencesSection}>
-              <Text style={styles.sectionLabelSecondary}>PREFERENSI</Text>
+              <Text style={styles.sectionLabelSecondary}>PREFERENSI & SISTEM</Text>
               
               <ProfileItem icon={Bell} title="Notifikasi" value="Aktif" color="#6366F1" />
+              <ProfileItem 
+                icon={Smartphone} 
+                title="Cek Update via EAS" 
+                value="Tap untuk sinkronisasi OTA" 
+                color="#0EA5E9" 
+                onPress={handleCheckUpdate}
+                isLoading={isCheckingUpdate}
+              />
               <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" color="#F43F5E" />
               <ProfileItem icon={Info} title="Tentang" value="PERTAMAK v1.0.0" color="#FACC15" />
            </Animated.View>

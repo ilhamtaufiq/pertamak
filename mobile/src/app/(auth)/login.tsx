@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 import { Animated } from '../../tw/animated';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
-import { Mail, Lock, LogIn, ShieldAlert, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, LogIn, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { APP_CONFIG } from '../../config';
 
@@ -18,6 +18,7 @@ const COLORS = {
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -145,11 +146,18 @@ export default function LoginScreen() {
                     <TextInput
                       placeholder="••••••••"
                       placeholderTextColor="#475569"
-                      secureTextEntry
+                      secureTextEntry={!showPassword}
                       style={styles.textInput}
                       value={password}
                       onChangeText={setPassword}
                     />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                      {showPassword ? (
+                        <EyeOff color="#64748B" size={20} />
+                      ) : (
+                        <Eye color="#64748B" size={20} />
+                      )}
+                    </TouchableOpacity>
                   </View>
                 </View>
 

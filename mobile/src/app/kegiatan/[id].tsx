@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, Image, LinearGradient, BlurView, TouchableOpacity, ActivityIndicator } from '../../tw';
-import { Modal, Alert, StatusBar, Dimensions, StyleSheet } from 'react-native';
+import { Modal, Alert, StatusBar, Dimensions, StyleSheet, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useKegiatanById, useDeleteKegiatan } from '../../hooks/useKegiatan';
-import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Share2, Pencil, AlertCircle, CheckCircle2 } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Send, Pencil, AlertCircle, CheckCircle2 } from 'lucide-react-native';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ export default function KegiatanDetailScreen() {
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const confirmDelete = async () => {
     setIsDeleting(true);
@@ -66,46 +68,39 @@ export default function KegiatanDetailScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Detail Laporan',
-          headerTransparent: true,
-          headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: '900', fontSize: 18 },
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-              <ChevronLeft color="white" size={24} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View style={styles.headerRight}>
-              <TouchableOpacity
-                onPress={() => router.push(`/kegiatan/create?id=${id}`)}
-                style={styles.headerEditBtn}
-              >
-                <Pencil color={COLORS.primary} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  haptics.impactMedium();
-                  setShowConfirmDelete(true);
-                }}
-                style={styles.headerDeleteBtn}
-              >
-                <Trash2 color={COLORS.rose} size={20} />
-              </TouchableOpacity>
-            </View>
-          )
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <LinearGradient
         colors={[COLORS.darkBg, COLORS.darkSurface]}
         style={StyleSheet.absoluteFill}
       />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      {/* Custom Header */}
+      <View style={[styles.customHeader, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
+          <ChevronLeft color="white" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Detail Laporan</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => router.push(`/kegiatan/create?id=${id}`)}
+            style={styles.headerEditBtn}
+          >
+            <Pencil color={COLORS.primary} size={20} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.impactMedium();
+              setShowConfirmDelete(true);
+            }}
+            style={styles.headerDeleteBtn}
+          >
+            <Trash2 color={COLORS.rose} size={20} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 120 }}>
         {/* Poster Image or Gallery */}
         <Animated.View entering={FadeInDown} style={styles.posterSection}>
           {kegiatan.media && kegiatan.media.length > 0 ? (
@@ -131,11 +126,13 @@ export default function KegiatanDetailScreen() {
         <Animated.View entering={FadeInUp.delay(200)} style={styles.contentSection}>
           <View style={styles.contentCard}>
             <View style={styles.dateRow}>
-              <View>
+              <View style={{ flex: 1, paddingRight: 16 }}>
                 <Text style={styles.sectionLabel}>WAKTU KEGIATAN</Text>
                 <View style={styles.dateValueRow}>
                   <Calendar color="white" size={20} style={{ marginRight: 12 }} />
-                  <Text style={styles.dateValue}>{kegiatan.hari}, {kegiatan.tanggal}</Text>
+                  <Text style={[styles.dateValue, { flex: 1 }]} numberOfLines={1} adjustsFontSizeToFit>
+                    {kegiatan.hari}, {kegiatan.tanggal}
+                  </Text>
                 </View>
               </View>
               <View style={styles.statusBadge}>
@@ -155,15 +152,24 @@ export default function KegiatanDetailScreen() {
               <View style={styles.locationCard}>
                 <MapPin color={COLORS.primary} size={24} style={{ marginRight: 16 }} />
                 <View style={styles.locationInfo}>
-                  <Text style={styles.locationName} numberOfLines={1}>{kegiatan.lokasi}</Text>
+                  <Text style={styles.locationName}>{kegiatan.lokasi}</Text>
                   {kegiatan.latitude && (
                     <Text style={styles.locationCoords}>
                       Lat: {kegiatan.latitude.toFixed(6)}, Lon: {kegiatan.longitude?.toFixed(6)}
                     </Text>
                   )}
                 </View>
-                <TouchableOpacity style={styles.shareBtn}>
-                  <Share2 color={COLORS.primary} size={20} />
+                <TouchableOpacity 
+                  style={styles.shareBtn} 
+                  onPress={() => {
+                    if (kegiatan.latitude && kegiatan.longitude) {
+                      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${kegiatan.latitude},${kegiatan.longitude}`);
+                    } else {
+                      Alert.alert('Lokasi Tidak Tersedia', 'Data koordinat (Lat/Lon) tidak ditemukan untuk titik lokasi ini.');
+                    }
+                  }}
+                >
+                  <Send color={COLORS.primary} size={20} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -223,7 +229,7 @@ export default function KegiatanDetailScreen() {
       </Modal>
 
       {/* Floating Back Button */}
-      <BlurView intensity={20} tint="dark" style={styles.bottomBar}>
+      <BlurView intensity={20} tint="dark" style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.9}>
           <LinearGradient
             colors={[COLORS.primary, COLORS.primarySolid]}
@@ -246,8 +252,14 @@ const styles = StyleSheet.create({
   errorDesc: { color: '#94A3B8', textAlign: 'center', marginBottom: 32 },
   errorBtn: { backgroundColor: '#0EA5E9', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20 },
   errorBtnText: { color: 'white', fontWeight: '700' },
-  headerBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 8, borderRadius: 12, marginLeft: 8 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 },
+  customHeader: {
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 16,
+  },
+  headerTitle: { color: 'white', fontWeight: '900', fontSize: 18 },
+  headerBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 8, borderRadius: 12 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerEditBtn: { backgroundColor: 'rgba(56,189,248,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)' },
   headerDeleteBtn: { backgroundColor: 'rgba(244,63,94,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)' },
   scrollView: { flex: 1, paddingTop: 128 },
@@ -325,7 +337,8 @@ const styles = StyleSheet.create({
   },
   confirmDeleteText: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
   bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, padding: 32,
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: 24, paddingTop: 24,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)',
   },
   backButton: {
