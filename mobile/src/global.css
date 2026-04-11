@@ -1,15 +1,7 @@
-@import "tailwindcss";
-
-@source "./app/**/*.{ts,tsx}";
-@source "./components/**/*.{ts,tsx}";
-
-@theme {
+/* Pertamak Mobile - Base Styles */
+/* All component styles use StyleSheet.create() */
+:root {
   --color-primary: #0EA5E9;
   --color-secondary: #0F172A;
 }
 
-@layer base {
-  body {
-    @apply bg-slate-950;
-  }
-}
