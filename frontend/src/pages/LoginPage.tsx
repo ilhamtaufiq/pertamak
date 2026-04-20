@@ -97,7 +97,7 @@ const LoginPage: React.FC = () => {
 
                 {/* Footer Info */}
                 <p className="text-center text-xs text-muted-foreground">
-                    Build with ❤️ for Pertamak Management System
+                    Build with ❤️ for Pertamak Hub
                 </p>
             </div>
 
