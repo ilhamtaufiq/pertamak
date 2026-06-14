@@ -3,6 +3,14 @@
     "name": "Pertamak Mobile Hub",
     "slug": "mobile",
     "version": "1.0.0",
+    "description": "Aplikasi pelaporan kegiatan lapangan untuk Kabupaten Cianjur",
+    "keywords": [
+      "pertamak",
+      "kegiatan",
+      "cianjur",
+      "laporan lapangan",
+      "mobile"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -36,7 +44,22 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "meta": {
+        "title": "Pertamak - Aplikasi Kegiatan Lapangan",
+        "description": "Aplikasi pelaporan dan monitoring kegiatan lapangan untuk Kabupaten Cianjur",
+        "keywords": "pertamak, kegiatan, cianjur, laporan lapangan"
+      },
+      "manifest": {
+        "display": "standalone",
+        "themeColor": "#0EA5E9",
+        "backgroundColor": "#020617",
+        "lang": "id-ID",
+        "categories": [
+          "business",
+          "productivity"
+        ]
+      }
     },
     "plugins": [
       "expo-router",

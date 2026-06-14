@@ -361,7 +361,7 @@ const s = StyleSheet.create({
     width: 64, height: 64, borderRadius: 24,
     backgroundColor: 'rgba(2,6,23,0.8)', alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5,
+    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)', elevation: 5,
   },
 
   // Bottom card
@@ -370,14 +370,14 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(2,6,23,0.6)', borderRadius: 40,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
     padding: 32, overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
   },
   trackingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
   trackingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   trackingIconBox: {
     width: 56, height: 56, borderRadius: 20, backgroundColor: COLORS.primarySolid,
     alignItems: 'center', justifyContent: 'center', marginRight: 16,
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.4, shadowRadius: 10, elevation: 5,
+    boxShadow: '0px 0px 10px rgba(14, 165, 233, 0.4)', elevation: 5,
   },
   trackingAddrBox: { flex: 1, maxWidth: 180 },
   trackingLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '900', fontSize: 9, letterSpacing: 2, marginBottom: 4 },
@@ -399,7 +399,7 @@ const s = StyleSheet.create({
   // Track button
   trackBtn: {
     height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8,
+    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.3)', elevation: 8,
   },
   trackBtnText: { color: 'white', fontWeight: '900', fontSize: 18, letterSpacing: 3, marginRight: 12 },
 });

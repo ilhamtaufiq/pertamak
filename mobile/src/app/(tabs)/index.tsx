@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import Head from 'expo-router/head';
 import { View, Text, ActivityIndicator, ScrollView, LinearGradient, BlurView, TouchableOpacity, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { Stack, useRouter } from 'expo-router';
@@ -8,20 +9,9 @@ import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { RefreshControl, StatusBar, StyleSheet, Dimensions } from 'react-native';
 import { ListTodo, Map as MapIcon, Bell, CalendarDays, ArrowRight } from 'lucide-react-native';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  text: '#FFFFFF',
-  textSecondary: '#64748B',
-  textTertiary: '#475569',
-  border: 'rgba(255,255,255,0.1)',
-  borderSky: 'rgba(56, 189, 248, 0.15)',
-};
 
 export default function HomeTab() {
   const { user } = useAuthStore();
@@ -51,11 +41,15 @@ export default function HomeTab() {
 
   return (
     <View style={styles.container}>
+      <Head>
+        <title>Beranda - Pertamak</title>
+        <meta name="description" content="Beranda aplikasi Pertamak - monitoring kegiatan lapangan" />
+      </Head>
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
 
       <LinearGradient
-        colors={[COLORS.darkBg, COLORS.darkSurface]}
+        colors={[T.darkBg, T.darkSurface]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -63,7 +57,7 @@ export default function HomeTab() {
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor={T.primary} />
         }
       >
         {/* Header Area */}
@@ -91,7 +85,7 @@ export default function HomeTab() {
           <Animated.View entering={FadeInDown.delay(200)} style={styles.featureSection}>
             <Text style={styles.sectionLabel}>FITUR UTAMA</Text>
             <View style={styles.featureGrid}>
-              <FeatureItem icon={ListTodo} title="Kegiatan" color={COLORS.primary} route="/kegiatan/create" />
+              <FeatureItem icon={ListTodo} title="Kegiatan" color={T.primary} route="/kegiatan/create" />
               <FeatureItem icon={MapIcon} title="Peta" color="#F472B6" route="/(tabs)/maps" />
             </View>
           </Animated.View>
@@ -108,13 +102,13 @@ export default function HomeTab() {
                 style={styles.seeAllButton}
               >
                 <Text style={styles.seeAllText}>Semua</Text>
-                <ArrowRight color={COLORS.primary} size={14} />
+                <ArrowRight color={T.primary} size={14} />
               </TouchableOpacity>
             </View>
 
             {isLoading ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator color={COLORS.primary} size="large" />
+                <ActivityIndicator color={T.primary} size="large" />
               </View>
             ) : recentKegiatan.length > 0 ? (
               recentKegiatan.map((item: any) => (
@@ -138,50 +132,50 @@ export default function HomeTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.darkBg },
+  container: { flex: 1, backgroundColor: T.darkBg },
   scroll: { flex: 1 },
-  headerArea: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 },
+  headerArea: { paddingHorizontal: SPACING.xl, paddingTop: 64, paddingBottom: SPACING.xl },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xxxl },
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatarFrame: {
-    width: 56, height: 56, borderRadius: 16, borderWidth: 2,
+    width: BUTTON.primary.height, height: BUTTON.primary.height, borderRadius: RADIUS.md, borderWidth: 2,
     borderColor: 'rgba(56, 189, 248, 0.3)', overflow: 'hidden',
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.2, shadowRadius: 10, elevation: 5,
+    ...SHADOWS.glow(T.primarySolid),
   },
   avatarImage: { width: '100%', height: '100%' },
-  userInfo: { marginLeft: 16 },
-  statusText: { color: '#94A3B8', fontWeight: '900', fontSize: 10, letterSpacing: 3, marginBottom: 4, textTransform: 'uppercase' },
-  greetingText: { color: 'white', fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+  userInfo: { marginLeft: SPACING.lg },
+  statusText: { color: T.textSecondary, ...TYPOGRAPHY.badge, marginBottom: 4 },
+  greetingText: { color: 'white', ...TYPOGRAPHY.heading },
   bellButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 16,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.05)', padding: SPACING.md, borderRadius: RADIUS.md,
+    borderWidth: 1, borderColor: T.darkBorder,
   },
-  featureSection: { marginBottom: 40 },
-  sectionLabel: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 24, paddingLeft: 4 },
+  featureSection: { marginBottom: SPACING.xxxl },
+  sectionLabel: { color: T.primary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, paddingLeft: 4 },
   featureGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   featureItem: { width: '47%' },
   featureCard: {
-    padding: 24, borderRadius: 32, borderWidth: 1, borderColor: COLORS.border,
-    backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center',
+    padding: SPACING.xl, borderRadius: RADIUS.xxl, borderWidth: 1, borderColor: T.darkBorder,
+    backgroundColor: T.darkCard, alignItems: 'center',
   },
   featureIconBox: {
-    padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12,
-    shadowColor: COLORS.primary, shadowOpacity: 0.1, shadowRadius: 10, elevation: 3,
+    padding: SPACING.lg, borderRadius: RADIUS.md, borderWidth: 1, marginBottom: SPACING.md,
+    ...SHADOWS.sm,
   },
-  featureTitle: { color: 'white', fontWeight: '900', fontSize: 14, letterSpacing: -0.5, textTransform: 'uppercase' },
+  featureTitle: { color: 'white', ...TYPOGRAPHY.caption, textTransform: 'uppercase' },
   recentSection: { flex: 1, paddingBottom: 120 },
-  recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingHorizontal: 4 },
-  recentTitle: { color: 'white', fontWeight: '900', fontSize: 24, letterSpacing: -0.5 },
-  recentSubtitle: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '700', marginTop: 2 },
+  recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.xl, paddingHorizontal: 4 },
+  recentTitle: { color: 'white', ...TYPOGRAPHY.heading },
+  recentSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.bodySecondary, fontWeight: '700', marginTop: 2 },
   seeAllButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 12, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm, flexDirection: 'row', alignItems: 'center',
   },
-  seeAllText: { color: COLORS.primary, fontWeight: '700', fontSize: 12, marginRight: 8 },
+  seeAllText: { color: T.primary, ...TYPOGRAPHY.bodySecondary, marginRight: SPACING.xs },
   loadingBox: { paddingVertical: 80, alignItems: 'center' },
   emptyBox: {
-    paddingVertical: 80, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 40, borderStyle: 'dashed', borderWidth: 1, borderColor: COLORS.border,
+    paddingVertical: 80, alignItems: 'center', backgroundColor: T.darkCard,
+    borderRadius: RADIUS.xxxl, borderStyle: 'dashed', borderWidth: 1, borderColor: T.darkBorder,
   },
-  emptyText: { color: COLORS.textSecondary, marginTop: 16, fontWeight: '500' },
+  emptyText: { color: T.textSecondary, marginTop: SPACING.lg, ...TYPOGRAPHY.caption },
 });

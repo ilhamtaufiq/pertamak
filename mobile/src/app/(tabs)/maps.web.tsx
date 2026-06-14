@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Head from 'expo-router/head';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Globe } from 'lucide-react-native';
 import { Animated } from '../../tw/animated';
@@ -21,6 +22,11 @@ export default function MapsWeb() {
 
   return (
     <View style={s.container}>
+      <Head>
+        <title>Peta Tracking - Pertamak</title>
+        <meta name="description" content="Peta real-time tracking kegiatan lapangan di Kabupaten Cianjur" />
+        <meta property="og:title" content="Peta Tracking - Pertamak" />
+      </Head>
       {/* Real Leaflet Map for Web */}
       <View style={{ flex: 1 }}>
         <iframe 

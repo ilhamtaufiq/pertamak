@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ScrollView, View, Text, Image, LinearGradient, BlurView, TouchableOpacity, ActivityIndicator } from '../../tw';
 import { Modal, Alert, StatusBar, Dimensions, StyleSheet, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useKegiatanById, useDeleteKegiatan } from '../../hooks/useKegiatan';
-import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Send, Pencil, AlertCircle, CheckCircle2 } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Send, Pencil, AlertCircle, CheckCircle2, X } from 'lucide-react-native';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
@@ -28,7 +28,12 @@ export default function KegiatanDetailScreen() {
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+
+  const goBack = useCallback(() => {
+    try { router.back(); } catch { router.replace('/(tabs)'); }
+  }, []);
 
   const confirmDelete = async () => {
     setIsDeleting(true);
@@ -58,12 +63,24 @@ export default function KegiatanDetailScreen() {
         <ShieldAlert color="#F87171" size={64} style={{ marginBottom: 16 }} />
         <Text style={styles.errorTitle}>Terjadi Kesalahan</Text>
         <Text style={styles.errorDesc}>Data tidak ditemukan atau Anda tidak memiliki akses.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.errorBtn}>
+        <TouchableOpacity onPress={goBack} style={styles.errorBtn}>
           <Text style={styles.errorBtnText}>Kembali</Text>
         </TouchableOpacity>
       </View>
     );
   }
+
+  // Helper to get correct image URL
+  const getImageUrl = (url: string) => {
+    if (!url) return '';
+    // Already production domain
+    if (url.includes('pertamak.cianjur.space')) return url;
+    // Replace localhost with production domain
+    if (url.includes('localhost')) {
+      return url.replace('http://localhost:8000', 'https://pertamak.cianjur.space');
+    }
+    return url;
+  };
 
   return (
     <View style={styles.container}>
@@ -75,38 +92,44 @@ export default function KegiatanDetailScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Custom Header */}
-      <View style={[styles.customHeader, { paddingTop: Math.max(insets.top, 16) + 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-          <ChevronLeft color="white" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detail Laporan</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            onPress={() => router.push(`/kegiatan/create?id=${id}`)}
-            style={styles.headerEditBtn}
-          >
-            <Pencil color={COLORS.primary} size={20} />
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 120 }}
+        scrollEventThrottle={16}
+      >
+        {/* Custom Header Sticky */}
+        <View style={[styles.customHeader, { paddingTop: Math.max(insets.top, 16) + 8, paddingBottom: 16 }]}>
+          <TouchableOpacity onPress={goBack} style={styles.headerBtn}>
+            <ChevronLeft color="white" size={24} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              haptics.impactMedium();
-              setShowConfirmDelete(true);
-            }}
-            style={styles.headerDeleteBtn}
-          >
-            <Trash2 color={COLORS.rose} size={20} />
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Detail Laporan</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              onPress={() => router.push(`/kegiatan/create?id=${id}`)}
+              style={styles.headerEditBtn}
+            >
+              <Pencil color={COLORS.primary} size={20} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                haptics.impactMedium();
+                setShowConfirmDelete(true);
+              }}
+              style={styles.headerDeleteBtn}
+            >
+              <Trash2 color={COLORS.rose} size={20} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 120 }}>
         {/* Poster Image or Gallery */}
         <Animated.View entering={FadeInDown} style={styles.posterSection}>
           {kegiatan.media && kegiatan.media.length > 0 ? (
+            <TouchableOpacity onPress={() => setPreviewImage(getImageUrl(kegiatan.media[0].original_url))}>
             <View style={styles.posterShadow}>
               <Image
-                source={{ uri: kegiatan.media[0].original_url.replace('localhost', 'pertamak.cianjur.space') }}
+                source={{ uri: getImageUrl(kegiatan.media[0].original_url) }}
                 style={styles.posterImage}
                 resizeMode="cover"
               />
@@ -115,6 +138,7 @@ export default function KegiatanDetailScreen() {
                 <Text style={styles.photoCountText}>{kegiatan.media.length} Foto</Text>
               </View>
             </View>
+            </TouchableOpacity>
           ) : (
             <View style={styles.noPhotoBox}>
               <Text style={styles.noPhotoText}>Tidak ada dokumentasi foto</Text>
@@ -131,7 +155,7 @@ export default function KegiatanDetailScreen() {
                 <View style={styles.dateValueRow}>
                   <Calendar color="white" size={20} style={{ marginRight: 12 }} />
                   <Text style={[styles.dateValue, { flex: 1 }]} numberOfLines={1} adjustsFontSizeToFit>
-                    {kegiatan.hari}, {kegiatan.tanggal}
+                    {kegiatan.hari}, {new Date(kegiatan.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </Text>
                 </View>
               </View>
@@ -181,18 +205,41 @@ export default function KegiatanDetailScreen() {
               <Text style={styles.galleryLabel}>SEMUA DOKUMENTASI</Text>
               <View style={styles.galleryGrid}>
                 {kegiatan.media.map((item, idx) => (
-                  <View key={idx} style={styles.galleryItem}>
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.galleryItem}
+                    onPress={() => setPreviewImage(getImageUrl(item.original_url))}
+                  >
                     <Image
-                      source={{ uri: item.original_url.replace('localhost', 'pertamak.cianjur.space') }}
+                      source={{ uri: getImageUrl(item.original_url) }}
                       style={styles.galleryImage}
                     />
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>
           )}
         </Animated.View>
       </ScrollView>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={!!previewImage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <View style={styles.previewOverlay}>
+          <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+            <View style={styles.previewHeader}>
+              <TouchableOpacity onPress={() => setPreviewImage(null)} style={styles.previewCloseBtn}>
+                <X color="white" size={24} />
+              </TouchableOpacity>
+            </View>
+            <Image source={{ uri: previewImage }} style={styles.previewFullImage} resizeMode="contain" />
+          </BlurView>
+        </View>
+      </Modal>
 
       {/* Custom Confirmation Modal */}
       <Modal
@@ -230,7 +277,7 @@ export default function KegiatanDetailScreen() {
 
       {/* Floating Back Button */}
       <BlurView intensity={20} tint="dark" style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.9}>
+        <TouchableOpacity onPress={goBack} activeOpacity={0.9}>
           <LinearGradient
             colors={[COLORS.primary, COLORS.primarySolid]}
             style={styles.backButton}
@@ -253,18 +300,19 @@ const styles = StyleSheet.create({
   errorBtn: { backgroundColor: '#0EA5E9', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20 },
   errorBtnText: { color: 'white', fontWeight: '700' },
   customHeader: {
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 16,
+    backgroundColor: COLORS.darkBg,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   headerTitle: { color: 'white', fontWeight: '900', fontSize: 18 },
   headerBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 8, borderRadius: 12 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerEditBtn: { backgroundColor: 'rgba(56,189,248,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)' },
   headerDeleteBtn: { backgroundColor: 'rgba(244,63,94,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)' },
-  scrollView: { flex: 1, paddingTop: 128 },
+  scrollView: { flex: 1 },
   posterSection: { paddingHorizontal: 24, marginBottom: 32 },
-  posterShadow: { shadowColor: '#0EA5E9', shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  posterShadow: { boxShadow: '0px 0px 20px rgba(14, 165, 233, 0.2)', elevation: 10 },
   posterImage: { width: '100%', height: 320, borderRadius: 40, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   photoCountBadge: {
     position: 'absolute', bottom: 24, right: 24, backgroundColor: 'rgba(0,0,0,0.6)',
@@ -333,7 +381,7 @@ const styles = StyleSheet.create({
   cancelBtnText: { color: '#94A3B8', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
   confirmDeleteBtn: {
     flex: 2, backgroundColor: '#EF4444', paddingVertical: 20, borderRadius: 24, alignItems: 'center',
-    shadowColor: '#EF4444', shadowOpacity: 0.4, shadowRadius: 15, elevation: 8,
+    boxShadow: '0px 0px 15px rgba(239, 68, 68, 0.4)', elevation: 8,
   },
   confirmDeleteText: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
   bottomBar: {
@@ -343,7 +391,13 @@ const styles = StyleSheet.create({
   },
   backButton: {
     height: 64, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    shadowColor: '#0EA5E9', shadowOpacity: 0.4, shadowRadius: 15, elevation: 8,
+    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.4)', elevation: 8,
   },
   backButtonText: { color: 'white', fontSize: 20, fontWeight: '900' },
+
+  previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+  previewModal: { flex: 1 },
+  previewHeader: { position: 'absolute', top: 60, right: 20, zIndex: 10 },
+  previewCloseBtn: { padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 },
+  previewFullImage: { width: '100%', height: '90%', marginTop: 80 },
 });

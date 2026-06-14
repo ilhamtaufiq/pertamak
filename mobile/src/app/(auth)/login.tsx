@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'expo-router/head';
 import { KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, LinearGradient, BlurView } from '../../tw';
 import { Animated } from '../../tw/animated';
@@ -7,13 +8,14 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock, LogIn, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { APP_CONFIG } from '../../config';
+import { z } from 'zod';
+import logger from '../../lib/logger';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-};
+const loginSchema = z.object({
+  email: z.string().email('Format email tidak valid'),
+  password: z.string().min(6, 'Password minimal 6 karakter'),
+});
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -26,8 +28,11 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Masukkan email dan password Anda.');
+    // Validate input with Zod
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const messages = result.error.issues.map(e => e.message).join(', ');
+      setError(messages);
       return;
     }
 
@@ -68,7 +73,7 @@ export default function LoginScreen() {
 
       router.replace('/(tabs)');
     } catch (e) {
-      console.error('Login error:', e);
+      logger.error(e, 'Login error');
       setError('Koneksi gagal. Pastikan jaringan internet atau backend aktif.');
       setIsLoading(false);
     }
@@ -76,9 +81,13 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      <Head>
+        <title>Masuk - Pertamak</title>
+        <meta name="description" content="Halaman masuk aplikasi Pertamak untuk pelaporan kegiatan lapangan" />
+      </Head>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={[COLORS.darkBg, COLORS.darkSurface, COLORS.primarySolid]}
+        colors={[T.darkBg, T.darkSurface, T.primarySolid]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -97,12 +106,9 @@ export default function LoginScreen() {
             style={styles.brandSection}
           >
             <View style={styles.logoBox}>
-              <LogIn color={COLORS.primary} size={56} strokeWidth={1.5} />
+              <LogIn color={T.primary} size={56} strokeWidth={1.5} />
             </View>
             <Text style={styles.brandTitle}>Pertamak</Text>
-            <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeText}>Mobile Hub</Text>
-            </View>
           </Animated.View>
 
           {/* Glassmorphic Login Card */}
@@ -169,7 +175,7 @@ export default function LoginScreen() {
                   style={styles.loginBtnWrapper}
                 >
                   <LinearGradient
-                    colors={[COLORS.primary, COLORS.primarySolid]}
+                    colors={[T.primary, T.primarySolid]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.loginBtn}
@@ -192,9 +198,9 @@ export default function LoginScreen() {
             </BlurView>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
+              <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
             <View style={styles.footerLine} />
-            <Text style={styles.footerText}>Pertamak v1.0.0 (Enterprise)</Text>
+            <Text style={styles.footerText}>Pertamak v1.0.0</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -203,48 +209,48 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.darkBg },
+  container: { flex: 1, backgroundColor: T.darkBg },
   flex1: { flex: 1 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.xxl, paddingVertical: 48 },
   brandSection: { alignItems: 'center', marginBottom: 48 },
   logoBox: {
-    backgroundColor: 'rgba(14, 165, 233, 0.2)', padding: 24, borderRadius: 40,
-    marginBottom: 24, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.3)',
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10,
+    backgroundColor: 'rgba(14, 165, 233, 0.2)', padding: SPACING.xxl, borderRadius: RADIUS.xxl,
+    marginBottom: SPACING.xxl, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.3)',
+    ...SHADOWS.glow(T.primarySolid),
   },
-  brandTitle: { color: 'white', fontSize: 48, fontWeight: '900', letterSpacing: -2, marginBottom: 8 },
+  brandTitle: { color: 'white', ...TYPOGRAPHY.display, marginBottom: 8 },
   brandBadge: {
-    backgroundColor: 'rgba(14, 165, 233, 0.2)', paddingHorizontal: 16, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)',
+    backgroundColor: 'rgba(14, 165, 233, 0.2)', paddingHorizontal: SPACING.lg, paddingVertical: 6,
+    borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)',
   },
   brandBadgeText: { color: '#7DD3FC', fontWeight: '700', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase' },
-  loginCard: { borderRadius: 40, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  loginCardInner: { padding: 32, backgroundColor: 'rgba(255,255,255,0.03)' },
-  welcomeSection: { marginBottom: 32 },
+  loginCard: { borderRadius: RADIUS.xxl, overflow: 'hidden', borderWidth: 1, borderColor: T.darkBorder },
+  loginCardInner: { padding: RADIUS.xl, backgroundColor: T.darkCard },
+  welcomeSection: { marginBottom: RADIUS.xl },
   welcomeTitle: { color: 'white', fontSize: 30, fontWeight: '700', marginBottom: 8 },
-  welcomeSubtitle: { color: '#94A3B8', fontSize: 16 },
+  welcomeSubtitle: { color: '#94A3B8', ...TYPOGRAPHY.bodySecondary },
   errorBox: {
     backgroundColor: 'rgba(239,68,68,0.1)', flexDirection: 'row', alignItems: 'center',
-    padding: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
+    padding: RADIUS.md, borderRadius: RADIUS.md, marginBottom: SPACING.xxl, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
   },
-  errorText: { color: '#FCA5A5', flex: 1, fontSize: 14, fontWeight: '500' },
-  fieldGroup: { marginBottom: 20 },
-  fieldGroupLast: { marginBottom: 40 },
-  fieldLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 12, marginLeft: 4, textTransform: 'uppercase' },
+  errorText: { color: '#FCA5A5', flex: 1, ...TYPOGRAPHY.caption },
+  fieldGroup: { marginBottom: SPACING.xl },
+  fieldGroupLast: { marginBottom: RADIUS.xxl },
+  fieldLabel: { color: '#94A3B8', ...TYPOGRAPHY.label, marginBottom: SPACING.md, marginLeft: 4 },
   inputRow: {
     backgroundColor: 'rgba(15,23,42,0.5)', flexDirection: 'row', alignItems: 'center',
-    borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', height: 64, paddingHorizontal: 20,
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', height: BUTTON.primary.height, paddingHorizontal: SPACING.xl,
   },
-  textInput: { flex: 1, color: 'white', fontSize: 18 },
-  loginBtnWrapper: { marginBottom: 24 },
+  textInput: { flex: 1, color: 'white', ...TYPOGRAPHY.body },
+  loginBtnWrapper: { marginBottom: SPACING.xxl },
   loginBtn: {
-    height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.4, shadowRadius: 15, elevation: 8,
+    ...BUTTON.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
+    ...SHADOWS.glow(T.primarySolid),
   },
-  loginBtnText: { color: 'white', fontSize: 20, fontWeight: '900', marginRight: 8 },
+  loginBtnText: { color: 'white', ...TYPOGRAPHY.subheading, marginRight: 8 },
   forgotBtn: { alignItems: 'center', paddingVertical: 8 },
-  forgotText: { color: '#334155', fontSize: 14, fontWeight: '600' },
+  forgotText: { color: T.textInactive, ...TYPOGRAPHY.caption, fontWeight: '600' },
   footerSection: { alignItems: 'center', marginTop: 48 },
-  footerLine: { height: 1, width: 48, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 16 },
-  footerText: { color: '#475569', fontWeight: '700', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
+  footerLine: { height: 1, width: 48, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: SPACING.lg },
+  footerText: { color: T.textTertiary, fontWeight: '700', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
 });

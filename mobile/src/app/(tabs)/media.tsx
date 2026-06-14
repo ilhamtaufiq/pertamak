@@ -34,21 +34,9 @@ import { useMedia, useCreateFolder, useUploadMedia, useDeleteItem, useRenameItem
 import { haptics } from '../../services/haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Official Pertamak Dark Theme Palette (from Jurnal/Katalog Kerja)
-const COLORS = {
-   primary: '#38BDF8',   // Sky 400 (used for captions/subtitles)
-   primarySolid: '#0EA5E9', // Sky 500
-   darkBg: '#020617',    // Slate 950 (Main background)
-   darkSurface: '#0F172A', // Slate 900 (Card backgrounds)
-   darkBorder: 'rgba(56, 189, 248, 0.15)', // Sky 400 with opacity
-   text: '#FFFFFF',
-   textSecondary: '#64748B', // Slate 500
-   emerald: '#10B981',
-   rose: '#F43F5E',
-};
 
 export default function MediaTab() {
    const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
@@ -65,6 +53,7 @@ export default function MediaTab() {
    const [selectedItem, setSelectedItem] = useState<{ type: 'folder' | 'file'; id: number; name: string } | null>(null);
    const [showOptions, setShowOptions] = useState(false);
    const [isUploading, setIsUploading] = useState(false);
+   const [previewMedia, setPreviewMedia] = useState<string | null>(null);
 
    const filteredFolders = useMemo(() =>
       data?.folders.filter((f: FolderType) => f.name.toLowerCase().includes(searchQuery.toLowerCase())) || [],
@@ -237,6 +226,7 @@ export default function MediaTab() {
                               setSelectedItem({ type: 'file', id: file.id, name: file.name });
                               setShowOptions(true);
                            }}
+                           onPreview={(f: any) => setPreviewMedia(getMediaUrl(f.url))}
                         />
                      ))}
                   </View>
@@ -285,6 +275,25 @@ export default function MediaTab() {
             </BlurView>
          )}
 
+         {/* Image Preview Modal */}
+         <Modal
+           visible={!!previewMedia}
+           transparent
+           animationType="fade"
+           onRequestClose={() => setPreviewMedia(null)}
+         >
+           <View style={styles.previewOverlay}>
+             <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+               <View style={styles.previewHeader}>
+                 <TouchableOpacity onPress={() => setPreviewMedia(null)} style={{ padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 }}>
+                   <X color="white" size={24} />
+                 </TouchableOpacity>
+               </View>
+               <Image source={{ uri: previewMedia }} style={styles.previewFullImage} resizeMode="contain" />
+             </BlurView>
+           </View>
+         </Modal>
+
          {/* Create Folder Modal */}
          <Modal visible={showCreateFolder} transparent animationType="fade">
             <View style={styles.modalOverlay}>
@@ -329,11 +338,11 @@ function FolderCard({ folder, delay, onPress, onLongPress }: any) {
    );
 }
 
-function FileItem({ file, delay, onPress }: any) {
+function FileItem({ file, delay, onPress, onPreview }: any) {
    const isImage = file.mime_type.startsWith('image/');
    return (
       <Animated.View entering={FadeInUp.delay(delay)}>
-         <TouchableOpacity onPress={onPress} style={styles.fileItemCard}>
+         <TouchableOpacity onPress={() => isImage && onPreview ? onPreview(file) : onPress?.()} style={styles.fileItemCard}>
             <View style={styles.fileIconFrame}>
                {isImage ? (
                   <Image source={{ uri: file.thumb || file.url.replace('localhost', 'pertamak.cianjur.space') }} style={{ width: '100%', height: '100%' }} />
@@ -395,7 +404,7 @@ const styles = StyleSheet.create({
    emptyBox: { paddingVertical: 60, alignItems: 'center', borderRadius: 40, borderStyle: 'dashed', borderWidth: 1, borderColor: '#1E293B' },
    emptyText: { color: '#1E293B', fontWeight: '900', fontSize: 10, marginTop: 16 },
    fabWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center' },
-   fab: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primarySolid, alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.primarySolid, shadowOpacity: 0.5, shadowRadius: 20, elevation: 20 },
+   fab: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primarySolid, alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 20px rgba(14, 165, 233, 0.5)', elevation: 20 },
    drawerCard: { backgroundColor: 'rgba(15,23,42,0.95)', padding: 40, borderTopLeftRadius: 56, borderTopRightRadius: 56, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
    drawerHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
    drawerIcon: { width: 64, height: 64, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 20 },
@@ -413,5 +422,9 @@ const styles = StyleSheet.create({
    btnSecondary: { flex: 1, paddingVertical: 20, alignItems: 'center' },
    btnSecondaryText: { color: '#64748B', fontWeight: '900', fontSize: 12 },
    btnPrimary: { flex: 1, backgroundColor: COLORS.primarySolid, paddingVertical: 20, borderRadius: 20, alignItems: 'center' },
-   btnPrimaryText: { color: 'white', fontWeight: '900', fontSize: 12 }
+   btnPrimaryText: { color: 'white', fontWeight: '900', fontSize: 12 },
+   previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+   previewModal: { flex: 1 },
+   previewHeader: { position: 'absolute', top: 60, right: 20, zIndex: 10 },
+   previewFullImage: { width: '100%', height: '90%', marginTop: 80 },
 });

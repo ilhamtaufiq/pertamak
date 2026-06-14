@@ -10,6 +10,7 @@ import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Search, ListFilter, SlidersHorizontal, FileText, History, X, Check, Calendar } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -78,14 +79,14 @@ export default function KegiatanListTab() {
   const renderHeader = () => (
     <View style={{ marginBottom: 10 }}>
       {/* Banner */}
-      <View style={{ height: 260, marginTop: -60, backgroundColor: '#0EA5E9', borderBottomLeftRadius: 48, borderBottomRightRadius: 48, overflow: 'hidden' }}>
+      <View style={{ height: 260, marginTop: -60, backgroundColor: T.primarySolid, borderBottomLeftRadius: 48, borderBottomRightRadius: 48, overflow: 'hidden' }}>
         <LinearGradient
-          colors={['#020617', '#0369A1']}
+          colors={[T.darkBg, '#0369A1']}
           style={{ flex: 1, paddingHorizontal: 32, paddingTop: 100 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#38BDF8', fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>Audit Lapangan</Text>
+              <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>Audit Lapangan</Text>
               <Text style={{ color: 'white', fontSize: 32, fontWeight: '900', letterSpacing: -1 }}>Laporan</Text>
             </View>
           </View>
@@ -113,16 +114,13 @@ export default function KegiatanListTab() {
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: '#0F172A',
+          backgroundColor: T.darkSurface,
           borderRadius: 24,
           height: 64,
           paddingHorizontal: 20,
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.1)',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.3,
-          shadowRadius: 20,
+          borderColor: T.darkBorder,
+          boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.3)',
           elevation: 10
         }}>
           <Search color="#38BDF8" size={20} style={{ marginRight: 12 }} />
@@ -130,13 +128,13 @@ export default function KegiatanListTab() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Cari deskripsi atau lokasi..."
-            placeholderTextColor="#475569"
+            placeholderTextColor={T.textTertiary}
             style={{ flex: 1, color: 'white', fontWeight: '600', fontSize: 15, height: '100%' }}
           />
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {searchQuery !== '' && (
               <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 8 }}>
-                <X color="#475569" size={20} />
+                <X color={T.textTertiary} size={20} />
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -159,16 +157,16 @@ export default function KegiatanListTab() {
   ), [router]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#020617' }}>
+    <View style={{ flex: 1, backgroundColor: T.darkBg }}>
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <LinearGradient colors={['#020617', '#0F172A']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+      <LinearGradient colors={[T.darkBg, T.darkSurface]} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
 
       {isLoading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color="#38BDF8" size="large" />
-          <Text style={{ color: '#64748B', marginTop: 16, fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 }}>Membangun Katalog...</Text>
+          <Text style={{ color: T.textSecondary, marginTop: 16, fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 }}>Membangun Katalog...</Text>
         </View>
       ) : (
         <FlashList
@@ -192,9 +190,9 @@ export default function KegiatanListTab() {
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={
             <View style={{ paddingHorizontal: 32, marginTop: 40 }}>
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: 40, borderRadius: 40, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center' }}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: 40, borderRadius: 40, borderStyle: 'dashed', borderWidth: 1, borderColor: T.darkBorder, alignItems: 'center' }}>
                 <FileText color="rgba(255,255,255,0.1)" size={64} strokeWidth={1} />
-                <Text style={{ color: '#64748B', marginTop: 16, fontWeight: '500', textAlign: 'center' }}>Belum ditemukan catatan penugasan untuk periode ini.</Text>
+                <Text style={{ color: T.textSecondary, marginTop: 16, fontWeight: '500', textAlign: 'center' }}>Belum ditemukan catatan penugasan untuk periode ini.</Text>
               </View>
             </View>
           }
@@ -221,14 +219,14 @@ export default function KegiatanListTab() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
               <View>
                 <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Filter Jurnal</Text>
-                <Text style={{ color: '#64748B', fontSize: 13, fontWeight: '500' }}>Pilih periode untuk memfilter data</Text>
+                <Text style={{ color: T.textSecondary, fontSize: 13, fontWeight: '500' }}>Pilih periode untuk memfilter data</Text>
               </View>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 8, borderRadius: 12 }}>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)} style={{ backgroundColor: T.darkBorder, padding: 8, borderRadius: 12 }}>
                 <X color="white" size={24} />
               </TouchableOpacity>
             </View>
 
-            <Text style={{ color: '#38BDF8', fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>Pilih Bulan</Text>
+            <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>Pilih Bulan</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
               {MONTH_NAMES.map((name, index) => {
                 const monthIdx = index + 1;
@@ -241,9 +239,9 @@ export default function KegiatanListTab() {
                       paddingHorizontal: 16,
                       paddingVertical: 10,
                       borderRadius: 16,
-                      backgroundColor: isActive ? '#0EA5E9' : 'rgba(255,255,255,0.05)',
+                      backgroundColor: isActive ? T.primarySolid : 'rgba(255,255,255,0.05)',
                       borderWidth: 1,
-                      borderColor: isActive ? '#38BDF8' : 'rgba(255,255,255,0.1)'
+                      borderColor: isActive ? T.primary : T.darkBorder
                     }}
                   >
                     <Text style={{ color: isActive ? 'white' : '#94A3B8', fontWeight: '700', fontSize: 13 }}>{name}</Text>
@@ -264,7 +262,7 @@ export default function KegiatanListTab() {
                   setShowFilterModal(false);
                   refetch();
                 }}
-                style={{ flex: 2, backgroundColor: '#0EA5E9', paddingVertical: 18, borderRadius: 20, alignItems: 'center', shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }}
+                style={{ flex: 2, backgroundColor: T.primarySolid, paddingVertical: 18, borderRadius: 20, alignItems: 'center', boxShadow: '0px 10px 15px rgba(14, 165, 233, 0.3)', elevation: 8 }}
               >
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>Terapkan Filter</Text>
               </TouchableOpacity>

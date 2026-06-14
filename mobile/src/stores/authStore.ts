@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync, setItemAsync, deleteItemAsync } from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import logger from '../lib/logger';
 
 interface User {
   id: number;
@@ -22,25 +23,25 @@ interface AuthState {
 const storage = {
   save: async (key: string, value: string) => {
     try {
-      await SecureStore.setItemAsync(key, value);
+      await setItemAsync(key, value);
     } catch (e) {
-      console.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
+      logger.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
       await AsyncStorage.setItem(key, value);
     }
   },
   get: async (key: string) => {
     try {
-      return await SecureStore.getItemAsync(key);
+      return await getItemAsync(key);
     } catch (e) {
-      console.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
+      logger.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
       return await AsyncStorage.getItem(key);
     }
   },
   remove: async (key: string) => {
     try {
-      await SecureStore.deleteItemAsync(key);
+      await deleteItemAsync(key);
     } catch (e) {
-      console.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
+      logger.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, e);
       await AsyncStorage.removeItem(key);
     }
   }

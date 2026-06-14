@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { KeyboardAvoidingView, Platform, Alert, Dimensions, TextInput as RNTextInput, StatusBar, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, Alert, Dimensions, Modal, TextInput as RNTextInput, StatusBar, StyleSheet } from 'react-native';
 import { View, Text, TouchableOpacity, LinearGradient, BlurView, Image, ScrollView, ActivityIndicator } from '../../tw';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Camera, MapPin, Calendar, X, Plus, ChevronLeft, Map as MapIcon, Send, RefreshCcw, FileText } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { useCreateKegiatan, useUpdateKegiatan, useKegiatanById } from '../../hooks/useKegiatan';
 import { haptics } from '../../services/haptics';
+import logger from '../../lib/logger';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { format } from 'date-fns';
@@ -35,6 +36,10 @@ const MOCK_PLACES = [
 export default function CreateKegiatanScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+
+  const goBack = useCallback(() => {
+    try { router.back(); } catch { router.replace('/(tabs)'); }
+  }, []);
   const isEdit = !!id;
 
   const createMutation = useCreateKegiatan();
@@ -52,6 +57,7 @@ export default function CreateKegiatanScreen() {
 
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Load existing data for Edit Mode
   useEffect(() => {
@@ -113,10 +119,10 @@ export default function CreateKegiatanScreen() {
           if (readable && (!lokasi || locationsIsDefault(lokasi))) setLokasi(readable);
         }
       } catch (e) {
-        console.warn('Geocoding error');
+        logger.warn('Geocoding error');
       }
     } catch (e) {
-      console.warn('Detection failed:', e);
+      logger.warn('Detection failed:', e);
     } finally {
       setIsLocating(false);
     }
@@ -178,9 +184,9 @@ export default function CreateKegiatanScreen() {
       }
 
       haptics.success();
-      router.back();
+      goBack();
     } catch (e: any) {
-      Alert.alert('Gagal', e.message || 'Gagal mengirim laporan.');
+      logger.error(e, 'Submit failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -205,7 +211,7 @@ export default function CreateKegiatanScreen() {
       <View style={styles.headerWrapper}>
         <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={styles.headerGradient}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => goBack()} style={styles.backBtn}>
               <ChevronLeft color="white" size={24} />
             </TouchableOpacity>
             <View style={styles.headerCenter}>
@@ -244,13 +250,29 @@ export default function CreateKegiatanScreen() {
 
             <View style={styles.formCard}>
               <View style={styles.gpsRow}>
-                <View style={styles.gpsBadge}>
-                  <Text style={styles.gpsBadgeText}>AUTOMATIC GPS</Text>
-                </View>
-                <TouchableOpacity onPress={detectLocation} disabled={isLocating}>
-                  {isLocating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <RefreshCcw color="#64748B" size={14} />}
+                <TouchableOpacity onPress={detectLocation} disabled={isLocating} style={{ padding: 8 }}>
+                  {isLocating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <RefreshCcw color="#64748B" size={16} />}
                 </TouchableOpacity>
               </View>
+
+              {/* Image Preview Modal */}
+              <Modal
+                visible={!!previewImage}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setPreviewImage(null)}
+              >
+                <View style={styles.modalOverlay}>
+                  <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+                    <View style={styles.previewHeader}>
+                      <TouchableOpacity onPress={() => setPreviewImage(null)} style={styles.previewCloseBtn}>
+                        <X color="white" size={24} />
+                      </TouchableOpacity>
+                    </View>
+                    <Image source={{ uri: previewImage }} style={styles.previewImage} resizeMode="contain" />
+                  </BlurView>
+                </View>
+              </Modal>
 
               <View style={{ position: 'relative' }}>
                 <View style={styles.locationInputRow}>
@@ -327,17 +349,12 @@ export default function CreateKegiatanScreen() {
               </TouchableOpacity>
 
               {images.map((img, idx) => (
-                <View key={idx} style={styles.imageThumb}>
+                <TouchableOpacity key={idx} onPress={() => setPreviewImage(img.uri)} style={styles.imageThumb}>
                   <Image source={{ uri: img.uri }} style={styles.imageThumbImg} />
                   <TouchableOpacity onPress={() => removeImage(idx)} style={styles.removeImageBtn}>
                     <X color="white" size={14} />
                   </TouchableOpacity>
-                  {img.isExisting && (
-                    <View style={styles.cloudAssetBadge}>
-                      <Text style={styles.cloudAssetText}>CLOUD ASSET</Text>
-                    </View>
-                  )}
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           </Animated.View>
@@ -401,7 +418,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkSurface, borderRadius: 32, paddingVertical: 16, paddingHorizontal: 32,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 15, elevation: 8,
+    boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.3)', elevation: 8,
   },
   datePillText: { color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
   section: { marginBottom: 40 },
@@ -413,7 +430,7 @@ const styles = StyleSheet.create({
   formCard: {
     backgroundColor: COLORS.darkSurface, paddingHorizontal: 12, paddingVertical: 32,
     borderRadius: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 15, elevation: 5,
+    boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.2)', elevation: 5,
   },
   gpsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, paddingHorizontal: 16 },
   gpsBadge: {
@@ -430,7 +447,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 88, left: 0, right: 0, zIndex: 50,
     backgroundColor: COLORS.darkSurface, borderRadius: 32, borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)', overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
   },
   suggestionItem: { padding: 24, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', flexDirection: 'row', alignItems: 'center' },
   suggestionText: { color: 'white', fontWeight: '700' },
@@ -450,7 +467,7 @@ const styles = StyleSheet.create({
   cameraBtn: {
     width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.primarySolid, borderRadius: 32,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: COLORS.primarySolid, shadowOpacity: 0.4, shadowRadius: 15, elevation: 8,
+    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.4)', elevation: 8,
   },
   addPhotoBtn: {
     width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.darkSurface, borderRadius: 32,
@@ -475,7 +492,7 @@ const styles = StyleSheet.create({
   submitBtnWrapper: {
     backgroundColor: COLORS.darkSurface, paddingVertical: 32, borderRadius: 48,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
   },
   submitBtnGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 48 },
   submitBtnContent: { flexDirection: 'row', alignItems: 'center' },
@@ -489,4 +506,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center',
   },
   loadingOverlayText: { color: 'white', marginTop: 24, fontWeight: '900', fontSize: 10, letterSpacing: 6, textTransform: 'uppercase' },
+  previewModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center' },
+  previewHeader: { position: 'absolute', top: 40, right: 20, zIndex: 10 },
+  previewCloseBtn: { padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 },
+  previewImage: { width: '100%', height: '80%' },
 });

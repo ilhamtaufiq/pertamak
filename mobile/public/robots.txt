@@ -1,0 +1,4 @@
+# SEO: Allow all crawlers
+User-agent: *
+Allow: /
+Sitemap: https://pertamak.cianjur.space/sitemap.xml

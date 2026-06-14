@@ -1,4 +1,5 @@
 import React from 'react';
+import Head from 'expo-router/head';
 import { View, Text, ScrollView, TouchableOpacity, LinearGradient, BlurView, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Bell, Heart } from 'lucide-react-native';
@@ -7,16 +8,7 @@ import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity, ActivityIndicator } from 'react-native';
 import * as Updates from 'expo-updates';
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  text: '#FFFFFF',
-  textSecondary: '#64748B',
-  border: 'rgba(255,255,255,0.1)',
-};
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 export default function ProfileTab() {
   const { user, clearAuth } = useAuthStore();
@@ -62,7 +54,7 @@ export default function ProfileTab() {
     }
   };
 
-  const ProfileItem = ({ icon: Icon, title, value, color = COLORS.primary, onPress, isLoading = false }: { icon: any, title: string, value: string, color?: string, onPress?: () => void, isLoading?: boolean }) => (
+  const ProfileItem = ({ icon: Icon, title, value, color = T.primary, onPress, isLoading = false }: { icon: any, title: string, value: string, color?: string, onPress?: () => void, isLoading?: boolean }) => (
     <TouchableOpacity style={styles.profileItem} onPress={onPress} activeOpacity={onPress ? 0.7 : 1} disabled={!onPress || isLoading}>
       <View style={[styles.profileItemIcon, { backgroundColor: `${color}15` }]}>
         <Icon color={color} size={22} />
@@ -77,9 +69,12 @@ export default function ProfileTab() {
 
   return (
     <View style={styles.container}>
+      <Head>
+        <title>Profil - Pertamak</title>
+      </Head>
       <StatusBar barStyle="light-content" />
       <LinearGradient 
-        colors={[COLORS.darkBg, COLORS.darkSurface]} 
+        colors={[T.darkBg, T.darkSurface]} 
         style={StyleSheet.absoluteFill}
       />
       
@@ -99,7 +94,7 @@ export default function ProfileTab() {
               <Text style={styles.userName}>{user?.name}</Text>
               <View style={styles.roleBadge}>
                 <Text style={styles.roleText}>
-                  {user?.role} Enterprise
+                  {user?.role}
                 </Text>
               </View>
             </Animated.View>
@@ -143,7 +138,7 @@ export default function ProfileTab() {
               </NativeTouchableOpacity>
               
               <Text style={styles.footerText}>
-                Pertamak Mobile Hub
+                Pertamak
               </Text>
            </Animated.View>
         </View>
@@ -153,45 +148,45 @@ export default function ProfileTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#020617' },
+  container: { flex: 1, backgroundColor: T.darkBg },
   scroll: { flex: 1 },
   headerArea: { paddingTop: 96, paddingBottom: 48, alignItems: 'center' },
   avatarFrame: {
-    width: 128, height: 128, borderRadius: 40, borderWidth: 4,
+    width: 128, height: 128, borderRadius: RADIUS.xxl, borderWidth: 4,
     borderColor: 'rgba(56, 189, 248, 0.3)', overflow: 'hidden',
-    shadowColor: '#0EA5E9', shadowOpacity: 0.2, shadowRadius: 20, elevation: 10,
-    marginBottom: 24,
+    ...SHADOWS.glow(T.primarySolid),
+    marginBottom: SPACING.xl,
   },
   avatarImage: { width: '100%', height: '100%' },
   userInfoCenter: { alignItems: 'center' },
-  userName: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, marginBottom: 8 },
+  userName: { color: 'white', ...TYPOGRAPHY.title, marginBottom: 8 },
   roleBadge: {
     backgroundColor: 'rgba(14, 165, 233, 0.2)',
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: RADIUS.xxl,
     borderWidth: 1,
     borderColor: 'rgba(56, 189, 248, 0.3)',
   },
-  roleText: { color: '#7DD3FC', fontWeight: '700', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
-  contentArea: { paddingHorizontal: 24, paddingBottom: 160 },
-  sectionLabel: { color: '#38BDF8', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 20, marginLeft: 8 },
-  sectionLabelSecondary: { color: '#475569', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 20, marginLeft: 8 },
+  roleText: { color: '#7DD3FC', fontWeight: '700', ...TYPOGRAPHY.label, marginBottom: 0 },
+  contentArea: { paddingHorizontal: SPACING.xl, paddingBottom: 160 },
+  sectionLabel: { color: T.primary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, marginLeft: SPACING.xs },
+  sectionLabelSecondary: { color: T.textTertiary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, marginLeft: SPACING.xs },
   profileItem: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)', padding: 20,
-    borderRadius: 28, marginBottom: 16,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: T.darkCard, padding: SPACING.xl,
+    borderRadius: 28, marginBottom: SPACING.md,
+    borderWidth: 1, borderColor: T.darkBorder,
   },
-  profileItemIcon: { padding: 12, borderRadius: 16, marginRight: 16 },
+  profileItemIcon: { padding: SPACING.md, borderRadius: RADIUS.md, marginRight: SPACING.lg },
   profileItemText: { flex: 1 },
-  profileItemLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4, textTransform: 'uppercase' },
-  profileItemValue: { color: 'white', fontSize: 16, fontWeight: '700' },
-  preferencesSection: { marginTop: 32 },
+  profileItemLabel: { color: T.textSecondary, ...TYPOGRAPHY.label, marginBottom: 4 },
+  profileItemValue: { color: 'white', ...TYPOGRAPHY.bodySecondary },
+  preferencesSection: { marginTop: RADIUS.xl },
   logoutSection: { marginTop: 48 },
   logoutButton: {
     backgroundColor: 'rgba(244, 63, 94, 0.1)',
-    height: 64,
+    ...BUTTON.primary,
     borderRadius: 28,
     borderWidth: 1,
     borderColor: 'rgba(244, 63, 94, 0.2)',
@@ -199,6 +194,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
-  logoutText: { color: '#FB7185', fontSize: 20, fontWeight: '900' },
-  footerText: { color: '#334155', textAlign: 'center', fontSize: 10, fontWeight: '900', letterSpacing: 5, marginTop: 32, textTransform: 'uppercase' },
+  logoutText: { color: '#FB7185', ...TYPOGRAPHY.subheading },
+  footerText: { color: T.textInactive, textAlign: 'center', ...TYPOGRAPHY.badge, letterSpacing: 5, marginTop: RADIUS.xl },
 });
