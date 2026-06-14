@@ -50,8 +50,8 @@ WORKDIR /var/www/html
 COPY backend/ ./
 COPY --from=backend-build /app/vendor ./vendor
 
-# Copy frontend build
-COPY --from=frontend-build /app/frontend/dist ./public/frontend
+# Copy frontend build to /dashboard path
+COPY --from=frontend-build /app/frontend/dist ./public/frontend/dashboard
 
 # Copy nginx config
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
