@@ -604,7 +604,7 @@
                 <a href="#cara-kerja" class="nav-link nav-link-hide-sm">Cara Kerja</a>
                 <a href="#faq" class="nav-link nav-link-hide-sm">FAQ</a>
                 <a href="{{ $simanUrl }}" class="nav-link nav-link-hide-sm" target="_blank" rel="noopener">SIMAN</a>
-                <a href="/dashboard" class="navbar-cta">
+                <a href="{{ secure_url('/dashboard') }}" class="navbar-cta">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                     Masuk Dashboard
                 </a>
@@ -640,7 +640,7 @@
                     SIMAN untuk layanan pemakaman publik.
                 </p>
                 <div class="hero-actions">
-                    <a href="/dashboard" class="btn-primary">
+                    <a href="{{ secure_url('/dashboard') }}" class="btn-primary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         Masuk ke Dashboard
                     </a>
@@ -755,7 +755,7 @@
                     <span class="eco-badge live">● Live</span>
                     <h3>Pertamak Hub</h3>
                     <p>Dashboard petugas &amp; admin: jurnal SKP, karyawan, piket, media, peta, dan laporan. Akses web + aplikasi mobile.</p>
-                    <a href="/dashboard" class="eco-cta">Masuk dashboard →</a>
+                    <a href="{{ secure_url('/dashboard') }}" class="eco-cta">Masuk dashboard →</a>
                 </div>
                 <a href="{{ $simanUrl }}" class="eco-card" target="_blank" rel="noopener noreferrer">
                     <span class="eco-badge live">● Live</span>
@@ -844,7 +844,7 @@
                 <p>Kelola kegiatan pertamanan &amp; pemakaman lebih efisien dan transparan.</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;">
-                <a href="/dashboard" class="btn-primary">
+                <a href="{{ secure_url('/dashboard') }}" class="btn-primary">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                     Masuk ke Dashboard
                 </a>
@@ -872,7 +872,7 @@
                         <li><a href="#ekosistem">Ekosistem</a></li>
                         <li><a href="#cara-kerja">Cara Kerja</a></li>
                         <li><a href="#faq">FAQ</a></li>
-                        <li><a href="/dashboard">Dashboard</a></li>
+                        <li><a href="{{ secure_url('/dashboard') }}">Dashboard</a></li>
                     </ul>
                 </div>
                 <div>
