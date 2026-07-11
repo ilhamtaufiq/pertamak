@@ -9,7 +9,7 @@
 - **Coolify** automatically builds Docker images from the `Dockerfile` present in each repo, so no shared `docker‑compose.yaml` or Nginx config is needed in the repository.
 - **Domain mapping** – configure two domains in Coolify:
     - `pertamak.cianjur.space` → Pertamak project.
-    - `siman.cianjur.space` → SIMAN project.
+    - `siman.cianjur.space` → SIMAN project (`siman/docker-compose.yaml`: app + MySQL 8).
 
 ## Repository layout
 ```
