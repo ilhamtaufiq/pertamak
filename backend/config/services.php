@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'siman' => [
+        'url' => env('SIMAN_URL', 'https://siman.cianjur.space'),
+    ],
+
 ];

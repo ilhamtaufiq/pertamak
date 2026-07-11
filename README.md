@@ -9,7 +9,7 @@
 - **Coolify** automatically builds Docker images from the `Dockerfile` present in each repo, so no shared `docker‑compose.yaml` or Nginx config is needed in the repository.
 - **Domain mapping** – configure two domains in Coolify:
     - `pertamak.cianjur.space` → Pertamak project.
-    - `siman.pertamak.cianjur.space` → SIMAN project.
+    - `siman.cianjur.space` → SIMAN project.
 
 ## Repository layout
 ```
@@ -33,11 +33,15 @@
 6. Deploy – Coolify will build the images, run migrations (you can add a post‑deploy command `php artisan migrate --force`), and expose the services.
 
 ## Landing page link
-The Pertamak landing page now includes a **SIMAN** card that points to:
+The Pertamak landing page includes a **SIMAN** feature card that points to:
 ```
-https://siman.pertamak.cianjur.space
+https://siman.cianjur.space
 ```
 Clicking it opens SIMAN in a new tab.
 
+## SIMAN deploy
+See [`siman/SIMAN_DEPLOY.md`](siman/SIMAN_DEPLOY.md) for Coolify env vars, SSL, volumes, and production checklist.
+SIMAN image uses **nginx + php-fpm + supervisor** (port **80**).
+
 ---
-*All Docker‑compose and Nginx configuration files have been removed from the repository, as they are managed by Coolify.
+*Docker Compose for local/shared stacks may still exist for Pertamak; SIMAN deploys as its own Coolify application.*
