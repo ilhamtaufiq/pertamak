@@ -13,11 +13,18 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Run migrations
+# Run migrations only (safe on redeploy — does not wipe data)
 php artisan migrate --force
 
-# Seed database (creates admin user & roles)
-php artisan db:seed --force
+# Seeding is OFF by default. First install only:
+#   set RUN_SEEDERS=true in Coolify env, or run manually:
+#   php artisan db:seed --force
+if [ "${RUN_SEEDERS:-false}" = "true" ]; then
+    echo "[pertamak] RUN_SEEDERS=true — running db:seed"
+    php artisan db:seed --force
+else
+    echo "[pertamak] skipping db:seed (set RUN_SEEDERS=true to enable once)"
+fi
 
 # Create storage link
 php artisan storage:link --force 2>/dev/null || true
