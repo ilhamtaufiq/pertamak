@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -10,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 // Fix Leaflet marker icon issue
-// @ts-ignore
+// @ts-expect-error leaflet default icon path patch
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -18,26 +19,48 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+function toCoord(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
+function formatCoord(value: unknown, digits = 6): string {
+    const n = toCoord(value);
+    return n === null ? '—' : n.toFixed(digits);
+}
+
 function MapRecenter({ center }: { center: [number, number] }) {
     const map = useMap();
-    map.setView(center);
+    // Only recenter once when the map mounts / center first becomes available
+    useEffect(() => {
+        map.setView(center);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: avoid fighting user pan/zoom
+    }, [map, center[0], center[1]]);
     return null;
 }
 
 export function OnlineUsersMapPage({ onBack }: { onBack: () => void }) {
-    const { data: onlineUsersData, isLoading } = useQuery({
+    const { data: onlineUsersData, isLoading, isError, error } = useQuery({
         queryKey: ['online-users'],
         queryFn: () => api.get<{ data: User[] }>('/users/online'),
         refetchInterval: 30000,
     });
 
     const onlineUsers = onlineUsersData?.data || [];
-    const usersWithLocation = onlineUsers.filter(u => u.latitude && u.longitude);
+    const usersWithLocation = onlineUsers
+        .map((u) => {
+            const lat = toCoord(u.latitude);
+            const lng = toCoord(u.longitude);
+            if (lat === null || lng === null) return null;
+            return { ...u, lat, lng };
+        })
+        .filter((u): u is User & { lat: number; lng: number } => u !== null);
 
     // Default center to Cianjur (or first user)
     const defaultCenter: [number, number] = usersWithLocation.length > 0
-        ? [Number(usersWithLocation[0].latitude), Number(usersWithLocation[0].longitude)]
-        : [-6.8173, 107.1424]; // Cianjur coordinate fallback
+        ? [usersWithLocation[0].lat, usersWithLocation[0].lng]
+        : [-6.8173, 107.1424];
 
     if (isLoading) {
         return (
@@ -48,8 +71,23 @@ export function OnlineUsersMapPage({ onBack }: { onBack: () => void }) {
         );
     }
 
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 px-4 text-center">
+                <MapPin className="w-10 h-10 text-destructive/60" />
+                <p className="text-sm font-bold text-foreground">Gagal memuat peta</p>
+                <p className="text-xs text-muted-foreground max-w-sm">
+                    {(error as Error)?.message || 'Periksa koneksi atau pastikan Anda login sebagai admin.'}
+                </p>
+                <Button variant="secondary" size="sm" onClick={onBack} className="mt-2 rounded-xl">
+                    Kembali
+                </Button>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-11rem)] animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Premium Header */}
             <div className="flex items-center justify-between mb-6 px-1">
                 <div className="flex items-center gap-4">
@@ -57,7 +95,7 @@ export function OnlineUsersMapPage({ onBack }: { onBack: () => void }) {
                         variant="ghost"
                         isIconOnly
                         onClick={onBack}
-                        className="bg-card shadow-sm border border-border/40 rounded-2xl hover:scale-105 active:scale-95 transition-all"
+                        className="md:hidden bg-card shadow-sm border border-border/40 rounded-2xl hover:scale-105 active:scale-95 transition-all"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
@@ -76,23 +114,23 @@ export function OnlineUsersMapPage({ onBack }: { onBack: () => void }) {
                 </div>
             </div>
 
-            <div className="flex-1 relative rounded-[2.5rem] overflow-hidden border border-border/40 shadow-2xl group">
+            <div className="flex-1 relative rounded-[2.5rem] overflow-hidden border border-border/40 shadow-2xl group min-h-[320px]">
                 <MapContainer
                     center={defaultCenter}
                     zoom={13}
                     style={{ height: '100%', width: '100%', zIndex: 1 }}
-                    zoomControl={false} // Custom zoom position or style if needed
+                    zoomControl={true}
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <MapRecenter center={defaultCenter} />
+                    {usersWithLocation.length > 0 && <MapRecenter center={defaultCenter} />}
 
                     {usersWithLocation.map((user) => (
                         <Marker
                             key={user.id}
-                            position={[Number(user.latitude), Number(user.longitude)]}
+                            position={[user.lat, user.lng]}
                         >
                             <Popup className="premium-popup">
                                 <div className="p-0 min-w-[180px] bg-card overflow-hidden rounded-xl">
@@ -116,14 +154,12 @@ export function OnlineUsersMapPage({ onBack }: { onBack: () => void }) {
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             <span>Aktif {user.last_seen ? formatDistanceToNow(new Date(user.last_seen), { addSuffix: true, locale: id }) : 'baru saja'}</span>
                                         </div>
-                                        {user.latitude && (
-                                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-medium bg-muted/50 px-2 py-1 rounded-lg">
-                                                <MapPin className="w-2.5 h-2.5" />
-                                                <span className="truncate">
-                                                    {user.latitude?.toFixed(6)}, {user.longitude?.toFixed(6)}
-                                                </span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-medium bg-muted/50 px-2 py-1 rounded-lg">
+                                            <MapPin className="w-2.5 h-2.5" />
+                                            <span className="truncate">
+                                                {formatCoord(user.lat)}, {formatCoord(user.lng)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </Popup>

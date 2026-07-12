@@ -9,7 +9,7 @@ interface BottomNavProps {
 
 export function BottomNav({ onAddClick, onPageChange, activePage }: BottomNavProps) {
     return (
-        <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-lg z-50">
+        <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-lg z-50">
             <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] px-2 py-2 flex items-center justify-between">
 
                 {/* Home */}

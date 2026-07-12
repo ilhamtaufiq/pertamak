@@ -56,6 +56,8 @@ class User extends Authenticatable implements HasMedia
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_seen' => 'datetime',
+            'latitude' => 'float',
+            'longitude' => 'float',
         ];
     }
 
