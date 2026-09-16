@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'latitude')) {
-                $table->decimal('latitude', 10, 8)->nullable()->after('last_seen');
+                $table->decimal('latitude', 10, 8)->nullable();
             }
             if (!Schema::hasColumn('users', 'longitude')) {
-                $table->decimal('longitude', 11, 8)->nullable()->after('latitude');
+                $table->decimal('longitude', 11, 8)->nullable();
             }
         });
     }

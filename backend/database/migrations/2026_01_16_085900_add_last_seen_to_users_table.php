@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('last_seen')->nullable();
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
+            if (!Schema::hasColumn('users', 'last_seen')) {
+                $table->timestamp('last_seen')->nullable();
+            }
         });
     }
 
@@ -24,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['last_seen', 'latitude', 'longitude']);
+            if (Schema::hasColumn('users', 'last_seen')) {
+                $table->dropColumn('last_seen');
+            }
         });
     }
 };
