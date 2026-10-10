@@ -1,14 +1,16 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { StatusBar, Dimensions, RefreshControl, Modal, TextInput as RNTextInput } from 'react-native';
+import { StatusBar, Dimensions, RefreshControl, Modal, Alert, Platform as RNPlatform, TextInput as RNTextInput } from 'react-native';
 import { View, Text, ActivityIndicator, TouchableOpacity, LinearGradient, BlurView, StyleSheet, Platform } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useRouter, Redirect, useFocusEffect } from 'expo-router';
 import { useKegiatan } from '../../hooks/useKegiatan';
+import { useExportKegiatan, ExportFormat } from '../../hooks/useExportKegiatan';
+import { haptics } from '../../services/haptics';
 import { KegiatanCard } from '../../components/features/KegiatanCard';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Search, ListFilter, SlidersHorizontal, FileText, History, X, Check, Calendar } from 'lucide-react-native';
+import { Search, ListFilter, SlidersHorizontal, FileText, History, X, Check, Calendar, Download } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
@@ -19,6 +21,22 @@ const MONTH_NAMES = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
 
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [CURRENT_YEAR - 2, CURRENT_YEAR - 1, CURRENT_YEAR];
+
+const EXPORT_FORMATS: { format: ExportFormat; label: string; description: string }[] = [
+  { format: 'pdf', label: 'PDF', description: 'Siap cetak & dibagikan' },
+  { format: 'docx', label: 'Word (DOCX)', description: 'Bisa diedit kembali' },
+];
+
+function showMessage(title: string, message: string) {
+  if (RNPlatform.OS === 'web') {
+    window.alert(`${title}\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
+
 export default function KegiatanListTab() {
   const router = useRouter();
   const { token } = useAuthStore();
@@ -28,6 +46,11 @@ export default function KegiatanListTab() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+
+  // Export States
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
+  const exportMutation = useExportKegiatan();
 
   const queryClient = useQueryClient();
   const {
@@ -69,6 +92,35 @@ export default function KegiatanListTab() {
   }, [kegiatanItems, searchQuery]);
 
   const handleRefresh = useCallback(() => refetch(), [refetch]);
+
+  // Export uses the active filter; without one, default to the current month
+  const exportPeriod = useMemo(() => {
+    if (!selectedMonth && !selectedYear) {
+      return { month: new Date().getMonth() + 1, year: CURRENT_YEAR };
+    }
+    return { month: selectedMonth, year: selectedYear ?? CURRENT_YEAR };
+  }, [selectedMonth, selectedYear]);
+
+  const exportPeriodLabel = exportPeriod.month
+    ? `${MONTH_NAMES[exportPeriod.month - 1]} ${exportPeriod.year}`
+    : `Tahun ${exportPeriod.year}`;
+
+  const handleExport = () => {
+    haptics.impactMedium();
+    exportMutation.mutate(
+      { format: exportFormat, ...exportPeriod },
+      {
+        onSuccess: () => {
+          haptics.success();
+          setShowExportModal(false);
+        },
+        onError: (error) => {
+          haptics.error();
+          showMessage('Export Gagal', error.message);
+        },
+      }
+    );
+  };
 
   const resetFilters = () => {
     setSelectedMonth(undefined);
@@ -142,6 +194,13 @@ export default function KegiatanListTab() {
               style={{ height: 40, width: 40, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' }}
             >
               <ListFilter color="#38BDF8" size={20} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowExportModal(true)}
+              accessibilityLabel="Export laporan"
+              style={{ height: 40, width: 40, marginLeft: 8, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' }}
+            >
+              <Download color="#38BDF8" size={20} />
             </TouchableOpacity>
           </View>
         </View>
@@ -234,7 +293,10 @@ export default function KegiatanListTab() {
                 return (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => setSelectedMonth(monthIdx)}
+                    onPress={() => {
+                      setSelectedMonth(monthIdx);
+                      setSelectedYear(y => y ?? CURRENT_YEAR);
+                    }}
                     style={{
                       paddingHorizontal: 16,
                       paddingVertical: 10,
@@ -245,6 +307,29 @@ export default function KegiatanListTab() {
                     }}
                   >
                     <Text style={{ color: isActive ? 'white' : '#94A3B8', fontWeight: '700', fontSize: 13 }}>{name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>Pilih Tahun</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 32 }}>
+              {YEAR_OPTIONS.map((year) => {
+                const isActive = selectedYear === year;
+                return (
+                  <TouchableOpacity
+                    key={year}
+                    onPress={() => setSelectedYear(year)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 16,
+                      backgroundColor: isActive ? T.primarySolid : 'rgba(255,255,255,0.05)',
+                      borderWidth: 1,
+                      borderColor: isActive ? T.primary : T.darkBorder
+                    }}
+                  >
+                    <Text style={{ color: isActive ? 'white' : '#94A3B8', fontWeight: '700', fontSize: 13 }}>{year}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -267,6 +352,90 @@ export default function KegiatanListTab() {
                 <Text style={{ color: 'white', fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>Terapkan Filter</Text>
               </TouchableOpacity>
             </View>
+          </BlurView>
+        </View>
+      </Modal>
+
+      {/* Export Modal */}
+      <Modal
+        visible={showExportModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => !exportMutation.isPending && setShowExportModal(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <BlurView intensity={80} tint="dark" style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, paddingBottom: 60 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: 'white', fontSize: 24, fontWeight: '900' }}>Export Laporan</Text>
+                <Text style={{ color: T.textSecondary, fontSize: 13, fontWeight: '500' }}>Unduh kegiatan Anda untuk periode terpilih</Text>
+              </View>
+              <TouchableOpacity
+                disabled={exportMutation.isPending}
+                onPress={() => setShowExportModal(false)}
+                style={{ backgroundColor: T.darkBorder, padding: 8, borderRadius: 12 }}
+              >
+                <X color="white" size={24} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 16, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' }}>
+              <Calendar color="#38BDF8" size={18} style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: 'white', fontWeight: '800', fontSize: 14 }}>Periode: {exportPeriodLabel}</Text>
+                <Text style={{ color: T.textSecondary, fontSize: 12, marginTop: 2 }}>
+                  {selectedMonth || selectedYear ? 'Mengikuti filter aktif' : 'Bulan berjalan — ubah lewat filter'}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>Pilih Format</Text>
+            <View style={{ gap: 10, marginBottom: 32 }}>
+              {EXPORT_FORMATS.map(({ format, label, description }) => {
+                const isActive = exportFormat === format;
+                return (
+                  <TouchableOpacity
+                    key={format}
+                    disabled={exportMutation.isPending}
+                    onPress={() => setExportFormat(format)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderRadius: 16,
+                      backgroundColor: isActive ? 'rgba(14, 165, 233, 0.2)' : 'rgba(255,255,255,0.05)',
+                      borderWidth: 1,
+                      borderColor: isActive ? T.primary : T.darkBorder
+                    }}
+                  >
+                    <FileText color={isActive ? '#38BDF8' : '#94A3B8'} size={22} style={{ marginRight: 12 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: isActive ? 'white' : '#CBD5E1', fontWeight: '800', fontSize: 14 }}>{label}</Text>
+                      <Text style={{ color: T.textSecondary, fontSize: 12 }}>{description}</Text>
+                    </View>
+                    {isActive && <Check color="#38BDF8" size={20} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              disabled={exportMutation.isPending}
+              onPress={handleExport}
+              style={{ flexDirection: 'row', justifyContent: 'center', backgroundColor: T.primarySolid, opacity: exportMutation.isPending ? 0.7 : 1, paddingVertical: 18, borderRadius: 20, alignItems: 'center', boxShadow: '0px 10px 15px rgba(14, 165, 233, 0.3)', elevation: 8 }}
+            >
+              {exportMutation.isPending ? (
+                <>
+                  <ActivityIndicator color="white" size="small" />
+                  <Text style={{ color: 'white', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', marginLeft: 10 }}>Menyiapkan Laporan...</Text>
+                </>
+              ) : (
+                <>
+                  <Download color="white" size={18} />
+                  <Text style={{ color: 'white', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', marginLeft: 10 }}>Export {exportFormat.toUpperCase()}</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </BlurView>
         </View>
       </Modal>

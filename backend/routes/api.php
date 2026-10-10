@@ -18,6 +18,7 @@ Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     
     Route::get('kegiatans/export/docx', [KegiatanController::class, 'exportDocx']);
+    Route::get('kegiatans/export/pdf', [KegiatanController::class, 'exportPdf']);
     Route::apiResource('kegiatans', KegiatanController::class);
     Route::apiResource('karyawans', KaryawanController::class);
     Route::apiResource('jadwal-pikets', JadwalPiketController::class);
