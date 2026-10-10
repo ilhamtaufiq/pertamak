@@ -8,8 +8,15 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Media\MediaFileController;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+// Private media. Authorised by the signed URL (see App\Support\MediaUrl), not a bearer token.
+Route::get('/media/{media}/{variant}', [MediaFileController::class, 'show'])
+    ->whereIn('variant', ['original', 'optimized', 'thumb'])
+    ->middleware('signed')
+    ->name('media.file');
 
 Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);

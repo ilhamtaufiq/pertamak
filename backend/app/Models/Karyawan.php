@@ -9,6 +9,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Traits\HasCompressedMedia;
+use App\Support\MediaUrl;
 
 class Karyawan extends Model implements HasMedia
 {
@@ -54,9 +55,9 @@ class Karyawan extends Model implements HasMedia
 
         return [
             'id' => $media->id,
-            'url' => $media->getUrl('optimized'),
-            'original_url' => $media->getUrl(),
-            'thumb' => $media->getUrl('thumb'),
+            'url' => MediaUrl::for($media, 'optimized'),
+            'original_url' => MediaUrl::for($media),
+            'thumb' => MediaUrl::for($media, 'thumb'),
         ];
     }
 

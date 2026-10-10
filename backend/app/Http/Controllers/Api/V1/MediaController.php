@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\Folder;
+use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Auth;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Facades\Schema;
@@ -78,9 +79,9 @@ class MediaController extends Controller
                 'size' => $media->size,
                 'human_size' => $media->human_readable_size,
                 'mime_type' => $media->mime_type,
-                'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
-                'original_url' => $media->getUrl(),
-                'thumb' => $isImage ? $media->getUrl('thumb') : null,
+                'url' => $isImage ? MediaUrl::for($media, 'optimized') : MediaUrl::for($media),
+                'original_url' => MediaUrl::for($media),
+                'thumb' => $isImage ? MediaUrl::for($media, 'thumb') : null,
                 'created_at' => $media->created_at,
                 'owner_name' => $ownerName
             ];
@@ -148,9 +149,9 @@ class MediaController extends Controller
             'size' => $media->size,
             'human_size' => $media->human_readable_size,
             'mime_type' => $media->mime_type,
-            'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
-            'original_url' => $media->getUrl(),
-            'thumb' => $isImage ? $media->getUrl('thumb') : null,
+            'url' => $isImage ? MediaUrl::for($media, 'optimized') : MediaUrl::for($media),
+            'original_url' => MediaUrl::for($media),
+            'thumb' => $isImage ? MediaUrl::for($media, 'thumb') : null,
             'created_at' => $media->created_at,
         ]);
     }
@@ -245,6 +246,9 @@ class MediaController extends Controller
                 ], 409);
             }
 
+            // DB cascade removes rows but not stored files, so delete the files through Spatie first
+            Media::whereIn('folder_id', $this->subtreeFolderIds($folder))->get()->each->delete();
+
             $folder->delete();
         } else {
             $media = Media::findOrFail($id);
@@ -324,25 +328,28 @@ class MediaController extends Controller
     }
 
     /**
-     * True when the folder or any folder beneath it holds an item owned by someone else.
+     * The folder id plus every folder id beneath it (breadth-first, depth-capped).
      */
-    private function subtreeHasForeignContent(Folder $root, int $userId): bool
+    private function subtreeFolderIds(Folder $root): array
     {
         $ids = [$root->id];
         $frontier = [$root->id];
         $depth = 0;
 
         while ($frontier && $depth++ < self::MAX_DEPTH) {
-            $children = Folder::whereIn('parent_id', $frontier)->get(['id', 'user_id']);
-            $frontier = [];
-            foreach ($children as $child) {
-                if ($child->user_id !== $userId) {
-                    return true;
-                }
-                $ids[] = $child->id;
-                $frontier[] = $child->id;
-            }
+            $frontier = Folder::whereIn('parent_id', $frontier)->pluck('id')->all();
+            $ids = array_merge($ids, $frontier);
         }
+
+        return $ids;
+    }
+
+    /**
+     * True when the folder or any folder beneath it holds an item owned by someone else.
+     */
+    private function subtreeHasForeignContent(Folder $root, int $userId): bool
+    {
+        $ids = $this->subtreeFolderIds($root);
 
         if (Folder::whereIn('id', $ids)->where('user_id', '!=', $userId)->exists()) {
             return true;

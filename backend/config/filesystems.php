@@ -47,6 +47,15 @@ return [
             'report' => false,
         ],
 
+        // Uploaded media. Never served directly: files go through the signed route media.file.
+        'media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/media'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
