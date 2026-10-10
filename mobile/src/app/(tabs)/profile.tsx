@@ -2,17 +2,19 @@ import React from 'react';
 import Head from 'expo-router/head';
 import { View, Text, ScrollView, TouchableOpacity, LinearGradient, BlurView, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
-import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Bell, Heart } from 'lucide-react-native';
+import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity, ActivityIndicator } from 'react-native';
+import { APP_VERSION } from '../../config';
 import * as Updates from 'expo-updates';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 export default function ProfileTab() {
   const { user, clearAuth } = useAuthStore();
   const router = useRouter();
+  const roleLabel = user?.role === 'admin' ? 'Administrator' : 'Karyawan';
 
   const handleLogout = async () => {
     Alert.alert(
@@ -84,7 +86,7 @@ export default function ProfileTab() {
             <Animated.View entering={FadeInDown.duration(800)}>
               <View style={styles.avatarFrame}>
                 <Image 
-                  source={{ uri: `https://ui-avatars.com/api/?name=${user?.name}&background=0EA5E9&color=fff&bold=true&size=256` }}
+                  source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0EA5E9&color=fff&bold=true&size=256` }}
                   style={styles.avatarImage}
                 />
               </View>
@@ -94,7 +96,7 @@ export default function ProfileTab() {
               <Text style={styles.userName}>{user?.name}</Text>
               <View style={styles.roleBadge}>
                 <Text style={styles.roleText}>
-                  {user?.role}
+                  {roleLabel}
                 </Text>
               </View>
             </Animated.View>
@@ -106,14 +108,13 @@ export default function ProfileTab() {
               <Text style={styles.sectionLabel}>AKUN SAYA</Text>
               
               <ProfileItem icon={User} title="Nama Lengkap" value={user?.name || '-'} />
-              <ProfileItem icon={Shield} title="Hak Akses" value={user?.role?.toUpperCase() || '-'} />
-              <ProfileItem icon={Smartphone} title="Versi Aplikasi" value="1.0.0 (Alpha)" />
+              <ProfileItem icon={Shield} title="Hak Akses" value={roleLabel} />
+              <ProfileItem icon={Smartphone} title="Versi Aplikasi" value={APP_VERSION} />
            </Animated.View>
 
            <Animated.View entering={FadeInUp.delay(600)} style={styles.preferencesSection}>
               <Text style={styles.sectionLabelSecondary}>PREFERENSI & SISTEM</Text>
               
-              <ProfileItem icon={Bell} title="Notifikasi" value="Aktif" color="#6366F1" />
               <ProfileItem 
                 icon={Smartphone} 
                 title="Cek Update via EAS" 
@@ -123,7 +124,7 @@ export default function ProfileTab() {
                 isLoading={isCheckingUpdate}
               />
               <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" color="#F43F5E" />
-              <ProfileItem icon={Info} title="Tentang" value="PERTAMAK v1.0.0" color="#FACC15" />
+              <ProfileItem icon={Info} title="Tentang" value={`PERTAMAK v${APP_VERSION}`} color="#FACC15" />
            </Animated.View>
 
            {/* Logout Button */}

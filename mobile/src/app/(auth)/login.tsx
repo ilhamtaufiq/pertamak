@@ -7,7 +7,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, LogIn, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { APP_CONFIG } from '../../config';
+import { APP_CONFIG, APP_VERSION } from '../../config';
+import { Alert } from 'react-native';
 import { z } from 'zod';
 import logger from '../../lib/logger';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
@@ -191,7 +192,11 @@ export default function LoginScreen() {
                   </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.forgotBtn}>
+                <TouchableOpacity
+                  style={styles.forgotBtn}
+                  accessibilityRole="button"
+                  onPress={() => Alert.alert('Lupa Sandi', 'Sandi hanya bisa direset oleh admin. Hubungi admin kantor Anda.')}
+                >
                   <Text style={styles.forgotText}>Lupa sandi Anda?</Text>
                 </TouchableOpacity>
               </View>
@@ -200,7 +205,7 @@ export default function LoginScreen() {
 
               <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
             <View style={styles.footerLine} />
-            <Text style={styles.footerText}>Pertamak v1.0.0</Text>
+            <Text style={styles.footerText}>Pertamak v{APP_VERSION}</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
