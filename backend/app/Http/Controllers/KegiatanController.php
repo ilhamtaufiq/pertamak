@@ -147,10 +147,20 @@ class KegiatanController extends Controller
             ->orderBy('tanggal', 'asc')
             ->get();
 
-        // Embed photos as data URIs so dompdf never needs filesystem or remote access
-        $rows = $kegiatans->map(function (Kegiatan $kegiatan) {
+        // Embed photos as data URIs so dompdf never needs filesystem or remote access.
+        // Capped per export to keep memory bounded; the cap is reported via headers.
+        $limit = (int) config('kegiatan.pdf_max_images', 150);
+        $embedded = 0;
+        $skipped = 0;
+
+        $rows = $kegiatans->map(function (Kegiatan $kegiatan) use ($limit, &$embedded, &$skipped) {
             $images = [];
             foreach ($kegiatan->media as $media) {
+                if ($embedded >= $limit) {
+                    $skipped++;
+                    continue;
+                }
+
                 $imagePath = $media->getPath('optimized');
                 if (!file_exists($imagePath)) {
                     $imagePath = $media->getPath();
@@ -158,6 +168,7 @@ class KegiatanController extends Controller
                 if (file_exists($imagePath)) {
                     $mime = mime_content_type($imagePath) ?: $media->mime_type;
                     $images[] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($imagePath));
+                    $embedded++;
                 }
             }
 
@@ -175,7 +186,9 @@ class KegiatanController extends Controller
             'nama' => $this->exportUser($filters)?->name,
         ])->setPaper([0, 0, 595.28, 935.43]); // F4 (210 x 330 mm), same as the DOCX export
 
-        return $pdf->download($this->exportFilename($filters, 'pdf'));
+        return $pdf->download($this->exportFilename($filters, 'pdf'))
+            ->header('X-Export-Images-Limit', (string) $limit)
+            ->header('X-Export-Images-Skipped', (string) $skipped);
     }
 
     /**

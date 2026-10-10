@@ -20,13 +20,15 @@ Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('kegiatans/export/docx', [KegiatanController::class, 'exportDocx']);
     Route::get('kegiatans/export/pdf', [KegiatanController::class, 'exportPdf']);
     Route::apiResource('kegiatans', KegiatanController::class);
-    Route::apiResource('karyawans', KaryawanController::class);
+    Route::get('karyawans', [KaryawanController::class, 'index']);
+    Route::get('karyawans/{karyawan}', [KaryawanController::class, 'show']);
     Route::apiResource('jadwal-pikets', JadwalPiketController::class);
     
     // Admin only
     Route::middleware('role:admin')->group(function () {
         Route::get('/users/online', [UserController::class, 'online']);
         Route::apiResource('users', UserController::class);
+        Route::apiResource('karyawans', KaryawanController::class)->only(['store', 'update', 'destroy']);
     });
 
     // Media Library Organizer

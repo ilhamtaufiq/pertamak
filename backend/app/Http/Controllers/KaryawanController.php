@@ -16,8 +16,22 @@ class KaryawanController extends Controller
         $karyawans = Karyawan::orderBy('nama')->get();
 
         return response()->json([
-            'data' => $karyawans,
+            'data' => $karyawans->map(fn (Karyawan $k) => $this->present($k)),
         ]);
+    }
+
+    /**
+     * Non-admins only see name and position. NIP and phone number are personal data.
+     */
+    private function present(Karyawan $karyawan): array
+    {
+        $data = $karyawan->toArray();
+
+        if (!auth()->user()?->hasRole('admin')) {
+            return array_intersect_key($data, array_flip(['id', 'nama', 'jabatan']));
+        }
+
+        return $data;
     }
 
     /**
@@ -53,7 +67,7 @@ class KaryawanController extends Controller
     public function show(Karyawan $karyawan): JsonResponse
     {
         return response()->json([
-            'data' => $karyawan,
+            'data' => $this->present($karyawan),
         ]);
     }
 
