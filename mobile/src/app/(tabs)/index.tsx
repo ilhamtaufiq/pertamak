@@ -1,17 +1,15 @@
 import React, { useCallback } from 'react';
 import Head from 'expo-router/head';
-import { View, Text, ActivityIndicator, ScrollView, LinearGradient, BlurView, TouchableOpacity, Image } from '../../tw';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { Stack, useRouter } from 'expo-router';
 import { useKegiatan } from '../../hooks/useKegiatan';
 import { KegiatanCard } from '../../components/features/KegiatanCard';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { RefreshControl, StatusBar, StyleSheet, Dimensions } from 'react-native';
+import { RefreshControl, StatusBar, StyleSheet } from 'react-native';
 import { ListTodo, Map as MapIcon, Plus, FolderOpen, CalendarDays, ArrowRight } from 'lucide-react-native';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
 export default function HomeTab() {
   const { user } = useAuthStore();
@@ -32,12 +30,10 @@ export default function HomeTab() {
       accessibilityRole="button"
       accessibilityLabel={title}
     >
-      <BlurView intensity={10} tint="dark" style={styles.featureCard}>
-        <View style={[styles.featureIconBox, { backgroundColor: `${color}20`, borderColor: `${color}30` }]}>
-          <Icon color={color} size={28} strokeWidth={2} />
-        </View>
+      <View style={styles.featureCard}>
+        <Icon color={color} size={22} strokeWidth={2} />
         <Text style={styles.featureTitle}>{title}</Text>
-      </BlurView>
+      </View>
     </TouchableOpacity>
   );
 
@@ -49,11 +45,6 @@ export default function HomeTab() {
       </Head>
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
-
-      <LinearGradient
-        colors={[T.darkBg, T.darkSurface]}
-        style={StyleSheet.absoluteFill}
-      />
 
       <ScrollView
         style={styles.scroll}
@@ -74,7 +65,7 @@ export default function HomeTab() {
               </View>
               <View style={styles.userInfo}>
                 <Text style={styles.statusText}>{user?.role === 'admin' ? 'Administrator' : 'Karyawan'}</Text>
-                <Text style={styles.greetingText}>Halo, {user?.name?.split(' ')[0]} 👋</Text>
+                <Text style={styles.greetingText}>Halo, {user?.name?.split(' ')[0]}</Text>
               </View>
             </Animated.View>
 
@@ -82,25 +73,27 @@ export default function HomeTab() {
 
           {/* Service Grid Section */}
           <Animated.View entering={FadeInDown.delay(200)} style={styles.featureSection}>
-            <Text style={styles.sectionLabel}>FITUR UTAMA</Text>
+            <Text style={styles.sectionLabel}>Fitur utama</Text>
             <View style={styles.featureGrid}>
               <FeatureItem icon={Plus} title="Buat Kegiatan" color={T.primary} route="/kegiatan/create" />
-              <FeatureItem icon={ListTodo} title="Jurnal" color="#34D399" route="/(tabs)/kegiatan" />
-              <FeatureItem icon={MapIcon} title="Peta" color="#F472B6" route="/(tabs)/maps" />
-              <FeatureItem icon={FolderOpen} title="Media" color="#FBBF24" route="/(tabs)/media" />
+              <FeatureItem icon={ListTodo} title="Jurnal" color={T.textSecondary} route="/(tabs)/kegiatan" />
+              <FeatureItem icon={MapIcon} title="Peta" color={T.textSecondary} route="/(tabs)/maps" />
+              <FeatureItem icon={FolderOpen} title="Media" color={T.textSecondary} route="/(tabs)/media" />
             </View>
           </Animated.View>
 
           {/* Recent Activities Section */}
           <Animated.View entering={FadeInUp.delay(400)} style={styles.recentSection}>
             <View style={styles.recentHeader}>
-              <View>
+              <View style={{ flex: 1, paddingRight: SPACING.md }}>
                 <Text style={styles.recentTitle}>Kegiatan Terakhir</Text>
                 <Text style={styles.recentSubtitle}>Pantau progres pengerjaan harian Anda</Text>
               </View>
               <TouchableOpacity
                 onPress={() => router.push('/(tabs)/kegiatan')}
                 style={styles.seeAllButton}
+                accessibilityRole="button"
+                accessibilityLabel="Lihat semua kegiatan"
               >
                 <Text style={styles.seeAllText}>Semua</Text>
                 <ArrowRight color={T.primary} size={14} />
@@ -121,7 +114,7 @@ export default function HomeTab() {
               ))
             ) : (
               <View style={styles.emptyBox}>
-                <CalendarDays color="#1E293B" size={64} strokeWidth={1} />
+                <CalendarDays color={T.darkBorder} size={56} strokeWidth={1.25} />
                 <Text style={styles.emptyText}>Belum ada kegiatan terbaru</Text>
                 <Text style={styles.emptyHint}>Tekan Buat Kegiatan untuk mencatat yang pertama</Text>
               </View>
@@ -140,41 +133,35 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xxxl },
   userRow: { flexDirection: 'row', alignItems: 'center' },
   avatarFrame: {
-    width: BUTTON.primary.height, height: BUTTON.primary.height, borderRadius: RADIUS.md, borderWidth: 2,
-    borderColor: 'rgba(56, 189, 248, 0.3)', overflow: 'hidden',
-    ...SHADOWS.glow(T.primarySolid),
+    width: BUTTON.primary.height, height: BUTTON.primary.height, borderRadius: RADIUS.md, borderWidth: 1,
+    borderColor: T.darkBorder, overflow: 'hidden',
   },
   avatarImage: { width: '100%', height: '100%' },
   userInfo: { marginLeft: SPACING.lg },
-  statusText: { color: T.textSecondary, ...TYPOGRAPHY.badge, marginBottom: 4 },
-  greetingText: { color: 'white', ...TYPOGRAPHY.heading },
+  statusText: { color: T.textSecondary, ...TYPOGRAPHY.badge, marginBottom: 2 },
+  greetingText: { color: T.text, ...TYPOGRAPHY.heading },
   featureSection: { marginBottom: SPACING.xxxl },
-  sectionLabel: { color: T.primary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, paddingLeft: 4 },
+  sectionLabel: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.md },
   featureGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: SPACING.md },
   featureItem: { width: '48%' },
   featureCard: {
-    padding: SPACING.xl, borderRadius: RADIUS.xxl, borderWidth: 1, borderColor: T.darkBorder,
-    backgroundColor: T.darkCard, alignItems: 'center',
+    padding: SPACING.lg, minHeight: 88, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder,
+    backgroundColor: T.darkSurface, justifyContent: 'space-between',
   },
-  featureIconBox: {
-    padding: SPACING.lg, borderRadius: RADIUS.md, borderWidth: 1, marginBottom: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  featureTitle: { color: 'white', ...TYPOGRAPHY.caption, textTransform: 'uppercase' },
+  featureTitle: { color: T.text, ...TYPOGRAPHY.bodySecondary, marginTop: SPACING.md },
   recentSection: { flex: 1, paddingBottom: 120 },
-  recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.xl, paddingHorizontal: 4 },
-  recentTitle: { color: 'white', ...TYPOGRAPHY.heading },
-  recentSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.bodySecondary, fontWeight: '700', marginTop: 2 },
+  recentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
+  recentTitle: { color: T.text, ...TYPOGRAPHY.heading },
+  recentSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: 2 },
   seeAllButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    borderRadius: RADIUS.sm, flexDirection: 'row', alignItems: 'center',
+    minHeight: 44, paddingHorizontal: SPACING.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
   },
   seeAllText: { color: T.primary, ...TYPOGRAPHY.bodySecondary, marginRight: SPACING.xs },
   loadingBox: { paddingVertical: 80, alignItems: 'center' },
   emptyBox: {
-    paddingVertical: 80, alignItems: 'center', backgroundColor: T.darkCard,
-    borderRadius: RADIUS.xxxl, borderStyle: 'dashed', borderWidth: 1, borderColor: T.darkBorder,
+    paddingVertical: 56, paddingHorizontal: SPACING.xl, alignItems: 'center', backgroundColor: T.darkSurface,
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder,
   },
-  emptyText: { color: T.textSecondary, marginTop: SPACING.lg, ...TYPOGRAPHY.caption },
-  emptyHint: { color: T.textTertiary, marginTop: SPACING.xs, fontSize: 12, fontWeight: '600' },
+  emptyText: { color: T.text, marginTop: SPACING.lg, ...TYPOGRAPHY.bodySecondary },
+  emptyHint: { color: T.textSecondary, marginTop: SPACING.xs, textAlign: 'center', ...TYPOGRAPHY.caption },
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Alert, Dimensions, Platform, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
-import { View, Text, LinearGradient, BlurView, ActivityIndicator } from '../../tw';
+import { View, Text, ActivityIndicator } from '../../tw';
 import { MapPin, Layers, Navigation, LocateFixed, Zap, ShieldCheck, Activity, Users } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
@@ -10,21 +10,16 @@ import { haptics } from '../../services/haptics';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
 import { APP_CONFIG } from '../../config';
+import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '../../tokens';
+
+// Destructive/stop state. White label on this red passes WCAG AA.
+const DANGER_SOLID = '#E11D48';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Center: Alun-Alun Kabupaten Cianjur
 const CIANJUR_LAT = -6.8204;
 const CIANJUR_LON = 107.1403;
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  emerald: '#10B981',
-  rose: '#EF4444',
-};
 
 const LEAFLET_HTML = `
 <!DOCTYPE html>
@@ -42,7 +37,6 @@ const LEAFLET_HTML = `
             background-color: #0EA5E9;
             border: 3px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(14, 165, 233, 0.8);
         }
         .pulse {
             width: 40px; height: 40px;
@@ -99,7 +93,7 @@ const LEAFLET_HTML = `
                             var initial = u.name ? u.name.charAt(0).toUpperCase() : '?';
                             var teamIcon = L.divIcon({
                                 className: 'custom-div-icon',
-                                html: '<div style="width:28px;height:28px;background-color:#10B981;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(16,185,129,0.8);"><span style="color:white;font-size:12px;font-weight:bold;font-family:sans-serif;">' + initial + '</span></div>',
+                                html: '<div style="width:28px;height:28px;background-color:#10B981;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:white;font-size:12px;font-weight:bold;font-family:sans-serif;">' + initial + '</span></div>',
                                 iconSize: [28, 28],
                                 iconAnchor: [14, 14]
                             });
@@ -253,29 +247,27 @@ export default function MapsTab() {
       </View>
 
       {/* Top Header */}
-      <View style={s.topOverlay}>
-        <LinearGradient colors={['rgba(2,6,23,0.9)', 'transparent']} style={s.topGradient}>
-          <Animated.View entering={FadeInDown} style={s.topRow}>
-            <View>
-              <Text style={s.topLabel}>LEAFLET INTELLIGENCE</Text>
-              <Text style={s.topTitle}>Geo Tracking</Text>
-            </View>
-            <NativeTouchableOpacity onPress={recenter} style={s.recenterBtn}>
-              <LocateFixed color="white" size={24} />
-            </NativeTouchableOpacity>
-          </Animated.View>
-        </LinearGradient>
+      <View style={s.topBar}>
+        <Animated.View entering={FadeInDown} style={s.topRow}>
+          <View>
+            <Text style={s.topLabel}>Leaflet intelligence</Text>
+            <Text style={s.topTitle}>Geo tracking</Text>
+          </View>
+          <NativeTouchableOpacity onPress={recenter} style={s.recenterBtn} accessibilityRole="button" accessibilityLabel="Pusatkan ke lokasi saya">
+            <LocateFixed color="white" size={20} />
+          </NativeTouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Side Controls */}
       <View style={s.sideControls}>
         <Animated.View entering={SlideInRight.delay(200)}>
-          <NativeTouchableOpacity style={s.mapControlBtn}>
+          <NativeTouchableOpacity style={s.mapControlBtn} accessibilityRole="button" accessibilityLabel="Lapisan peta">
             <Layers color="white" size={20} />
           </NativeTouchableOpacity>
         </Animated.View>
         <Animated.View entering={SlideInRight.delay(300)}>
-          <NativeTouchableOpacity style={s.mapControlBtn}>
+          <NativeTouchableOpacity style={s.mapControlBtn} accessibilityRole="button" accessibilityLabel="Status keamanan">
             <ShieldCheck color={COLORS.emerald} size={20} />
           </NativeTouchableOpacity>
         </Animated.View>
@@ -284,23 +276,23 @@ export default function MapsTab() {
       {/* Bottom Tracking Card */}
       <View style={s.bottomCardWrapper}>
         <Animated.View entering={FadeInUp.delay(400)}>
-          <BlurView intensity={40} tint="dark" style={s.trackingCard}>
+          <View style={s.trackingCard}>
             {/* Header Row */}
             <View style={s.trackingHeader}>
               <View style={s.trackingLeft}>
-                <View style={s.trackingIconBox}>
-                  {isTracking ? <Activity color="white" size={28} /> : <MapPin color="white" size={28} />}
+                <View style={s.trackingIcon}>
+                  {isTracking ? <Activity color={COLORS.primary} size={24} /> : <MapPin color={COLORS.primary} size={24} />}
                 </View>
                 <View style={s.trackingAddrBox}>
-                  <Text style={s.trackingLabel}>LOKASI PRESISI</Text>
+                  <Text style={s.trackingLabel}>Lokasi presisi</Text>
                   <Text style={s.trackingAddr} numberOfLines={2}>{address}</Text>
                 </View>
               </View>
               <View style={[s.statusPill, isTracking ? s.statusActive : s.statusIdle]}>
                 <View style={s.statusRow}>
-                  <View style={[s.statusDot, { backgroundColor: isTracking ? COLORS.emerald : '#94A3B8' }]} />
-                  <Text style={[s.statusPillText, { color: isTracking ? COLORS.emerald : '#94A3B8' }]}>
-                    {isTracking ? 'Active' : 'Standby'}
+                  <View style={[s.statusDot, { backgroundColor: isTracking ? COLORS.emerald : COLORS.textSecondary }]} />
+                  <Text style={[s.statusPillText, { color: isTracking ? COLORS.emerald : COLORS.textSecondary }]}>
+                    {isTracking ? 'Aktif' : 'Siaga'}
                   </Text>
                 </View>
               </View>
@@ -309,17 +301,17 @@ export default function MapsTab() {
             {/* Metrics */}
             <View style={s.metricsRow}>
               <View style={s.metricItem}>
-                <Users color={COLORS.primary} size={12} />
+                <Users color={COLORS.textSecondary} size={14} />
                 <View style={s.metricText}>
-                  <Text style={s.metricLabel}>TIM AKTIF</Text>
-                  <Text style={s.metricValue}>{otherUsers.length} Petugas</Text>
+                  <Text style={s.metricLabel}>Tim aktif</Text>
+                  <Text style={s.metricValue}>{otherUsers.length} petugas</Text>
                 </View>
               </View>
               <View style={s.metricItem}>
-                <ShieldCheck color={COLORS.emerald} size={12} />
+                <ShieldCheck color={COLORS.textSecondary} size={14} />
                 <View style={s.metricText}>
-                  <Text style={s.metricLabel}>AKURASI</Text>
-                  <Text style={s.metricValue}>+/- 10m</Text>
+                  <Text style={s.metricLabel}>Akurasi</Text>
+                  <Text style={s.metricValue}>+/- 10 m</Text>
                 </View>
               </View>
             </View>
@@ -327,14 +319,15 @@ export default function MapsTab() {
             {/* Track Button */}
             <NativeTouchableOpacity
               onPress={toggleTracking}
-              style={[s.trackBtn, { backgroundColor: isTracking ? COLORS.rose : COLORS.primarySolid }]}
+              accessibilityRole="button"
+              style={[s.trackBtn, { backgroundColor: isTracking ? DANGER_SOLID : COLORS.primaryDeep }]}
             >
               <Text style={s.trackBtnText}>
-                {isTracking ? 'HENTIKAN PELACAKAN' : 'MULAI PELACAKAN'}
+                {isTracking ? 'Hentikan pelacakan' : 'Mulai pelacakan'}
               </Text>
-              {isTracking ? <ShieldCheck color="white" size={20} /> : <Navigation color="white" size={20} />}
+              {isTracking ? <ShieldCheck color="white" size={18} /> : <Navigation color="white" size={18} />}
             </NativeTouchableOpacity>
-          </BlurView>
+          </View>
         </Animated.View>
       </View>
     </View>
@@ -344,62 +337,60 @@ export default function MapsTab() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.darkBg },
 
-  // Top overlay
-  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, height: 160, zIndex: 10 },
-  topGradient: { flex: 1, paddingTop: 64, paddingHorizontal: 24 },
+  // Top bar: flat, translucent so the map stays readable underneath
+  topBar: {
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+    paddingTop: 64, paddingBottom: SPACING.lg, paddingHorizontal: SPACING.xl,
+    backgroundColor: 'rgba(2,6,23,0.85)',
+    borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder,
+  },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  topLabel: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 4 },
-  topTitle: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
+  topLabel: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginBottom: 2 },
+  topTitle: { color: 'white', ...TYPOGRAPHY.title, fontSize: 24, lineHeight: 30 },
   recenterBtn: {
-    backgroundColor: 'rgba(255,255,255,0.1)', padding: 16, borderRadius: 24,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md,
+    borderWidth: 1, borderColor: COLORS.darkBorder,
   },
 
   // Side controls
-  sideControls: { position: 'absolute', top: 192, right: 24, gap: 16, zIndex: 10 },
+  sideControls: { position: 'absolute', top: 152, right: SPACING.lg, gap: SPACING.sm, zIndex: 10 },
   mapControlBtn: {
-    width: 64, height: 64, borderRadius: 24,
-    backgroundColor: 'rgba(2,6,23,0.8)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.3)', elevation: 5,
+    width: 44, height: 44, borderRadius: RADIUS.md,
+    backgroundColor: COLORS.darkSurface, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: COLORS.darkBorder,
   },
 
   // Bottom card
-  bottomCardWrapper: { position: 'absolute', bottom: 120, left: 16, right: 16, zIndex: 10 },
+  bottomCardWrapper: { position: 'absolute', bottom: 112, left: SPACING.lg, right: SPACING.lg, zIndex: 10 },
   trackingCard: {
-    backgroundColor: 'rgba(2,6,23,0.6)', borderRadius: 40,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    padding: 32, overflow: 'hidden',
-    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
+    backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.darkBorder,
+    padding: SPACING.lg,
   },
-  trackingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+  trackingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg },
   trackingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  trackingIconBox: {
-    width: 56, height: 56, borderRadius: 20, backgroundColor: COLORS.primarySolid,
-    alignItems: 'center', justifyContent: 'center', marginRight: 16,
-    boxShadow: '0px 0px 10px rgba(14, 165, 233, 0.4)', elevation: 5,
-  },
-  trackingAddrBox: { flex: 1, maxWidth: 180 },
-  trackingLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '900', fontSize: 9, letterSpacing: 2, marginBottom: 4 },
-  trackingAddr: { color: 'white', fontWeight: '900', fontSize: 18, lineHeight: 22 },
-  statusPill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginLeft: 12 },
-  statusActive: { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.2)' },
-  statusIdle: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  trackingIcon: { width: 32, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
+  trackingAddrBox: { flex: 1, maxWidth: 200 },
+  trackingLabel: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginBottom: 2 },
+  trackingAddr: { color: 'white', ...TYPOGRAPHY.subheading },
+  statusPill: { paddingHorizontal: SPACING.md, paddingVertical: 4, borderRadius: RADIUS.sm, borderWidth: 1, marginLeft: SPACING.sm },
+  statusActive: { backgroundColor: COLORS.darkBg, borderColor: 'rgba(16,185,129,0.4)' },
+  statusIdle: { backgroundColor: COLORS.darkBg, borderColor: COLORS.darkBorder },
   statusRow: { flexDirection: 'row', alignItems: 'center' },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
-  statusPillText: { fontWeight: '900', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase' },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusPillText: { ...TYPOGRAPHY.badge },
 
   // Metrics
-  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32, paddingHorizontal: 8 },
+  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.lg, paddingHorizontal: SPACING.xs },
   metricItem: { flexDirection: 'row', alignItems: 'center' },
-  metricText: { marginLeft: 12 },
-  metricLabel: { color: 'rgba(255,255,255,0.4)', fontWeight: '900', fontSize: 8, letterSpacing: 2 },
-  metricValue: { color: 'white', fontWeight: '700', fontSize: 12, textTransform: 'uppercase' },
+  metricText: { marginLeft: SPACING.sm },
+  metricLabel: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption },
+  metricValue: { color: 'white', ...TYPOGRAPHY.bodySecondary },
 
   // Track button
   trackBtn: {
-    height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.3)', elevation: 8,
+    height: 52, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
   },
-  trackBtnText: { color: 'white', fontWeight: '900', fontSize: 18, letterSpacing: 3, marginRight: 12 },
+  trackBtnText: { color: 'white', ...TYPOGRAPHY.subheading, marginRight: SPACING.sm },
 });

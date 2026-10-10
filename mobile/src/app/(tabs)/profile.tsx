@@ -1,6 +1,6 @@
 import React from 'react';
 import Head from 'expo-router/head';
-import { View, Text, ScrollView, TouchableOpacity, LinearGradient, BlurView, Image } from '../../tw';
+import { View, Text, ScrollView, TouchableOpacity, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
 import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -9,7 +9,7 @@ import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity, ActivityIndicator } from 'react-native';
 import { APP_VERSION } from '../../config';
 import * as Updates from 'expo-updates';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
 export default function ProfileTab() {
   const { user, clearAuth } = useAuthStore();
@@ -56,16 +56,21 @@ export default function ProfileTab() {
     }
   };
 
-  const ProfileItem = ({ icon: Icon, title, value, color = T.primary, onPress, isLoading = false }: { icon: any, title: string, value: string, color?: string, onPress?: () => void, isLoading?: boolean }) => (
-    <TouchableOpacity style={styles.profileItem} onPress={onPress} activeOpacity={onPress ? 0.7 : 1} disabled={!onPress || isLoading}>
-      <View style={[styles.profileItemIcon, { backgroundColor: `${color}15` }]}>
-        <Icon color={color} size={22} />
-      </View>
+  const ProfileItem = ({ icon: Icon, title, value, onPress, isLoading = false }: { icon: any, title: string, value: string, onPress?: () => void, isLoading?: boolean }) => (
+    <TouchableOpacity
+      style={styles.profileItem}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress || isLoading}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${title}: ${value}`}
+    >
+      <Icon color={T.textSecondary} size={20} style={{ marginRight: SPACING.lg }} />
       <View style={styles.profileItemText}>
         <Text style={styles.profileItemLabel}>{title}</Text>
         <Text style={styles.profileItemValue}>{value}</Text>
       </View>
-      {isLoading ? <ActivityIndicator color={color} /> : <ChevronRight color="#475569" size={20} />}
+      {isLoading ? <ActivityIndicator color={T.primary} /> : onPress ? <ChevronRight color={T.textTertiary} size={20} /> : null}
     </TouchableOpacity>
   );
 
@@ -75,11 +80,6 @@ export default function ProfileTab() {
         <title>Profil - Pertamak</title>
       </Head>
       <StatusBar barStyle="light-content" />
-      <LinearGradient 
-        colors={[T.darkBg, T.darkSurface]} 
-        style={StyleSheet.absoluteFill}
-      />
-      
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header/Banner Area */}
         <View style={styles.headerArea}>
@@ -105,7 +105,7 @@ export default function ProfileTab() {
         {/* Content Section */}
         <View style={styles.contentArea}>
            <Animated.View entering={FadeInUp.delay(400)}>
-              <Text style={styles.sectionLabel}>AKUN SAYA</Text>
+              <Text style={styles.sectionLabel}>Akun saya</Text>
               
               <ProfileItem icon={User} title="Nama Lengkap" value={user?.name || '-'} />
               <ProfileItem icon={Shield} title="Hak Akses" value={roleLabel} />
@@ -113,18 +113,17 @@ export default function ProfileTab() {
            </Animated.View>
 
            <Animated.View entering={FadeInUp.delay(600)} style={styles.preferencesSection}>
-              <Text style={styles.sectionLabelSecondary}>PREFERENSI & SISTEM</Text>
+              <Text style={styles.sectionLabel}>Preferensi & sistem</Text>
               
               <ProfileItem 
                 icon={Smartphone} 
                 title="Cek Update via EAS" 
                 value="Tap untuk sinkronisasi OTA" 
-                color="#0EA5E9" 
                 onPress={handleCheckUpdate}
                 isLoading={isCheckingUpdate}
               />
-              <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" color="#F43F5E" />
-              <ProfileItem icon={Info} title="Tentang" value={`PERTAMAK v${APP_VERSION}`} color="#FACC15" />
+              <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" />
+              <ProfileItem icon={Info} title="Tentang" value={`Pertamak v${APP_VERSION}`} />
            </Animated.View>
 
            {/* Logout Button */}
@@ -134,7 +133,7 @@ export default function ProfileTab() {
                 onPress={handleLogout}
                 style={styles.logoutButton}
               >
-                 <LogOut color="#FB7185" size={24} style={{ marginRight: 12 }} />
+                 <LogOut color={T.rose} size={20} style={{ marginRight: SPACING.md }} />
                  <Text style={styles.logoutText}>Keluar Akun</Text>
               </NativeTouchableOpacity>
               
@@ -151,50 +150,48 @@ export default function ProfileTab() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.darkBg },
   scroll: { flex: 1 },
-  headerArea: { paddingTop: 96, paddingBottom: 48, alignItems: 'center' },
+  headerArea: { paddingTop: 80, paddingBottom: SPACING.xxxl, alignItems: 'center' },
   avatarFrame: {
-    width: 128, height: 128, borderRadius: RADIUS.xxl, borderWidth: 4,
-    borderColor: 'rgba(56, 189, 248, 0.3)', overflow: 'hidden',
-    ...SHADOWS.glow(T.primarySolid),
+    width: 96, height: 96, borderRadius: RADIUS.lg, borderWidth: 1,
+    borderColor: T.darkBorder, overflow: 'hidden',
     marginBottom: SPACING.xl,
   },
   avatarImage: { width: '100%', height: '100%' },
   userInfoCenter: { alignItems: 'center' },
-  userName: { color: 'white', ...TYPOGRAPHY.title, marginBottom: 8 },
+  userName: { color: T.text, ...TYPOGRAPHY.heading, marginBottom: SPACING.sm },
   roleBadge: {
-    backgroundColor: 'rgba(14, 165, 233, 0.2)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 6,
-    borderRadius: RADIUS.xxl,
+    backgroundColor: T.darkSurface,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderColor: T.darkBorder,
   },
-  roleText: { color: '#7DD3FC', fontWeight: '700', ...TYPOGRAPHY.label, marginBottom: 0 },
+  roleText: { color: T.primary, ...TYPOGRAPHY.badge },
   contentArea: { paddingHorizontal: SPACING.xl, paddingBottom: 160 },
-  sectionLabel: { color: T.primary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, marginLeft: SPACING.xs },
-  sectionLabelSecondary: { color: T.textTertiary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, marginLeft: SPACING.xs },
+  sectionLabel: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.md, marginLeft: SPACING.xs },
   profileItem: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.darkCard, padding: SPACING.xl,
-    borderRadius: 28, marginBottom: SPACING.md,
+    backgroundColor: T.darkSurface, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg,
+    minHeight: 64,
+    borderRadius: RADIUS.lg, marginBottom: SPACING.sm,
     borderWidth: 1, borderColor: T.darkBorder,
   },
-  profileItemIcon: { padding: SPACING.md, borderRadius: RADIUS.md, marginRight: SPACING.lg },
   profileItemText: { flex: 1 },
-  profileItemLabel: { color: T.textSecondary, ...TYPOGRAPHY.label, marginBottom: 4 },
-  profileItemValue: { color: 'white', ...TYPOGRAPHY.bodySecondary },
-  preferencesSection: { marginTop: RADIUS.xl },
-  logoutSection: { marginTop: 48 },
+  profileItemLabel: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginBottom: 2 },
+  profileItemValue: { color: T.text, ...TYPOGRAPHY.bodySecondary },
+  preferencesSection: { marginTop: SPACING.xxxl },
+  logoutSection: { marginTop: SPACING.xxxl },
   logoutButton: {
-    backgroundColor: 'rgba(244, 63, 94, 0.1)',
-    ...BUTTON.primary,
-    borderRadius: 28,
+    height: BUTTON.primary.height,
+    backgroundColor: T.darkSurface,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: 'rgba(244, 63, 94, 0.2)',
+    borderColor: T.darkBorder,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
   },
-  logoutText: { color: '#FB7185', ...TYPOGRAPHY.subheading },
-  footerText: { color: T.textInactive, textAlign: 'center', ...TYPOGRAPHY.badge, letterSpacing: 5, marginTop: RADIUS.xl },
+  logoutText: { color: T.rose, ...TYPOGRAPHY.subheading },
+  footerText: { color: T.textTertiary, textAlign: 'center', ...TYPOGRAPHY.badge, marginTop: SPACING.xl },
 });

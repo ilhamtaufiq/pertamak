@@ -1,24 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { ScrollView, View, Text, Image, LinearGradient, BlurView, TouchableOpacity, ActivityIndicator } from '../../tw';
-import { Modal, Alert, StatusBar, Dimensions, StyleSheet, Linking } from 'react-native';
+import { ScrollView, View, Text, Image, TouchableOpacity, ActivityIndicator } from '../../tw';
+import { Modal, Alert, StatusBar, StyleSheet, Linking } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useKegiatanById, useDeleteKegiatan } from '../../hooks/useKegiatan';
-import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Send, Pencil, AlertCircle, CheckCircle2, X } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronLeft, Trash2, ShieldAlert, Image as ImageIcon, Send, Pencil, AlertCircle, X } from 'lucide-react-native';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  emerald: '#10B981',
-  rose: '#FB7185',
-};
+// Destructive action fill: white label on this red passes WCAG AA
+const DANGER_SOLID = '#E11D48';
 
 export default function KegiatanDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -52,7 +45,7 @@ export default function KegiatanDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingScreen}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={T.primary} size="large" />
       </View>
     );
   }
@@ -60,10 +53,10 @@ export default function KegiatanDetailScreen() {
   if (error || !kegiatan) {
     return (
       <View style={styles.errorScreen}>
-        <ShieldAlert color="#F87171" size={64} style={{ marginBottom: 16 }} />
-        <Text style={styles.errorTitle}>Terjadi Kesalahan</Text>
+        <ShieldAlert color="#FCA5A5" size={48} style={{ marginBottom: SPACING.lg }} />
+        <Text style={styles.errorTitle}>Terjadi kesalahan</Text>
         <Text style={styles.errorDesc}>Data tidak ditemukan atau Anda tidak memiliki akses.</Text>
-        <TouchableOpacity onPress={goBack} style={styles.errorBtn}>
+        <TouchableOpacity onPress={goBack} style={styles.errorBtn} accessibilityRole="button">
           <Text style={styles.errorBtnText}>Kembali</Text>
         </TouchableOpacity>
       </View>
@@ -87,11 +80,6 @@ export default function KegiatanDetailScreen() {
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <LinearGradient
-        colors={[COLORS.darkBg, COLORS.darkSurface]}
-        style={StyleSheet.absoluteFill}
-      />
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -100,44 +88,52 @@ export default function KegiatanDetailScreen() {
         scrollEventThrottle={16}
       >
         {/* Custom Header Sticky */}
-        <View style={[styles.customHeader, { paddingTop: Math.max(insets.top, 16) + 8, paddingBottom: 16 }]}>
-          <TouchableOpacity onPress={goBack} style={styles.headerBtn}>
-            <ChevronLeft color="white" size={24} />
+        <View style={[styles.customHeader, { paddingTop: Math.max(insets.top, 16) + 8, paddingBottom: SPACING.lg }]}>
+          <TouchableOpacity onPress={goBack} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Kembali">
+            <ChevronLeft color={T.text} size={22} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detail Laporan</Text>
+          <Text style={styles.headerTitle}>Detail laporan</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity
               onPress={() => router.push(`/kegiatan/create?id=${id}`)}
-              style={styles.headerEditBtn}
+              style={styles.headerBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Ubah laporan"
             >
-              <Pencil color={COLORS.primary} size={20} />
+              <Pencil color={T.primary} size={18} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
                 haptics.impactMedium();
                 setShowConfirmDelete(true);
               }}
-              style={styles.headerDeleteBtn}
+              style={styles.headerBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Hapus laporan"
             >
-              <Trash2 color={COLORS.rose} size={20} />
+              <Trash2 color={T.rose} size={18} />
             </TouchableOpacity>
           </View>
         </View>
         {/* Poster Image or Gallery */}
         <Animated.View entering={FadeInDown} style={styles.posterSection}>
           {kegiatan.media && kegiatan.media.length > 0 ? (
-            <TouchableOpacity onPress={() => setPreviewImage(getImageUrl(kegiatan.media[0].original_url))}>
-            <View style={styles.posterShadow}>
-              <Image
-                source={{ uri: getImageUrl(kegiatan.media[0].original_url) }}
-                style={styles.posterImage}
-                resizeMode="cover"
-              />
-              <View style={styles.photoCountBadge}>
-                <ImageIcon color="white" size={16} style={{ marginRight: 8 }} />
-                <Text style={styles.photoCountText}>{kegiatan.media.length} Foto</Text>
+            <TouchableOpacity
+              onPress={() => setPreviewImage(getImageUrl(kegiatan.media![0].original_url))}
+              accessibilityRole="imagebutton"
+              accessibilityLabel="Perbesar foto"
+            >
+              <View style={styles.posterFrame}>
+                <Image
+                  source={{ uri: getImageUrl(kegiatan.media[0].original_url) }}
+                  style={styles.posterImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.photoCountBadge}>
+                  <ImageIcon color="white" size={14} style={{ marginRight: 6 }} />
+                  <Text style={styles.photoCountText}>{kegiatan.media.length} foto</Text>
+                </View>
               </View>
-            </View>
             </TouchableOpacity>
           ) : (
             <View style={styles.noPhotoBox}>
@@ -150,10 +146,10 @@ export default function KegiatanDetailScreen() {
         <Animated.View entering={FadeInUp.delay(200)} style={styles.contentSection}>
           <View style={styles.contentCard}>
             <View style={styles.dateRow}>
-              <View style={{ flex: 1, paddingRight: 16 }}>
-                <Text style={styles.sectionLabel}>WAKTU KEGIATAN</Text>
+              <View style={{ flex: 1, paddingRight: SPACING.lg }}>
+                <Text style={styles.sectionLabel}>Waktu kegiatan</Text>
                 <View style={styles.dateValueRow}>
-                  <Calendar color="white" size={20} style={{ marginRight: 12 }} />
+                  <Calendar color={T.textSecondary} size={18} style={{ marginRight: SPACING.md }} />
                   <Text style={[styles.dateValue, { flex: 1 }]} numberOfLines={1} adjustsFontSizeToFit>
                     {kegiatan.hari}, {new Date(kegiatan.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </Text>
@@ -167,14 +163,14 @@ export default function KegiatanDetailScreen() {
             <View style={styles.divider} />
 
             <View style={styles.uraianSection}>
-              <Text style={styles.sectionLabel}>URAIAN LAPORAN</Text>
+              <Text style={styles.sectionLabel}>Uraian laporan</Text>
               <Text style={styles.uraianText}>{kegiatan.uraian_kegiatan}</Text>
             </View>
 
             <View>
-              <Text style={styles.sectionLabel}>TITIK LOKASI</Text>
+              <Text style={styles.sectionLabel}>Titik lokasi</Text>
               <View style={styles.locationCard}>
-                <MapPin color={COLORS.primary} size={24} style={{ marginRight: 16 }} />
+                <MapPin color={T.textSecondary} size={20} style={{ marginRight: SPACING.md }} />
                 <View style={styles.locationInfo}>
                   <Text style={styles.locationName}>{kegiatan.lokasi}</Text>
                   {kegiatan.latitude && (
@@ -183,8 +179,10 @@ export default function KegiatanDetailScreen() {
                     </Text>
                   )}
                 </View>
-                <TouchableOpacity 
-                  style={styles.shareBtn} 
+                <TouchableOpacity
+                  style={styles.shareBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Buka lokasi di Google Maps"
                   onPress={() => {
                     if (kegiatan.latitude && kegiatan.longitude) {
                       Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${kegiatan.latitude},${kegiatan.longitude}`);
@@ -193,7 +191,7 @@ export default function KegiatanDetailScreen() {
                     }
                   }}
                 >
-                  <Send color={COLORS.primary} size={20} />
+                  <Send color={T.primary} size={18} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -202,12 +200,14 @@ export default function KegiatanDetailScreen() {
           {/* Full Gallery Section */}
           {kegiatan.media && kegiatan.media.length > 1 && (
             <View style={styles.gallerySection}>
-              <Text style={styles.galleryLabel}>SEMUA DOKUMENTASI</Text>
+              <Text style={[styles.sectionLabel, { marginLeft: 2 }]}>Semua dokumentasi</Text>
               <View style={styles.galleryGrid}>
                 {kegiatan.media.map((item, idx) => (
                   <TouchableOpacity
                     key={idx}
                     style={styles.galleryItem}
+                    accessibilityRole="imagebutton"
+                    accessibilityLabel={`Perbesar foto ${idx + 1}`}
                     onPress={() => setPreviewImage(getImageUrl(item.original_url))}
                   >
                     <Image
@@ -230,14 +230,19 @@ export default function KegiatanDetailScreen() {
         onRequestClose={() => setPreviewImage(null)}
       >
         <View style={styles.previewOverlay}>
-          <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+          <View style={styles.previewModal}>
             <View style={styles.previewHeader}>
-              <TouchableOpacity onPress={() => setPreviewImage(null)} style={styles.previewCloseBtn}>
-                <X color="white" size={24} />
+              <TouchableOpacity
+                onPress={() => setPreviewImage(null)}
+                style={styles.previewCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Tutup pratinjau"
+              >
+                <X color="white" size={22} />
               </TouchableOpacity>
             </View>
-            <Image source={{ uri: previewImage }} style={styles.previewFullImage} resizeMode="contain" />
-          </BlurView>
+            <Image source={{ uri: previewImage ?? undefined }} style={styles.previewFullImage} resizeMode="contain" />
+          </View>
         </View>
       </Modal>
 
@@ -249,155 +254,151 @@ export default function KegiatanDetailScreen() {
         onRequestClose={() => setShowConfirmDelete(false)}
       >
         <View style={styles.modalOverlay}>
-          <BlurView intensity={20} tint="dark" style={styles.deleteModal}>
+          <View style={styles.deleteModal}>
             <Animated.View entering={ZoomIn}>
-              <View style={styles.deleteIconBox}>
-                <AlertCircle color={COLORS.rose} size={48} />
-              </View>
+              <AlertCircle color={DANGER_SOLID} size={40} strokeWidth={1.75} style={{ marginBottom: SPACING.lg }} />
             </Animated.View>
 
-            <Text style={styles.deleteTitle}>Hapus Laporan?</Text>
+            <Text style={styles.deleteTitle}>Hapus laporan?</Text>
             <Text style={styles.deleteDesc}>Data yang sudah dihapus tidak dapat dipulihkan kembali. Lanjutkan?</Text>
 
             <View style={styles.deleteActions}>
-              <TouchableOpacity onPress={() => setShowConfirmDelete(false)} style={styles.cancelBtn}>
+              <TouchableOpacity onPress={() => setShowConfirmDelete(false)} style={styles.cancelBtn} accessibilityRole="button">
                 <Text style={styles.cancelBtnText}>Batal</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDelete} disabled={isDeleting} style={styles.confirmDeleteBtn}>
+              <TouchableOpacity onPress={confirmDelete} disabled={isDeleting} style={styles.confirmDeleteBtn} accessibilityRole="button">
                 {isDeleting ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text style={styles.confirmDeleteText}>Ya, Hapus</Text>
+                  <Text style={styles.confirmDeleteText}>Ya, hapus</Text>
                 )}
               </TouchableOpacity>
             </View>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
-      {/* Floating Back Button */}
-      <BlurView intensity={20} tint="dark" style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-        <TouchableOpacity onPress={goBack} activeOpacity={0.9}>
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.primarySolid]}
-            style={styles.backButton}
-          >
-            <ChevronLeft color="white" size={24} style={{ marginRight: 8 }} />
-            <Text style={styles.backButtonText}>Kembali ke Daftar</Text>
-          </LinearGradient>
+      {/* Bottom Back Bar */}
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <TouchableOpacity onPress={goBack} activeOpacity={0.9} accessibilityRole="button" style={styles.backButton}>
+          <ChevronLeft color="white" size={20} style={{ marginRight: SPACING.xs }} />
+          <Text style={styles.backButtonText}>Kembali ke daftar</Text>
         </TouchableOpacity>
-      </BlurView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#020617' },
-  loadingScreen: { flex: 1, backgroundColor: '#020617', alignItems: 'center', justifyContent: 'center' },
-  errorScreen: { flex: 1, backgroundColor: '#020617', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorTitle: { color: 'white', fontSize: 20, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
-  errorDesc: { color: '#94A3B8', textAlign: 'center', marginBottom: 32 },
-  errorBtn: { backgroundColor: '#0EA5E9', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20 },
-  errorBtnText: { color: 'white', fontWeight: '700' },
+  container: { flex: 1, backgroundColor: T.darkBg },
+  loadingScreen: { flex: 1, backgroundColor: T.darkBg, alignItems: 'center', justifyContent: 'center' },
+  errorScreen: { flex: 1, backgroundColor: T.darkBg, alignItems: 'center', justifyContent: 'center', padding: SPACING.xxl },
+  errorTitle: { color: T.text, ...TYPOGRAPHY.heading, textAlign: 'center', marginBottom: SPACING.sm },
+  errorDesc: { color: T.textSecondary, ...TYPOGRAPHY.body, textAlign: 'center', marginBottom: SPACING.xxxl },
+  errorBtn: {
+    backgroundColor: T.primaryDeep, height: BUTTON.primary.height, minWidth: 140, paddingHorizontal: SPACING.xxl,
+    borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center',
+  },
+  errorBtnText: { color: 'white', ...TYPOGRAPHY.bodySecondary },
   customHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 16,
-    backgroundColor: COLORS.darkBg,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: SPACING.lg,
+    backgroundColor: T.darkBg,
+    borderBottomWidth: 1, borderBottomColor: T.darkBorder,
   },
-  headerTitle: { color: 'white', fontWeight: '900', fontSize: 18 },
-  headerBtn: { backgroundColor: 'rgba(255,255,255,0.1)', padding: 8, borderRadius: 12 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerEditBtn: { backgroundColor: 'rgba(56,189,248,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)' },
-  headerDeleteBtn: { backgroundColor: 'rgba(244,63,94,0.1)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)' },
+  headerTitle: { color: T.text, ...TYPOGRAPHY.subheading },
+  headerBtn: {
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: T.darkSurface, borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder,
+  },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   scrollView: { flex: 1 },
-  posterSection: { paddingHorizontal: 24, marginBottom: 32 },
-  posterShadow: { boxShadow: '0px 0px 20px rgba(14, 165, 233, 0.2)', elevation: 10 },
-  posterImage: { width: '100%', height: 320, borderRadius: 40, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  posterSection: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.xl, marginTop: SPACING.lg },
+  posterFrame: {
+    borderRadius: RADIUS.lg, overflow: 'hidden', borderWidth: 1, borderColor: T.darkBorder, backgroundColor: T.darkSurface,
+  },
+  posterImage: { width: '100%', height: 260 },
   photoCountBadge: {
-    position: 'absolute', bottom: 24, right: 24, backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)', flexDirection: 'row', alignItems: 'center',
+    position: 'absolute', bottom: SPACING.md, right: SPACING.md, backgroundColor: 'rgba(2,6,23,0.75)',
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.sm,
+    flexDirection: 'row', alignItems: 'center',
   },
-  photoCountText: { color: 'white', fontWeight: '700' },
+  photoCountText: { color: 'white', ...TYPOGRAPHY.badge },
   noPhotoBox: {
-    width: '100%', height: 160, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 40,
-    alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    width: '100%', height: 120, backgroundColor: T.darkSurface, borderRadius: RADIUS.lg,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: T.darkBorder,
   },
-  noPhotoText: { color: '#475569', fontWeight: '700' },
-  contentSection: { paddingHorizontal: 24, paddingBottom: 160 },
+  noPhotoText: { color: T.textSecondary, ...TYPOGRAPHY.caption },
+  contentSection: { paddingHorizontal: SPACING.lg, paddingBottom: 160 },
   contentCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 40, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)', padding: 32,
+    backgroundColor: T.darkSurface, borderRadius: RADIUS.lg, borderWidth: 1,
+    borderColor: T.darkBorder, padding: SPACING.xl,
   },
-  dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
-  sectionLabel: { color: '#38BDF8', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 12, textTransform: 'uppercase' },
+  dateRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: SPACING.xl },
+  sectionLabel: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.sm },
   dateValueRow: { flexDirection: 'row', alignItems: 'center' },
-  dateValue: { color: 'white', fontSize: 20, fontWeight: '700' },
+  dateValue: { color: T.text, ...TYPOGRAPHY.subheading },
   statusBadge: {
-    backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 16, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)',
+    backgroundColor: T.darkBg, paddingHorizontal: SPACING.md, paddingVertical: 4,
+    borderRadius: RADIUS.sm, borderWidth: 1, borderColor: T.darkBorder,
   },
-  statusText: { color: '#34D399', fontWeight: '900', fontSize: 10, letterSpacing: -0.3, textTransform: 'uppercase', textAlign: 'center' },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: 32 },
-  uraianSection: { marginBottom: 32 },
-  uraianText: { color: '#CBD5E1', fontSize: 18, lineHeight: 28, fontWeight: '500' },
+  statusText: { color: T.emerald, ...TYPOGRAPHY.badge, textAlign: 'center' },
+  divider: { height: 1, backgroundColor: T.darkBorder, marginBottom: SPACING.xl },
+  uraianSection: { marginBottom: SPACING.xl },
+  uraianText: { color: '#CBD5E1', ...TYPOGRAPHY.body },
   locationCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(15,23,42,0.5)',
-    padding: 20, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: T.darkBg,
+    padding: SPACING.lg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder,
   },
   locationInfo: { flex: 1 },
-  locationName: { color: 'white', fontWeight: '700', fontSize: 16, marginBottom: 4 },
-  locationCoords: { color: '#475569', fontSize: 12, fontWeight: '500' },
+  locationName: { color: T.text, ...TYPOGRAPHY.bodySecondary, marginBottom: 2 },
+  locationCoords: { color: T.textTertiary, ...TYPOGRAPHY.caption },
   shareBtn: {
-    backgroundColor: 'rgba(56,189,248,0.1)', padding: 12, borderRadius: 16,
-    borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)', marginLeft: 8,
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder, marginLeft: SPACING.sm,
   },
-  gallerySection: { marginTop: 32 },
-  galleryLabel: { color: '#38BDF8', fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 16, marginLeft: 8 },
-  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  gallerySection: { marginTop: SPACING.xxl },
+  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md },
   galleryItem: {
-    width: '47%', aspectRatio: 1, borderRadius: 32, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+    width: '47%', aspectRatio: 1, borderRadius: RADIUS.md, overflow: 'hidden',
+    borderWidth: 1, borderColor: T.darkBorder,
   },
   galleryImage: { width: '100%', height: '100%' },
-  modalOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 32 },
+  modalOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(2,6,23,0.8)', paddingHorizontal: SPACING.xxl },
   deleteModal: {
-    backgroundColor: 'rgba(15,23,42,0.9)', borderRadius: 48, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)', padding: 40, width: '100%', alignItems: 'center',
+    backgroundColor: T.darkSurface, borderRadius: RADIUS.lg, borderWidth: 1,
+    borderColor: T.darkBorder, padding: SPACING.xxl, width: '100%', alignItems: 'center',
   },
-  deleteIconBox: {
-    width: 96, height: 96, backgroundColor: 'rgba(244,63,94,0.2)', borderRadius: 48,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
-  },
-  deleteTitle: { color: 'white', fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
-  deleteDesc: { color: '#94A3B8', textAlign: 'center', marginBottom: 40, lineHeight: 24 },
-  deleteActions: { flexDirection: 'row', gap: 16, width: '100%' },
+  deleteTitle: { color: T.text, ...TYPOGRAPHY.heading, textAlign: 'center', marginBottom: SPACING.sm },
+  deleteDesc: { color: T.textSecondary, ...TYPOGRAPHY.body, textAlign: 'center', marginBottom: SPACING.xxl },
+  deleteActions: { flexDirection: 'row', gap: SPACING.md, width: '100%' },
   cancelBtn: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', paddingVertical: 20, borderRadius: 24,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center',
+    flex: 1, height: BUTTON.primary.height, backgroundColor: T.darkBg, borderRadius: RADIUS.md,
+    borderWidth: 1, borderColor: T.darkBorder, alignItems: 'center', justifyContent: 'center',
   },
-  cancelBtnText: { color: '#94A3B8', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
+  cancelBtnText: { color: T.textSecondary, ...TYPOGRAPHY.bodySecondary },
   confirmDeleteBtn: {
-    flex: 2, backgroundColor: '#EF4444', paddingVertical: 20, borderRadius: 24, alignItems: 'center',
-    boxShadow: '0px 0px 15px rgba(239, 68, 68, 0.4)', elevation: 8,
+    flex: 1, height: BUTTON.primary.height, backgroundColor: DANGER_SOLID, borderRadius: RADIUS.md,
+    alignItems: 'center', justifyContent: 'center',
   },
-  confirmDeleteText: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
+  confirmDeleteText: { color: 'white', ...TYPOGRAPHY.bodySecondary },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 24, paddingTop: 24,
-    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg,
+    backgroundColor: T.darkBg, borderTopWidth: 1, borderTopColor: T.darkBorder,
   },
   backButton: {
-    height: 64, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.4)', elevation: 8,
+    height: BUTTON.primary.height, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', backgroundColor: T.primaryDeep,
   },
-  backButtonText: { color: 'white', fontSize: 20, fontWeight: '900' },
+  backButtonText: { color: 'white', ...TYPOGRAPHY.subheading },
 
   previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
   previewModal: { flex: 1 },
-  previewHeader: { position: 'absolute', top: 60, right: 20, zIndex: 10 },
-  previewCloseBtn: { padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 },
+  previewHeader: { position: 'absolute', top: 60, right: SPACING.lg, zIndex: 10 },
+  previewCloseBtn: {
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: RADIUS.md,
+  },
   previewFullImage: { width: '100%', height: '90%', marginTop: 80 },
 });
