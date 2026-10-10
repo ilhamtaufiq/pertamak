@@ -63,12 +63,11 @@ export default function KegiatanListTab() {
     isRefetching
   } = useKegiatan({ month: selectedMonth, year: selectedYear });
 
-  // Reset to first page (7 items) when screen is focused
+  // Refresh in the background when the tab is focused. Unlike resetQueries, this keeps
+  // the current list on screen instead of flashing the loading state and jumping to top.
   useFocusEffect(
     useCallback(() => {
-      // Use a subtle check to see if we should reset (e.g. if we have more than 7 items)
-      // We don't include infiniteData in deps to avoid the fetch-reset-fetch loop
-      queryClient.resetQueries({ queryKey: ['kegiatans'] });
+      queryClient.invalidateQueries({ queryKey: ['kegiatans'] });
     }, [queryClient])
   );
 
@@ -138,7 +137,7 @@ export default function KegiatanListTab() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>Audit Lapangan</Text>
+              <Text style={{ color: T.primary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>Jurnal Kegiatan</Text>
               <Text style={{ color: 'white', fontSize: 32, fontWeight: '900', letterSpacing: -1 }}>Laporan</Text>
             </View>
           </View>
@@ -191,12 +190,15 @@ export default function KegiatanListTab() {
             )}
             <TouchableOpacity
               onPress={() => setShowFilterModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filter periode"
               style={{ height: 40, width: 40, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' }}
             >
               <ListFilter color="#38BDF8" size={20} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowExportModal(true)}
+              accessibilityRole="button"
               accessibilityLabel="Export laporan"
               style={{ height: 40, width: 40, marginLeft: 8, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' }}
             >
@@ -225,7 +227,7 @@ export default function KegiatanListTab() {
       {isLoading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color="#38BDF8" size="large" />
-          <Text style={{ color: T.textSecondary, marginTop: 16, fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 }}>Membangun Katalog...</Text>
+          <Text style={{ color: T.textSecondary, marginTop: 16, fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 }}>Memuat kegiatan...</Text>
         </View>
       ) : (
         <FlashList

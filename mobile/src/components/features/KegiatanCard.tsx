@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, Image, BlurView } from '../../tw';
 import { Kegiatan } from '../../types/kegiatan';
 import { haptics } from '../../services/haptics';
-import { MapPin, Calendar, ChevronRight, CheckCircle2, FileText, Image as ImageIcon } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 
 const COLORS = {
@@ -13,7 +13,6 @@ const COLORS = {
   text: '#FFFFFF',
   textSecondary: '#64748B',
   textTertiary: '#475569',
-  emerald: '#10B981',
   border: 'rgba(255,255,255,0.1)',
 };
 
@@ -32,10 +31,12 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
   const firstMedia = hasMedia ? item.media![0].original_url : null;
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       activeOpacity={0.9}
       onPress={handlePress}
       style={styles.card}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.uraian_kegiatan}, ${item.lokasi}, ${item.hari}`}
     >
       <BlurView intensity={10} tint="dark" style={styles.cardInner}>
         <View style={styles.contentRow}>
@@ -69,9 +70,11 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
             </View>
 
             <View style={styles.footer}>
-              <View style={styles.statusBadge}>
-                <CheckCircle2 color={COLORS.emerald} size={12} style={{ marginRight: 6 }} />
-                <Text style={styles.statusText}>Terverifikasi</Text>
+              <View style={styles.photoInfo}>
+                <ImageIcon color={COLORS.textTertiary} size={12} style={{ marginRight: 6 }} />
+                <Text style={styles.photoInfoText}>
+                  {hasMedia ? `${item.media?.length} foto` : 'Tanpa foto'}
+                </Text>
               </View>
               <View style={styles.detailLink}>
                 <Text style={styles.detailText}>Detail</Text>
@@ -97,7 +100,7 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
             ) : (
               <View style={styles.noMediaFrame}>
                 <FileText color={COLORS.textTertiary} size={32} strokeWidth={1} />
-                <Text style={styles.noMediaText}>No Media</Text>
+                <Text style={styles.noMediaText}>Tanpa foto</Text>
               </View>
             )}
           </View>
@@ -148,17 +151,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)',
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
-  },
-  statusText: { color: '#34D399', fontSize: 10, fontWeight: '900', letterSpacing: -0.3, textTransform: 'uppercase' },
+  photoInfo: { flexDirection: 'row', alignItems: 'center' },
+  photoInfoText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
   detailLink: { flexDirection: 'row', alignItems: 'center' },
   detailText: { color: COLORS.primary, fontSize: 12, fontWeight: '700', marginRight: 4 },
   mediaSection: { width: 96, alignItems: 'center', justifyContent: 'center' },

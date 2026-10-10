@@ -8,7 +8,7 @@ import { KegiatanCard } from '../../components/features/KegiatanCard';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { RefreshControl, StatusBar, StyleSheet, Dimensions } from 'react-native';
-import { ListTodo, Map as MapIcon, Bell, CalendarDays, ArrowRight } from 'lucide-react-native';
+import { ListTodo, Map as MapIcon, Plus, FolderOpen, CalendarDays, ArrowRight } from 'lucide-react-native';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -29,6 +29,8 @@ export default function HomeTab() {
       activeOpacity={0.8}
       onPress={() => router.push(route as any)}
       style={styles.featureItem}
+      accessibilityRole="button"
+      accessibilityLabel={title}
     >
       <BlurView intensity={10} tint="dark" style={styles.featureCard}>
         <View style={[styles.featureIconBox, { backgroundColor: `${color}20`, borderColor: `${color}30` }]}>
@@ -66,27 +68,26 @@ export default function HomeTab() {
             <Animated.View entering={FadeInDown.delay(100)} style={styles.userRow}>
               <View style={styles.avatarFrame}>
                 <Image
-                  source={{ uri: `https://ui-avatars.com/api/?name=${user?.name}&background=0EA5E9&color=fff&bold=true&size=128` }}
+                  source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0EA5E9&color=fff&bold=true&size=128` }}
                   style={styles.avatarImage}
                 />
               </View>
               <View style={styles.userInfo}>
-                <Text style={styles.statusText}>STATUS: ONLINE</Text>
+                <Text style={styles.statusText}>{user?.role === 'admin' ? 'Administrator' : 'Karyawan'}</Text>
                 <Text style={styles.greetingText}>Halo, {user?.name?.split(' ')[0]} 👋</Text>
               </View>
             </Animated.View>
 
-            <TouchableOpacity style={styles.bellButton}>
-              <Bell color="white" size={24} strokeWidth={1.5} />
-            </TouchableOpacity>
           </View>
 
           {/* Service Grid Section */}
           <Animated.View entering={FadeInDown.delay(200)} style={styles.featureSection}>
             <Text style={styles.sectionLabel}>FITUR UTAMA</Text>
             <View style={styles.featureGrid}>
-              <FeatureItem icon={ListTodo} title="Kegiatan" color={T.primary} route="/kegiatan/create" />
+              <FeatureItem icon={Plus} title="Buat Kegiatan" color={T.primary} route="/kegiatan/create" />
+              <FeatureItem icon={ListTodo} title="Jurnal" color="#34D399" route="/(tabs)/kegiatan" />
               <FeatureItem icon={MapIcon} title="Peta" color="#F472B6" route="/(tabs)/maps" />
+              <FeatureItem icon={FolderOpen} title="Media" color="#FBBF24" route="/(tabs)/media" />
             </View>
           </Animated.View>
 
@@ -122,6 +123,7 @@ export default function HomeTab() {
               <View style={styles.emptyBox}>
                 <CalendarDays color="#1E293B" size={64} strokeWidth={1} />
                 <Text style={styles.emptyText}>Belum ada kegiatan terbaru</Text>
+                <Text style={styles.emptyHint}>Tekan Buat Kegiatan untuk mencatat yang pertama</Text>
               </View>
             )}
           </Animated.View>
@@ -146,14 +148,10 @@ const styles = StyleSheet.create({
   userInfo: { marginLeft: SPACING.lg },
   statusText: { color: T.textSecondary, ...TYPOGRAPHY.badge, marginBottom: 4 },
   greetingText: { color: 'white', ...TYPOGRAPHY.heading },
-  bellButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)', padding: SPACING.md, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: T.darkBorder,
-  },
   featureSection: { marginBottom: SPACING.xxxl },
   sectionLabel: { color: T.primary, ...TYPOGRAPHY.label, letterSpacing: 4, marginBottom: SPACING.xl, paddingLeft: 4 },
-  featureGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  featureItem: { width: '47%' },
+  featureGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: SPACING.md },
+  featureItem: { width: '48%' },
   featureCard: {
     padding: SPACING.xl, borderRadius: RADIUS.xxl, borderWidth: 1, borderColor: T.darkBorder,
     backgroundColor: T.darkCard, alignItems: 'center',
@@ -178,4 +176,5 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xxxl, borderStyle: 'dashed', borderWidth: 1, borderColor: T.darkBorder,
   },
   emptyText: { color: T.textSecondary, marginTop: SPACING.lg, ...TYPOGRAPHY.caption },
+  emptyHint: { color: T.textTertiary, marginTop: SPACING.xs, fontSize: 12, fontWeight: '600' },
 });
