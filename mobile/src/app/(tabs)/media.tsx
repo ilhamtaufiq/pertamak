@@ -35,6 +35,7 @@ import { getMediaUrl } from '../../config';
 import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
 import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SPACING } from '../../tokens';
+import { confirmAction } from '../../services/dialogs';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -103,22 +104,19 @@ export default function MediaTab() {
    const handleDelete = async () => {
       if (!selectedItem) return;
       const kind = selectedItem.type === 'folder' ? 'folder' : 'berkas';
-      Alert.alert(
-         `Hapus ${kind} permanen?`,
-         `"${selectedItem.name}" akan dihapus permanen dan tidak bisa dikembalikan.`,
-         [
-            { text: 'Batal', style: 'cancel' },
-            {
-               text: 'Hapus permanen', style: 'destructive', onPress: async () => {
-                  try {
-                     await deleteMutation.mutateAsync({ type: selectedItem.type, id: selectedItem.id });
-                     setShowOptions(false);
-                     haptics.impactHeavy();
-                  } catch (e: any) { Alert.alert(`Gagal menghapus ${kind}`, describeError(e)); }
-               }
-            }
-         ]
-      );
+      const confirmed = await confirmAction({
+         title: `Hapus ${kind} permanen?`,
+         message: `"${selectedItem.name}" akan dihapus permanen dan tidak bisa dikembalikan.`,
+         confirmText: 'Hapus permanen',
+         destructive: true,
+      });
+      if (!confirmed) return;
+
+      try {
+         await deleteMutation.mutateAsync({ type: selectedItem.type, id: selectedItem.id });
+         setShowOptions(false);
+         haptics.impactHeavy();
+      } catch (e: any) { Alert.alert(`Gagal menghapus ${kind}`, describeError(e)); }
    };
 
    const isSearching = searchQuery.trim().length > 0;
