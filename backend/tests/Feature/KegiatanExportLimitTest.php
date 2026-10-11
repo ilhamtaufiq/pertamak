@@ -53,6 +53,18 @@ class KegiatanExportLimitTest extends TestCase
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 
+    public function test_docx_export_caps_embedded_images_and_reports_the_limit(): void
+    {
+        config(['kegiatan.pdf_max_images' => 2]);
+        Sanctum::actingAs($this->karyawan);
+
+        $response = $this->get('/api/kegiatans/export/docx?month=3&year=2026');
+
+        $response->assertOk();
+        $response->assertHeader('X-Export-Images-Limit', '2');
+        $response->assertHeader('X-Export-Images-Skipped', '1');
+    }
+
     public function test_pdf_export_reports_zero_skipped_under_the_default_limit(): void
     {
         Sanctum::actingAs($this->karyawan);
