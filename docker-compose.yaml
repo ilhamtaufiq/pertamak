@@ -19,7 +19,7 @@ services:
       - SESSION_DOMAIN=pertamak.cianjur.space
       - SESSION_SECURE_COOKIE=true
       - SANCTUM_STATEFUL_DOMAINS=pertamak.cianjur.space
-      - QUEUE_CONNECTION=sync
+      - QUEUE_CONNECTION=database
     volumes:
       - storage:/var/www/html/storage/app
     depends_on:

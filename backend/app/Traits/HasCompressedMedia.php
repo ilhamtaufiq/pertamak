@@ -16,8 +16,7 @@ trait HasCompressedMedia
         $this->addMediaConversion('thumb')
             ->width(200)
             ->height(200)
-            ->sharpen(10)
-            ->nonQueued();
+            ->sharpen(10);
 
         // Optimized conversion for general display (compressed)
         $this->addMediaConversion('optimized')
@@ -25,13 +24,11 @@ trait HasCompressedMedia
             ->height(1200)
             ->fit(Fit::Max, 1200, 1200)
             ->quality(60)
-            ->sharpen(10)
-            ->nonQueued();
+            ->sharpen(10);
             
         // WebP conversion for even better compression
         $this->addMediaConversion('webp')
             ->format('webp')
-            ->quality(60)
-            ->nonQueued();
+            ->quality(60);
     }
 }
