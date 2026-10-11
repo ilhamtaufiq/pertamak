@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Alert, StatusBar, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_VERSION } from '../../config';
+import { confirmAction } from '../../services/dialogs';
 import * as Updates from 'expo-updates';
 import { TYPOGRAPHY, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
@@ -17,18 +18,17 @@ export default function ProfileTab() {
   const [isCheckingUpdate, setIsCheckingUpdate] = React.useState(false);
   const roleLabel = user?.role === 'admin' ? 'Administrator' : 'Karyawan';
 
-  const handleLogout = () => {
-    Alert.alert('Keluar dari akun?', 'Anda perlu masuk lagi untuk membuka aplikasi.', [
-      { text: 'Batal', style: 'cancel' },
-      {
-        text: 'Keluar',
-        style: 'destructive',
-        onPress: async () => {
-          await clearAuth();
-          router.replace('/(auth)/login');
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    const confirmed = await confirmAction({
+      title: 'Keluar dari akun?',
+      message: 'Anda perlu masuk lagi untuk membuka aplikasi.',
+      confirmText: 'Keluar',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    await clearAuth();
+    router.replace('/(auth)/login');
   };
 
   const handleCheckUpdate = async () => {
