@@ -52,7 +52,7 @@ class KegiatanExportTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('Laporan_Kegiatan_2026_03_', $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('filename="Laporan Kegiatan - Budi - Maret - 2026.pdf"', $response->headers->get('content-disposition'));
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 

@@ -242,9 +242,9 @@ export function KegiatanPage() {
             link.href = url;
 
             const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = 'Laporan_Kegiatan.docx';
+            let filename = 'Laporan Kegiatan.docx';
             if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
                 if (filenameMatch) filename = filenameMatch[1];
             }
 

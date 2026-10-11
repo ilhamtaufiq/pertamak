@@ -260,17 +260,26 @@ class KegiatanController extends Controller
         return !empty($filters['user_id']) ? User::find($filters['user_id']) : null;
     }
 
+    /**
+     * "Laporan Kegiatan - {Nama} - {Bulan} - {Tahun}.{ext}". Missing parts read "Semua ...".
+     */
     private function exportFilename(array $filters, string $extension): string
     {
-        $filename = 'Laporan_Kegiatan';
-        if (!empty($filters['year'])) {
-            $filename .= '_' . $filters['year'];
-            if (!empty($filters['month'])) {
-                $filename .= '_' . str_pad($filters['month'], 2, '0', STR_PAD_LEFT);
-            }
-        }
+        $nama = $this->cleanFilenamePart($this->exportUser($filters)?->name ?? 'Semua Karyawan');
+        $bulan = !empty($filters['month'])
+            ? Carbon::create(2000, (int) $filters['month'], 1)->locale('id')->translatedFormat('F')
+            : 'Semua Bulan';
+        $tahun = !empty($filters['year']) ? (string) $filters['year'] : 'Semua Tahun';
 
-        return $filename . '_' . now()->format('His') . '.' . $extension;
+        return "Laporan Kegiatan - {$nama} - {$bulan} - {$tahun}.{$extension}";
+    }
+
+    /** Removes characters that are not allowed in file names and collapses spaces. */
+    private function cleanFilenamePart(string $value): string
+    {
+        $clean = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], ' ', $value);
+
+        return trim(preg_replace('/\s+/', ' ', $clean));
     }
 
     /**

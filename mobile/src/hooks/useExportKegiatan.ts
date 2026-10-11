@@ -23,29 +23,35 @@ const UTI_TYPES: Record<ExportFormat, string> = {
   docx: 'org.openxmlformats.wordprocessingml.document',
 };
 
-function buildFilename({ format, month, year }: ExportKegiatanParams) {
-  let name = 'Laporan_Kegiatan';
-  if (year) {
-    name += `_${year}`;
-    if (month) name += `_${String(month).padStart(2, '0')}`;
-  }
-  return `${name}.${format}`;
+const MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+/** Same pattern the server uses: "Laporan Kegiatan - {Nama} - {Bulan} - {Tahun}". */
+function fallbackFilename({ format, month, year }: ExportKegiatanParams, name: string) {
+  const bulan = month ? MONTHS[month - 1] : 'Semua Bulan';
+  const tahun = year ? String(year) : 'Semua Tahun';
+  return `Laporan Kegiatan - ${name} - ${bulan} - ${tahun}.${format}`;
 }
 
-function parseErrorMessage(body: string, status: number) {
-  try {
-    return JSON.parse(body).message || `Export gagal (${status})`;
-  } catch {
-    return `Export gagal (${status})`;
-  }
+function sanitize(name: string) {
+  return name.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Reads the file name the server chose from Content-Disposition. */
+function filenameFromHeaders(headers?: Record<string, string>): string | null {
+  const value = headers?.['content-disposition'] ?? headers?.['Content-Disposition'];
+  const match = value?.match(/filename="([^"]+)"/);
+  return match ? sanitize(match[1]) : null;
 }
 
 /**
  * Downloads the current user's kegiatan report (PDF/DOCX) and opens the share sheet.
- * The backend scopes non-admin users to their own kegiatan.
+ * The backend scopes non-admin users to their own kegiatan and names the file.
  */
 export function useExportKegiatan() {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
 
   return useMutation({
     mutationFn: async (params: ExportKegiatanParams) => {
@@ -58,13 +64,18 @@ export function useExportKegiatan() {
         Authorization: `Bearer ${token}`,
         Accept: `${MIME_TYPES[params.format]}, application/json`,
       };
-      const filename = buildFilename(params);
+      const fallbackName = user?.role === 'admin' ? 'Semua Karyawan' : sanitize(user?.name ?? 'Karyawan');
 
       if (Platform.OS === 'web') {
         const response = await fetch(url, { headers });
         if (!response.ok) {
-          throw new Error(parseErrorMessage(await response.text(), response.status));
+          const body = await response.text();
+          throw new Error(parseErrorMessage(body, response.status));
         }
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value, key) => { responseHeaders[key] = value; });
+        const filename = filenameFromHeaders(responseHeaders) ?? fallbackFilename(params, fallbackName);
+
         const blobUrl = URL.createObjectURL(await response.blob());
         const link = document.createElement('a');
         link.href = blobUrl;
@@ -76,8 +87,9 @@ export function useExportKegiatan() {
         return filename;
       }
 
-      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
-      const result = await FileSystem.downloadAsync(url, fileUri, { headers });
+      // Download to a temporary name first, because the final name comes from the response headers
+      const tempUri = `${FileSystem.cacheDirectory}export-${Date.now()}.${params.format}`;
+      const result = await FileSystem.downloadAsync(url, tempUri, { headers });
 
       if (result.status !== 200) {
         const body = await FileSystem.readAsStringAsync(result.uri).catch(() => '');
@@ -85,11 +97,16 @@ export function useExportKegiatan() {
         throw new Error(parseErrorMessage(body, result.status));
       }
 
+      const filename = filenameFromHeaders(result.headers) ?? fallbackFilename(params, fallbackName);
+      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.deleteAsync(fileUri, { idempotent: true });
+      await FileSystem.moveAsync({ from: result.uri, to: fileUri });
+
       if (!(await Sharing.isAvailableAsync())) {
         throw new Error('Fitur berbagi file tidak tersedia di perangkat ini');
       }
 
-      await Sharing.shareAsync(result.uri, {
+      await Sharing.shareAsync(fileUri, {
         mimeType: MIME_TYPES[params.format],
         UTI: UTI_TYPES[params.format],
         dialogTitle: 'Simpan atau bagikan laporan',
@@ -98,4 +115,12 @@ export function useExportKegiatan() {
       return filename;
     },
   });
+}
+
+function parseErrorMessage(body: string, status: number) {
+  try {
+    return JSON.parse(body).message || `Export gagal (${status})`;
+  } catch {
+    return `Export gagal (${status})`;
+  }
 }
