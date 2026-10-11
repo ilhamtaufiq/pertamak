@@ -5,37 +5,28 @@ import { useAuthStore } from '../../stores/authStore';
 import { Stack, useRouter } from 'expo-router';
 import { useKegiatan } from '../../hooks/useKegiatan';
 import { KegiatanCard } from '../../components/features/KegiatanCard';
-import { Animated } from '../../tw/animated';
-import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { RefreshControl, StatusBar, StyleSheet } from 'react-native';
-import { ListTodo, Map as MapIcon, Plus, FolderOpen, CalendarDays, ArrowRight } from 'lucide-react-native';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
+import { Plus, ListTodo, Map as MapIcon, FolderOpen, ArrowRight } from 'lucide-react-native';
+import { TYPOGRAPHY, COLORS as T, RADIUS, SPACING } from '../../tokens';
+
+const QUICK_ACTIONS = [
+  { icon: ListTodo, label: 'Jurnal', route: '/(tabs)/kegiatan' },
+  { icon: MapIcon, label: 'Peta', route: '/(tabs)/maps' },
+  { icon: FolderOpen, label: 'Media', route: '/(tabs)/media' },
+] as const;
 
 export default function HomeTab() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const { data: kegiatan, isLoading, refetch } = useKegiatan();
+  const { data: kegiatan, isLoading, refetch, isRefetching } = useKegiatan();
 
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
 
   const recentKegiatan = (kegiatan?.pages.flatMap(page => page.data) || []).slice(0, 5);
-
-  const FeatureItem = ({ icon: Icon, title, color, route }: { icon: any, title: string, color: string, route: string }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => router.push(route as any)}
-      style={styles.featureItem}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
-      <View style={styles.featureCard}>
-        <Icon color={color} size={22} strokeWidth={2} />
-        <Text style={styles.featureTitle}>{title}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const firstName = user?.name?.split(' ')[0] ?? '';
 
   return (
     <View style={styles.container}>
@@ -48,79 +39,91 @@ export default function HomeTab() {
 
       <ScrollView
         style={styles.scroll}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor={T.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor={T.primary} />
         }
       >
-        {/* Header Area */}
-        <View style={styles.headerArea}>
-          <View style={styles.headerRow}>
-            <Animated.View entering={FadeInDown.delay(100)} style={styles.userRow}>
-              <View style={styles.avatarFrame}>
-                <Image
-                  source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0EA5E9&color=fff&bold=true&size=128` }}
-                  style={styles.avatarImage}
-                />
-              </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.statusText}>{user?.role === 'admin' ? 'Administrator' : 'Karyawan'}</Text>
-                <Text style={styles.greetingText}>Halo, {user?.name?.split(' ')[0]}</Text>
-              </View>
-            </Animated.View>
-
+        {/* Greeting */}
+        <View style={styles.greetingRow}>
+          <Image
+            source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0284C7&color=fff&bold=true&size=96` }}
+            style={styles.avatar}
+            accessibilityLabel="Foto profil"
+          />
+          <View style={styles.greetingText}>
+            <Text style={styles.date}>{today}</Text>
+            <Text style={styles.greeting} numberOfLines={1}>Halo, {firstName}</Text>
           </View>
-
-          {/* Service Grid Section */}
-          <Animated.View entering={FadeInDown.delay(200)} style={styles.featureSection}>
-            <Text style={styles.sectionLabel}>Fitur utama</Text>
-            <View style={styles.featureGrid}>
-              <FeatureItem icon={Plus} title="Buat Kegiatan" color={T.primary} route="/kegiatan/create" />
-              <FeatureItem icon={ListTodo} title="Jurnal" color={T.textSecondary} route="/(tabs)/kegiatan" />
-              <FeatureItem icon={MapIcon} title="Peta" color={T.textSecondary} route="/(tabs)/maps" />
-              <FeatureItem icon={FolderOpen} title="Media" color={T.textSecondary} route="/(tabs)/media" />
-            </View>
-          </Animated.View>
-
-          {/* Recent Activities Section */}
-          <Animated.View entering={FadeInUp.delay(400)} style={styles.recentSection}>
-            <View style={styles.recentHeader}>
-              <View style={{ flex: 1, paddingRight: SPACING.md }}>
-                <Text style={styles.recentTitle}>Kegiatan Terakhir</Text>
-                <Text style={styles.recentSubtitle}>Pantau progres pengerjaan harian Anda</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push('/(tabs)/kegiatan')}
-                style={styles.seeAllButton}
-                accessibilityRole="button"
-                accessibilityLabel="Lihat semua kegiatan"
-              >
-                <Text style={styles.seeAllText}>Semua</Text>
-                <ArrowRight color={T.primary} size={14} />
-              </TouchableOpacity>
-            </View>
-
-            {isLoading ? (
-              <View style={styles.loadingBox}>
-                <ActivityIndicator color={T.primary} size="large" />
-              </View>
-            ) : recentKegiatan.length > 0 ? (
-              recentKegiatan.map((item: any) => (
-                <KegiatanCard
-                  key={item.id}
-                  item={item}
-                  onPress={(id) => router.push(`/kegiatan/${id}`)}
-                />
-              ))
-            ) : (
-              <View style={styles.emptyBox}>
-                <CalendarDays color={T.darkBorder} size={56} strokeWidth={1.25} />
-                <Text style={styles.emptyText}>Belum ada kegiatan terbaru</Text>
-                <Text style={styles.emptyHint}>Tekan Buat Kegiatan untuk mencatat yang pertama</Text>
-              </View>
-            )}
-          </Animated.View>
         </View>
+
+        {/* Primary action */}
+        <TouchableOpacity
+          onPress={() => router.push('/kegiatan/create')}
+          style={styles.primaryAction}
+          accessibilityRole="button"
+          accessibilityLabel="Buat kegiatan baru"
+        >
+          <View style={styles.primaryIcon}>
+            <Plus color="white" size={22} strokeWidth={2.5} />
+          </View>
+          <View style={styles.primaryText}>
+            <Text style={styles.primaryTitle}>Buat kegiatan baru</Text>
+            <Text style={styles.primaryHint}>Catat lokasi, uraian, dan foto dokumentasi</Text>
+          </View>
+          <ArrowRight color="white" size={20} />
+        </TouchableOpacity>
+
+        {/* Quick actions */}
+        <View style={styles.quickRow}>
+          {QUICK_ACTIONS.map(({ icon: Icon, label, route }) => (
+            <TouchableOpacity
+              key={label}
+              onPress={() => router.push(route as any)}
+              style={styles.quickItem}
+              accessibilityRole="button"
+              accessibilityLabel={label}
+            >
+              <View style={styles.quickIcon}>
+                <Icon color={T.textSecondary} size={20} strokeWidth={2} />
+              </View>
+              <Text style={styles.quickLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Recent */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Kegiatan terakhir</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/kegiatan')}
+            style={styles.seeAll}
+            accessibilityRole="button"
+            accessibilityLabel="Lihat semua kegiatan"
+          >
+            <Text style={styles.seeAllText}>Lihat semua</Text>
+          </TouchableOpacity>
+        </View>
+
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={T.primary} />
+          </View>
+        ) : recentKegiatan.length > 0 ? (
+          recentKegiatan.map((item: any) => (
+            <KegiatanCard
+              key={item.id}
+              item={item}
+              onPress={(id) => router.push(`/kegiatan/${id}`)}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>Belum ada kegiatan</Text>
+            <Text style={styles.emptyHint}>Kegiatan yang Anda catat akan muncul di sini.</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -129,39 +132,45 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.darkBg },
   scroll: { flex: 1 },
-  headerArea: { paddingHorizontal: SPACING.xl, paddingTop: 64, paddingBottom: SPACING.xl },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xxxl },
-  userRow: { flexDirection: 'row', alignItems: 'center' },
-  avatarFrame: {
-    width: BUTTON.primary.height, height: BUTTON.primary.height, borderRadius: RADIUS.md, borderWidth: 1,
-    borderColor: T.darkBorder, overflow: 'hidden',
+  content: { paddingHorizontal: SPACING.xl, paddingTop: 72, paddingBottom: 140 },
+
+  greetingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xxl },
+  avatar: { width: 48, height: 48, borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder },
+  greetingText: { flex: 1, marginLeft: SPACING.md },
+  date: { color: T.textSecondary, ...TYPOGRAPHY.caption },
+  greeting: { color: T.text, ...TYPOGRAPHY.title, marginTop: 2 },
+
+  primaryAction: {
+    flexDirection: 'row', alignItems: 'center', padding: SPACING.lg, borderRadius: RADIUS.lg,
+    backgroundColor: T.primaryDeep, marginBottom: SPACING.xl,
   },
-  avatarImage: { width: '100%', height: '100%' },
-  userInfo: { marginLeft: SPACING.lg },
-  statusText: { color: T.textSecondary, ...TYPOGRAPHY.badge, marginBottom: 2 },
-  greetingText: { color: T.text, ...TYPOGRAPHY.heading },
-  featureSection: { marginBottom: SPACING.xxxl },
-  sectionLabel: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.md },
-  featureGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: SPACING.md },
-  featureItem: { width: '48%' },
-  featureCard: {
-    padding: SPACING.lg, minHeight: 88, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder,
-    backgroundColor: T.darkSurface, justifyContent: 'space-between',
+  primaryIcon: {
+    width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: 'rgba(255,255,255,0.16)',
+    alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md,
   },
-  featureTitle: { color: T.text, ...TYPOGRAPHY.bodySecondary, marginTop: SPACING.md },
-  recentSection: { flex: 1, paddingBottom: 120 },
-  recentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
-  recentTitle: { color: T.text, ...TYPOGRAPHY.heading },
-  recentSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: 2 },
-  seeAllButton: {
-    minHeight: 44, paddingHorizontal: SPACING.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  primaryText: { flex: 1 },
+  primaryTitle: { color: 'white', ...TYPOGRAPHY.subheading },
+  primaryHint: { color: 'rgba(255,255,255,0.8)', ...TYPOGRAPHY.caption, marginTop: 2 },
+
+  quickRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.xxxl },
+  quickItem: {
+    flex: 1, alignItems: 'center', marginHorizontal: 4, paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder, backgroundColor: T.darkSurface,
+    minHeight: 44,
   },
-  seeAllText: { color: T.primary, ...TYPOGRAPHY.bodySecondary, marginRight: SPACING.xs },
-  loadingBox: { paddingVertical: 80, alignItems: 'center' },
+  quickIcon: { marginBottom: SPACING.sm },
+  quickLabel: { color: T.text, ...TYPOGRAPHY.caption, fontWeight: '600' },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.md },
+  sectionTitle: { color: T.text, ...TYPOGRAPHY.heading },
+  seeAll: { minHeight: 44, justifyContent: 'center' },
+  seeAllText: { color: T.primary, ...TYPOGRAPHY.bodySecondary },
+
+  loadingBox: { paddingVertical: 64, alignItems: 'center' },
   emptyBox: {
-    paddingVertical: 56, paddingHorizontal: SPACING.xl, alignItems: 'center', backgroundColor: T.darkSurface,
-    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder,
+    paddingVertical: 40, paddingHorizontal: SPACING.xl, alignItems: 'center', borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: T.darkBorder, backgroundColor: T.darkSurface,
   },
-  emptyText: { color: T.text, marginTop: SPACING.lg, ...TYPOGRAPHY.bodySecondary },
-  emptyHint: { color: T.textSecondary, marginTop: SPACING.xs, textAlign: 'center', ...TYPOGRAPHY.caption },
+  emptyTitle: { color: T.text, ...TYPOGRAPHY.bodySecondary },
+  emptyHint: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: SPACING.xs, textAlign: 'center' },
 });
