@@ -16,9 +16,10 @@ class MediaFileController extends Controller
     {
         $disk = Storage::disk($media->disk);
 
-        $relative = $variant === 'original'
-            ? $media->getPathRelativeToRoot()
-            : ($media->hasGeneratedConversion($variant) ? $media->getPathRelativeToRoot($variant) : null);
+        // A derived image may not exist yet (queued job still running): fall back to the original
+        $relative = $variant !== 'original' && $media->hasGeneratedConversion($variant)
+            ? $media->getPathRelativeToRoot($variant)
+            : $media->getPathRelativeToRoot();
 
         abort_unless($relative && $disk->exists($relative), 404);
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\Folder;
+use App\Models\User;
 use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Auth;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -61,14 +62,23 @@ class MediaController extends Controller
             }
         }
 
-        $files = $queryFiles->with('model')->get()->map(function($media) use ($isAdmin) {
+        $files = $queryFiles->with('model')->get();
+
+        // One query for all owner names, instead of one per file
+        $ownerNames = $isAdmin
+            ? User::whereIn('id', $files->map(fn ($m) => $m->model instanceof Folder
+                ? $m->model->user_id
+                : ($m->model instanceof User ? $m->model->id : null))->filter()->unique())
+                ->pluck('name', 'id')
+            : collect();
+
+        $files = $files->map(function ($media) use ($isAdmin, $ownerNames) {
             $ownerName = 'N/A';
             if ($isAdmin) {
-                if ($media->model instanceof Folder) {
-                    $ownerName = $media->model->user->name ?? 'N/A';
-                } elseif ($media->model instanceof \App\Models\User) {
-                    $ownerName = $media->model->name ?? 'N/A';
-                }
+                $ownerId = $media->model instanceof Folder
+                    ? $media->model->user_id
+                    : ($media->model instanceof User ? $media->model->id : null);
+                $ownerName = $ownerNames[$ownerId] ?? 'N/A';
             }
             
             $isImage = str_starts_with($media->mime_type, 'image/');

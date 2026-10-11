@@ -13,7 +13,7 @@ class KaryawanController extends Controller
      */
     public function index(): JsonResponse
     {
-        $karyawans = Karyawan::orderBy('nama')->get();
+        $karyawans = Karyawan::with('media')->orderBy('nama')->get();
 
         return response()->json([
             'data' => $karyawans->map(fn (Karyawan $k) => $this->present($k)),
