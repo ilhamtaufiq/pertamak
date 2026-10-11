@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'expo-router/head';
 import { KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from '../../tw';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Image } from '../../tw';
 import { Animated } from '../../tw/animated';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
-import { Mail, Lock, LogIn, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
+import { Mail, Lock, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { APP_CONFIG, APP_VERSION } from '../../config';
 import { Alert } from 'react-native';
@@ -83,8 +83,8 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Head>
-        <title>Masuk - Pertamak</title>
-        <meta name="description" content="Halaman masuk aplikasi Pertamak untuk pelaporan kegiatan lapangan" />
+        <title>Masuk - Pertamak Hub</title>
+        <meta name="description" content="Halaman masuk Pertamak Hub untuk pelaporan kegiatan lapangan" />
       </Head>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
@@ -101,8 +101,13 @@ export default function LoginScreen() {
             entering={FadeInDown.duration(1000).springify()}
             style={styles.brandSection}
           >
-            <LogIn color={T.primary} size={40} strokeWidth={1.75} style={{ marginBottom: SPACING.lg }} />
-            <Text style={styles.brandTitle}>Pertamak</Text>
+            <Image
+              source={require('../../../assets/logo-kabupaten-cianjur.png')}
+              style={styles.brandLogo}
+              accessibilityLabel="Logo Kabupaten Cianjur"
+            />
+            <Text style={styles.brandTitle}>Pertamak Hub</Text>
+            <Text style={styles.brandSubtitle}>Kabupaten Cianjur</Text>
           </Animated.View>
 
           {/* Login Card */}
@@ -197,7 +202,7 @@ export default function LoginScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
-            <Text style={styles.footerText}>Pertamak v{APP_VERSION}</Text>
+            <Text style={styles.footerText}>Pertamak Hub v{APP_VERSION}</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -211,6 +216,8 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.xxl, paddingVertical: 48 },
   brandSection: { alignItems: 'center', marginBottom: 40 },
   brandTitle: { color: T.text, ...TYPOGRAPHY.display },
+  brandLogo: { width: 96, height: 96, marginBottom: SPACING.md },
+  brandSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: 2 },
   loginCard: {
     borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder, backgroundColor: T.darkSurface,
   },
