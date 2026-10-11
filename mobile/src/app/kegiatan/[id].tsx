@@ -3,8 +3,10 @@ import { View, Text, Image, TouchableOpacity, ActivityIndicator } from '../../tw
 import { ScrollView, Modal, Alert, StatusBar, StyleSheet, Linking, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useKegiatanById, useDeleteKegiatan } from '../../hooks/useKegiatan';
-import { ChevronLeft, Trash2, Pencil, ShieldAlert, MapPin, Map as MapIcon, X, User } from 'lucide-react-native';
+import { ChevronLeft, Trash2, Pencil, ShieldAlert, MapPin, Map as MapIcon, X, User, Share2 } from 'lucide-react-native';
 import { haptics } from '../../services/haptics';
+import { confirmAction } from '../../services/dialogs';
+import { shareKegiatanPhoto } from '../../services/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
@@ -30,6 +32,8 @@ export default function KegiatanDetailScreen() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [isSharing, setIsSharing] = useState(false);
 
   const goBack = useCallback(() => {
     try { router.back(); } catch { router.replace('/(tabs)/kegiatan'); }
@@ -136,6 +140,7 @@ export default function KegiatanDetailScreen() {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               snapToInterval={photoWidth + SPACING.md}
+              onMomentumScrollEnd={(e) => setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / (photoWidth + SPACING.md)))}
               decelerationRate="fast"
               contentContainerStyle={styles.galleryContent}
             >
@@ -152,7 +157,7 @@ export default function KegiatanDetailScreen() {
               ))}
             </ScrollView>
             {photos.length > 1 && (
-              <Text style={styles.photoCount}>{photos.length} foto · geser untuk melihat</Text>
+              <Text style={styles.photoCount}>Foto {photoIndex + 1} dari {photos.length} · geser untuk melihat</Text>
             )}
           </View>
         ) : (
@@ -187,6 +192,37 @@ export default function KegiatanDetailScreen() {
             />
           )}
         </View>
+
+        <TouchableOpacity
+          onPress={async () => {
+            const photo = photos[photoIndex];
+            if (!photo) return;
+            const ok = await confirmAction({
+              title: 'Bagikan ke Instagram?',
+              message: 'Foto yang sedang terlihat akan dibagikan. Caption disalin ke papan klip, tempel saat membuat postingan.',
+              confirmText: 'Lanjut',
+            });
+            if (!ok) return;
+            setIsSharing(true);
+            try {
+              await shareKegiatanPhoto(kegiatan, photo);
+            } catch (e: any) {
+              Alert.alert('Gagal membagikan', e.message || 'Coba lagi.');
+            } finally {
+              setIsSharing(false);
+            }
+          }}
+          disabled={photos.length === 0 || isSharing}
+          style={[styles.shareBtn, (photos.length === 0 || isSharing) && { opacity: 0.5 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Bagikan foto ke Instagram"
+        >
+          {isSharing ? <ActivityIndicator color="white" /> : <Share2 color="white" size={18} />}
+          <Text style={styles.shareBtnText}>{isSharing ? 'Menyiapkan...' : 'Bagikan ke Instagram'}</Text>
+        </TouchableOpacity>
+        {photos.length === 0 && (
+          <Text style={styles.shareHint}>Tambahkan foto dokumentasi untuk membagikan kegiatan ini.</Text>
+        )}
 
         {hasCoords && (
           <TouchableOpacity
@@ -321,6 +357,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
   },
   secondaryBtnText: { color: T.primary, ...TYPOGRAPHY.bodySecondary },
+
+  shareBtn: {
+    height: BUTTON.primary.height, marginHorizontal: SPACING.xl, marginTop: SPACING.xl, borderRadius: RADIUS.md,
+    backgroundColor: T.primaryDeep, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+  },
+  shareBtnText: { color: 'white', ...TYPOGRAPHY.bodySecondary },
+  shareHint: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginHorizontal: SPACING.xl, marginTop: SPACING.sm, textAlign: 'center' },
 
   errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xxl },
   errorTitle: { color: T.text, ...TYPOGRAPHY.heading, marginTop: SPACING.lg, textAlign: 'center' },

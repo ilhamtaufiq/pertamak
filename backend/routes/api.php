@@ -4,6 +4,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
@@ -20,6 +21,8 @@ Route::get('/media/{media}/{variant}', [MediaFileController::class, 'show'])
 
 Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::patch('/me', [ProfileController::class, 'update']);
+    Route::put('/me/password', [ProfileController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
     
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);

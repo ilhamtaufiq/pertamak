@@ -25,6 +25,7 @@ interface AuthState {
   setAuth: (user: User, token: string) => Promise<void>;
   clearAuth: () => Promise<void>;
   restoreAuth: () => Promise<void>;
+  updateUser: (patch: Partial<Pick<User, 'name' | 'email'>>) => Promise<void>;
 }
 
 // Helper to handle storage with fallback
@@ -70,6 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     await storage.remove('user_token');
     await storage.remove('user_data');
     set({ user: null, token: null, isLoading: false });
+  },
+  updateUser: async (patch) => {
+    const current = useAuthStore.getState().user;
+    if (!current) return;
+    const next = { ...current, ...patch };
+    await storage.save('user_data', JSON.stringify(next));
+    set({ user: next });
   },
   restoreAuth: async () => {
     try {

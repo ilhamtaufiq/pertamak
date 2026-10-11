@@ -2,7 +2,7 @@ import React from 'react';
 import Head from 'expo-router/head';
 import { View, Text, ScrollView, TouchableOpacity, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
-import { LogOut, User, Shield, Info, ChevronRight, RefreshCw, Heart } from 'lucide-react-native';
+import { LogOut, User, Shield, Info, ChevronRight, RefreshCw, Heart, Mail, KeyRound } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { Alert, StatusBar, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,7 +56,7 @@ export default function ProfileTab() {
   return (
     <View style={styles.container}>
       <Head>
-        <title>Profil - Pertamak</title>
+        <title>Profil - Pertamak Hub</title>
       </Head>
       <StatusBar barStyle="light-content" />
 
@@ -78,8 +78,10 @@ export default function ProfileTab() {
         </View>
 
         <Group title="Akun">
-          <Row icon={User} label="Nama lengkap" value={user?.name ?? '-'} />
+          <Row icon={User} label="Nama lengkap" value={user?.name ?? '-'} onPress={() => router.push('/profile/edit')} />
+          <Row icon={Mail} label="Email" value={user?.email ?? '-'} onPress={() => router.push('/profile/edit')} />
           <Row icon={Shield} label="Peran" value={roleLabel} />
+          <Row icon={KeyRound} label="Kata sandi" value="Ubah kata sandi Anda" onPress={() => router.push('/profile/password')} last />
         </Group>
 
         <Group title="Aplikasi">
@@ -91,7 +93,7 @@ export default function ProfileTab() {
             loading={isCheckingUpdate}
           />
           <Row icon={Heart} label="Bantuan" value="Hubungi admin kantor Anda" />
-          <Row icon={Info} label="Versi" value={`Pertamak ${APP_VERSION}`} last />
+          <Row icon={Info} label="Versi" value={`Pertamak Hub ${APP_VERSION}`} last />
         </Group>
 
         <TouchableOpacity
