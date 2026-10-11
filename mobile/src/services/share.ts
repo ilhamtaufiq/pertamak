@@ -81,7 +81,7 @@ export async function shareKegiatanPhoto(kegiatan: Kegiatan, photo: Media): Prom
   await Sharing.shareAsync(uri, {
     mimeType: photo.mime_type,
     UTI: photo.mime_type === 'image/png' ? 'public.png' : 'public.jpeg',
-    dialogTitle: 'Bagikan ke Instagram',
+    dialogTitle: 'Bagikan foto',
   });
 
   return caption;

@@ -198,7 +198,7 @@ export default function KegiatanDetailScreen() {
             const photo = photos[photoIndex];
             if (!photo) return;
             const ok = await confirmAction({
-              title: 'Bagikan ke Instagram?',
+              title: 'Bagikan foto?',
               message: 'Foto yang sedang terlihat akan dibagikan. Caption disalin ke papan klip, tempel saat membuat postingan.',
               confirmText: 'Lanjut',
             });
@@ -215,10 +215,10 @@ export default function KegiatanDetailScreen() {
           disabled={photos.length === 0 || isSharing}
           style={[styles.shareBtn, (photos.length === 0 || isSharing) && { opacity: 0.5 }]}
           accessibilityRole="button"
-          accessibilityLabel="Bagikan foto ke Instagram"
+          accessibilityLabel="Bagikan foto"
         >
           {isSharing ? <ActivityIndicator color="white" /> : <Share2 color="white" size={18} />}
-          <Text style={styles.shareBtnText}>{isSharing ? 'Menyiapkan...' : 'Bagikan ke Instagram'}</Text>
+          <Text style={styles.shareBtnText}>{isSharing ? 'Menyiapkan...' : 'Bagikan'}</Text>
         </TouchableOpacity>
         {photos.length === 0 && (
           <Text style={styles.shareHint}>Tambahkan foto dokumentasi untuk membagikan kegiatan ini.</Text>
