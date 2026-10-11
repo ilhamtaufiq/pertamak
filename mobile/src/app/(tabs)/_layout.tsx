@@ -3,14 +3,10 @@ import { Tabs, useRouter, Redirect } from 'expo-router';
 import { Home, ClipboardList, User, Plus, FolderOpen } from 'lucide-react-native';
 import { View, TouchableOpacity } from '@/tw';
 import { COLORS, RADIUS, SPACING } from '@/tokens';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../stores/authStore';
-
-const BAR_HEIGHT = 60;
 
 export default function TabLayout() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { token, isLoading, restoreAuth } = useAuthStore();
 
   React.useEffect(() => {
@@ -43,8 +39,6 @@ export default function TabLayout() {
           left: 0,
           right: 0,
           bottom: 0,
-          height: BAR_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
           paddingTop: SPACING.xs,
           backgroundColor: COLORS.darkSurface,
           borderTopWidth: 1,
@@ -57,7 +51,8 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: 0,
+          marginBottom: 4,
         },
       }}
     >
