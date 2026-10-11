@@ -2,77 +2,56 @@ import React from 'react';
 import Head from 'expo-router/head';
 import { View, Text, ScrollView, TouchableOpacity, Image } from '../../tw';
 import { useAuthStore } from '../../stores/authStore';
-import { LogOut, User, Shield, Info, ChevronRight, Smartphone, Heart } from 'lucide-react-native';
+import { LogOut, User, Shield, Info, ChevronRight, RefreshCw, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Animated } from '../../tw/animated';
-import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Alert, StatusBar, StyleSheet, TouchableOpacity as NativeTouchableOpacity, ActivityIndicator } from 'react-native';
+import { Alert, StatusBar, StyleSheet, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_VERSION } from '../../config';
 import * as Updates from 'expo-updates';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
+import { TYPOGRAPHY, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
 export default function ProfileTab() {
   const { user, clearAuth } = useAuthStore();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [isCheckingUpdate, setIsCheckingUpdate] = React.useState(false);
   const roleLabel = user?.role === 'admin' ? 'Administrator' : 'Karyawan';
 
-  const handleLogout = async () => {
-    Alert.alert(
-      'Keluar Akun',
-      'Apakah Anda yakin ingin keluar dari sesi ini?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        { 
-          text: 'Keluar', 
-          style: 'destructive',
-          onPress: async () => {
-            await clearAuth();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]
-    );
+  const handleLogout = () => {
+    Alert.alert('Keluar dari akun?', 'Anda perlu masuk lagi untuk membuka aplikasi.', [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Keluar',
+        style: 'destructive',
+        onPress: async () => {
+          await clearAuth();
+          router.replace('/(auth)/login');
+        },
+      },
+    ]);
   };
-
-  const [isCheckingUpdate, setIsCheckingUpdate] = React.useState(false);
 
   const handleCheckUpdate = async () => {
     try {
       setIsCheckingUpdate(true);
       const update = await Updates.checkForUpdateAsync();
       if (update.isAvailable) {
-        Alert.alert('Update Tersedia', 'Update OTA baru sedang diunduh. Tunggu sebentar...');
         await Updates.fetchUpdateAsync();
-        Alert.alert('Update Selesai', 'Akses fitur terbaru sekarang! Aplikasi akan dimuat ulang.', [
-          { text: 'Muat Ulang', style: 'default', onPress: () => Updates.reloadAsync() }
+        Alert.alert('Pembaruan siap', 'Muat ulang aplikasi untuk memakai versi terbaru.', [
+          { text: 'Muat ulang', onPress: () => Updates.reloadAsync() },
         ]);
       } else {
-        Alert.alert('Versi Terbaru', 'Tidak ada update OTA (EAS Update) baru saat ini.');
+        Alert.alert('Sudah versi terbaru', 'Tidak ada pembaruan baru saat ini.');
       }
     } catch (e: any) {
-      Alert.alert('Gagal Cek Update', 'Terjadi kesalahan koneksi atau aplikasi berjalan di mode development (Expo Go).\n\nDetails: ' + e.message);
+      Alert.alert(
+        'Gagal memeriksa pembaruan',
+        'Periksa koneksi internet Anda. Di Expo Go, pemeriksaan pembaruan tidak tersedia.\n\n' + e.message
+      );
     } finally {
       setIsCheckingUpdate(false);
     }
   };
-
-  const ProfileItem = ({ icon: Icon, title, value, onPress, isLoading = false }: { icon: any, title: string, value: string, onPress?: () => void, isLoading?: boolean }) => (
-    <TouchableOpacity
-      style={styles.profileItem}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-      disabled={!onPress || isLoading}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${title}: ${value}`}
-    >
-      <Icon color={T.textSecondary} size={20} style={{ marginRight: SPACING.lg }} />
-      <View style={styles.profileItemText}>
-        <Text style={styles.profileItemLabel}>{title}</Text>
-        <Text style={styles.profileItemValue}>{value}</Text>
-      </View>
-      {isLoading ? <ActivityIndicator color={T.primary} /> : onPress ? <ChevronRight color={T.textTertiary} size={20} /> : null}
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
@@ -80,118 +59,126 @@ export default function ProfileTab() {
         <title>Profil - Pertamak</title>
       </Head>
       <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header/Banner Area */}
-        <View style={styles.headerArea}>
-            <Animated.View entering={FadeInDown.duration(800)}>
-              <View style={styles.avatarFrame}>
-                <Image 
-                  source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0EA5E9&color=fff&bold=true&size=256` }}
-                  style={styles.avatarImage}
-                />
-              </View>
-            </Animated.View>
-            
-            <Animated.View entering={FadeInUp.delay(200)} style={styles.userInfoCenter}>
-              <Text style={styles.userName}>{user?.name}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>
-                  {roleLabel}
-                </Text>
-              </View>
-            </Animated.View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 16) + SPACING.xl, paddingBottom: insets.bottom + 120 }]}
+      >
+        {/* Identity */}
+        <View style={styles.identity}>
+          <Image
+            source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'User')}&background=0284C7&color=fff&bold=true&size=128` }}
+            style={styles.avatar}
+            accessibilityLabel="Foto profil"
+          />
+          <View style={styles.identityText}>
+            <Text style={styles.name} numberOfLines={1}>{user?.name ?? '-'}</Text>
+            <Text style={styles.role}>{roleLabel}</Text>
+          </View>
         </View>
 
-        {/* Content Section */}
-        <View style={styles.contentArea}>
-           <Animated.View entering={FadeInUp.delay(400)}>
-              <Text style={styles.sectionLabel}>Akun saya</Text>
-              
-              <ProfileItem icon={User} title="Nama Lengkap" value={user?.name || '-'} />
-              <ProfileItem icon={Shield} title="Hak Akses" value={roleLabel} />
-              <ProfileItem icon={Smartphone} title="Versi Aplikasi" value={APP_VERSION} />
-           </Animated.View>
+        <Group title="Akun">
+          <Row icon={User} label="Nama lengkap" value={user?.name ?? '-'} />
+          <Row icon={Shield} label="Peran" value={roleLabel} />
+        </Group>
 
-           <Animated.View entering={FadeInUp.delay(600)} style={styles.preferencesSection}>
-              <Text style={styles.sectionLabel}>Preferensi & sistem</Text>
-              
-              <ProfileItem 
-                icon={Smartphone} 
-                title="Cek Update via EAS" 
-                value="Tap untuk sinkronisasi OTA" 
-                onPress={handleCheckUpdate}
-                isLoading={isCheckingUpdate}
-              />
-              <ProfileItem icon={Heart} title="Bantuan & Dukungan" value="Hubungi Admin" />
-              <ProfileItem icon={Info} title="Tentang" value={`Pertamak v${APP_VERSION}`} />
-           </Animated.View>
+        <Group title="Aplikasi">
+          <Row
+            icon={RefreshCw}
+            label="Periksa pembaruan"
+            value="Ambil perbaikan terbaru dari server"
+            onPress={handleCheckUpdate}
+            loading={isCheckingUpdate}
+          />
+          <Row icon={Heart} label="Bantuan" value="Hubungi admin kantor Anda" />
+          <Row icon={Info} label="Versi" value={`Pertamak ${APP_VERSION}`} last />
+        </Group>
 
-           {/* Logout Button */}
-           <Animated.View entering={FadeInUp.delay(800)} style={styles.logoutSection}>
-              <NativeTouchableOpacity 
-                activeOpacity={0.8}
-                onPress={handleLogout}
-                style={styles.logoutButton}
-              >
-                 <LogOut color={T.rose} size={20} style={{ marginRight: SPACING.md }} />
-                 <Text style={styles.logoutText}>Keluar Akun</Text>
-              </NativeTouchableOpacity>
-              
-              <Text style={styles.footerText}>
-                Pertamak
-              </Text>
-           </Animated.View>
-        </View>
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={styles.logout}
+          accessibilityRole="button"
+          accessibilityLabel="Keluar dari akun"
+        >
+          <LogOut color={T.rose} size={18} />
+          <Text style={styles.logoutText}>Keluar</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.groupTitle}>{title}</Text>
+      <View style={styles.groupCard}>{children}</View>
+    </View>
+  );
+}
+
+function Row({
+  icon: Icon,
+  label,
+  value,
+  onPress,
+  loading = false,
+  last = false,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  onPress?: () => void;
+  loading?: boolean;
+  last?: boolean;
+}) {
+  const interactive = !!onPress;
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={!interactive || loading}
+      activeOpacity={interactive ? 0.7 : 1}
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityLabel={`${label}: ${value}`}
+      style={[styles.row, !last && styles.rowBorder]}
+    >
+      <Icon color={T.textSecondary} size={18} style={{ marginRight: SPACING.md }} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowValue}>{value}</Text>
+      </View>
+      {loading ? (
+        <ActivityIndicator color={T.primary} />
+      ) : interactive ? (
+        <ChevronRight color={T.textTertiary} size={18} />
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.darkBg },
-  scroll: { flex: 1 },
-  headerArea: { paddingTop: 80, paddingBottom: SPACING.xxxl, alignItems: 'center' },
-  avatarFrame: {
-    width: 96, height: 96, borderRadius: RADIUS.lg, borderWidth: 1,
-    borderColor: T.darkBorder, overflow: 'hidden',
-    marginBottom: SPACING.xl,
+  content: { paddingHorizontal: SPACING.xl },
+
+  identity: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xxxl },
+  avatar: { width: 64, height: 64, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder },
+  identityText: { flex: 1, marginLeft: SPACING.lg },
+  name: { color: T.text, ...TYPOGRAPHY.heading },
+  role: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: 2 },
+
+  group: { marginBottom: SPACING.xxl },
+  groupTitle: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.sm, marginLeft: SPACING.xs },
+  groupCard: {
+    backgroundColor: T.darkSurface, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder, overflow: 'hidden',
   },
-  avatarImage: { width: '100%', height: '100%' },
-  userInfoCenter: { alignItems: 'center' },
-  userName: { color: T.text, ...TYPOGRAPHY.heading, marginBottom: SPACING.sm },
-  roleBadge: {
-    backgroundColor: T.darkSurface,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: T.darkBorder,
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: T.darkBorder },
+  rowLabel: { color: T.textSecondary, ...TYPOGRAPHY.caption },
+  rowValue: { color: T.text, ...TYPOGRAPHY.bodySecondary, marginTop: 2 },
+
+  logout: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+    height: 52, borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder, marginTop: SPACING.sm,
   },
-  roleText: { color: T.primary, ...TYPOGRAPHY.badge },
-  contentArea: { paddingHorizontal: SPACING.xl, paddingBottom: 160 },
-  sectionLabel: { color: T.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.md, marginLeft: SPACING.xs },
-  profileItem: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: T.darkSurface, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg,
-    minHeight: 64,
-    borderRadius: RADIUS.lg, marginBottom: SPACING.sm,
-    borderWidth: 1, borderColor: T.darkBorder,
-  },
-  profileItemText: { flex: 1 },
-  profileItemLabel: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginBottom: 2 },
-  profileItemValue: { color: T.text, ...TYPOGRAPHY.bodySecondary },
-  preferencesSection: { marginTop: SPACING.xxxl },
-  logoutSection: { marginTop: SPACING.xxxl },
-  logoutButton: {
-    height: BUTTON.primary.height,
-    backgroundColor: T.darkSurface,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: T.darkBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  logoutText: { color: T.rose, ...TYPOGRAPHY.subheading },
-  footerText: { color: T.textTertiary, textAlign: 'center', ...TYPOGRAPHY.badge, marginTop: SPACING.xl },
+  logoutText: { color: T.rose, ...TYPOGRAPHY.bodySecondary },
 });
