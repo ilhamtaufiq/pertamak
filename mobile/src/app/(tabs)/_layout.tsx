@@ -4,9 +4,13 @@ import { Home, ClipboardList, User, Plus, FolderOpen } from 'lucide-react-native
 import { View, TouchableOpacity } from '@/tw';
 import { COLORS, RADIUS, SPACING } from '@/tokens';
 import { useAuthStore } from '../../stores/authStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const BAR_CONTENT_HEIGHT = 64;
 
 export default function TabLayout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { token, isLoading, restoreAuth } = useAuthStore();
 
   React.useEffect(() => {
@@ -39,20 +43,19 @@ export default function TabLayout() {
           left: 0,
           right: 0,
           bottom: 0,
-          paddingTop: SPACING.xs,
+          // Explicit height so icon and label always fit, plus the device's bottom inset
+          height: BAR_CONTENT_HEIGHT + insets.bottom,
+          paddingTop: SPACING.sm,
+          paddingBottom: insets.bottom,
           backgroundColor: COLORS.darkSurface,
           borderTopWidth: 1,
           borderTopColor: COLORS.darkBorder,
           elevation: 0,
         },
-        tabBarItemStyle: {
-          paddingTop: SPACING.xs,
-        },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 0,
-          marginBottom: 4,
+          marginTop: 2,
         },
       }}
     >
