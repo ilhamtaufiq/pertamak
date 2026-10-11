@@ -91,6 +91,11 @@ class KegiatanController extends Controller
         $table->addCell(3500, ['bgColor' => 'EEEEEE'])->addText('Uraian Kegiatan', ['bold' => true], ['alignment' => Jc::CENTER]);
         $table->addCell(2700, ['bgColor' => 'EEEEEE'])->addText('Dokumentasi', ['bold' => true], ['alignment' => Jc::CENTER]);
 
+        // Same per-export photo cap as the PDF, so memory stays bounded for large periods
+        $limit = (int) config('kegiatan.pdf_max_images', 150);
+        $embedded = 0;
+        $skipped = 0;
+
         foreach ($kegiatans as $index => $kegiatan) {
             $table->addRow();
             $table->addCell(500)->addText($index + 1, null, ['alignment' => Jc::CENTER]);
@@ -100,6 +105,11 @@ class KegiatanController extends Controller
             
             $docCell = $table->addCell(2700);
             foreach ($kegiatan->media as $media) {
+                if ($embedded >= $limit) {
+                    $skipped++;
+                    continue;
+                }
+
                 $imagePath = $media->getPath('optimized');
                 
                 // Fallback to original if optimized doesn't exist
@@ -109,6 +119,7 @@ class KegiatanController extends Controller
 
                 if (file_exists($imagePath)) {
                     try {
+                        $embedded++;
                         $docCell->addImage($imagePath, [
                             'width' => 120,
                             'height' => 120,
@@ -131,7 +142,11 @@ class KegiatanController extends Controller
         $tempFile = tempnam(sys_get_temp_dir(), 'docx');
         $objWriter->save($tempFile);
 
-        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+        $response = response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+        $response->headers->set('X-Export-Images-Limit', (string) $limit);
+        $response->headers->set('X-Export-Images-Skipped', (string) $skipped);
+
+        return $response;
     }
 
     /**

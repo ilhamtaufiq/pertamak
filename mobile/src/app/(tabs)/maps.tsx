@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, Alert, Dimensions, Platform, TouchableOpacity as NativeTouchableOpacity } from 'react-native';
 import { View, Text, ActivityIndicator } from '../../tw';
 import { MapPin, Layers, Navigation, LocateFixed, Zap, ShieldCheck, Activity, Users } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { APP_CONFIG } from '../../config';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '../../tokens';
@@ -121,8 +122,19 @@ export default function MapsTab() {
   
   const { token, user } = useAuthStore();
 
+  // Poll only while this tab is on screen, and only for admins: /users/online is admin-only
+  const [isFocused, setIsFocused] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => setIsFocused(false);
+    }, [])
+  );
+  const isAdmin = user?.role === 'admin';
+
   const { data: onlineUsersData } = useQuery({
     queryKey: ['online-users'],
+    enabled: isAdmin,
     queryFn: async () => {
       const res = await fetch(`${APP_CONFIG.API_URL}/users/online`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -130,7 +142,7 @@ export default function MapsTab() {
       if (!res.ok) throw new Error('Network error');
       return res.json();
     },
-    refetchInterval: 10000,
+    refetchInterval: isAdmin && isFocused ? 10000 : false,
   });
 
   const onlineUsers = onlineUsersData?.data || [];
