@@ -8,8 +8,15 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Media\MediaFileController;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+// Private media. Authorised by the signed URL (see App\Support\MediaUrl), not a bearer token.
+Route::get('/media/{media}/{variant}', [MediaFileController::class, 'show'])
+    ->whereIn('variant', ['original', 'optimized', 'thumb'])
+    ->middleware('signed')
+    ->name('media.file');
 
 Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -18,14 +25,17 @@ Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     
     Route::get('kegiatans/export/docx', [KegiatanController::class, 'exportDocx']);
+    Route::get('kegiatans/export/pdf', [KegiatanController::class, 'exportPdf']);
     Route::apiResource('kegiatans', KegiatanController::class);
-    Route::apiResource('karyawans', KaryawanController::class);
+    Route::get('karyawans', [KaryawanController::class, 'index']);
+    Route::get('karyawans/{karyawan}', [KaryawanController::class, 'show']);
     Route::apiResource('jadwal-pikets', JadwalPiketController::class);
     
     // Admin only
     Route::middleware('role:admin')->group(function () {
         Route::get('/users/online', [UserController::class, 'online']);
         Route::apiResource('users', UserController::class);
+        Route::apiResource('karyawans', KaryawanController::class)->only(['store', 'update', 'destroy']);
     });
 
     // Media Library Organizer

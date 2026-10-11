@@ -1,69 +1,91 @@
 /**
  * Design Tokens — Pertamak Mobile
- * Single source of truth for typography, buttons, colors, spacing, shadows.
+ * Single source of truth for typography, buttons, colors, spacing, radii, elevation.
+ *
+ * Principles: flat surfaces, 1px borders instead of shadows, one accent colour
+ * (primary) reserved for actions and active states, sentence case by default.
  *
  * Usage:
- *   import { TYPOGRAPHY, BUTTON, COLORS } from '../tokens';
+ *   import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SHADOWS } from '../tokens';
  *
+ *   <View style={{ backgroundColor: COLORS.darkSurface, borderColor: COLORS.darkBorder, borderWidth: 1, borderRadius: RADIUS.lg }} />
  *   <Text style={TYPOGRAPHY.title}>...</Text>
- *   <TouchableOpacity style={{ ...BUTTON.primary, ...SHADOWS.glow(COLORS.primarySolid) }} ...
  */
 
 export const COLORS = {
+  /** Accent for icons, links and active tab on dark surfaces */
   primary: '#38BDF8',
+  /** Brand sky blue */
   primarySolid: '#0EA5E9',
+  /** Filled action backgrounds — white label on this passes WCAG AA */
   primaryDeep: '#0284C7',
   darkBg: '#020617',
+  /** Cards, sheets, modals */
   darkSurface: '#0F172A',
-  darkCard: 'rgba(255,255,255,0.03)',
-  darkBorder: 'rgba(255,255,255,0.1)',
+  /** Alias kept for existing call sites: cards are solid, not translucent */
+  darkCard: '#0F172A',
+  /** Solid 1px hairline */
+  darkBorder: '#1E293B',
   emerald: '#10B981',
   rose: '#F43F5E',
   amber: '#F59E0B',
   text: '#FFFFFF',
-  textSecondary: '#64748B',
-  textTertiary: '#475569',
-  textInactive: '#334155',
+  /** Body and meta text. Not dimmer than this on dark surfaces. */
+  textSecondary: '#94A3B8',
+  /** Tertiary meta and placeholder text (still >= 4.5:1 on darkBg) */
+  textTertiary: '#64748B',
+  /** Decorative / disabled only. Never for readable text. */
+  textInactive: '#475569',
+} as const;
+
+/** Radius scale: 8 (chips), 12 (buttons, inputs), 16 (cards, sheets). */
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
 } as const;
 
 export const TYPOGRAPHY = {
-  /** Hero — 48, -2, 900 */
-  display: { fontSize: 48, letterSpacing: -2, fontWeight: '900' as const },
-  /** Page title — 30, -0.5, 900 */
-  title: { fontSize: 30, letterSpacing: -0.5, fontWeight: '900' as const },
-  /** Section heading — 24, 900 */
-  heading: { fontSize: 24, fontWeight: '900' as const },
-  /** Sub heading — 20, 900 */
-  subheading: { fontSize: 20, fontWeight: '900' as const, letterSpacing: -0.5 },
-  /** Content body — 18, 700 */
-  body: { fontSize: 18, fontWeight: '700' as const },
-  /** Secondary body — 16, 700 */
-  bodySecondary: { fontSize: 16, fontWeight: '700' as const },
-  /** Caption — 14, 500 */
-  caption: { fontSize: 14, fontWeight: '500' as const },
-  /** Label — 10, 900, uppercase, letterSpacing 2 */
-  label: { fontSize: 10, fontWeight: '900' as const, textTransform: 'uppercase' as const, letterSpacing: 2 },
-  /** Badge — 9, 900, uppercase */
-  badge: { fontSize: 9, fontWeight: '900' as const, textTransform: 'uppercase' as const, letterSpacing: 2 },
+  /** Hero — 40, 800 */
+  display: { fontSize: 40, lineHeight: 46, fontWeight: '800' as const },
+  /** Page title — 28, 800 */
+  title: { fontSize: 28, lineHeight: 34, fontWeight: '800' as const },
+  /** Section heading — 22, 700 */
+  heading: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const },
+  /** Sub heading — 18, 700 */
+  subheading: { fontSize: 18, lineHeight: 24, fontWeight: '700' as const },
+  /** Content body — 16, 500 */
+  body: { fontSize: 16, lineHeight: 24, fontWeight: '500' as const },
+  /** Secondary body — 15, 600 */
+  bodySecondary: { fontSize: 15, lineHeight: 22, fontWeight: '600' as const },
+  /** Caption — 13, 500 */
+  caption: { fontSize: 13, lineHeight: 18, fontWeight: '500' as const },
+  /** Field / value label — 13, 600, sentence case */
+  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' as const },
+  /** Small section label — the only place uppercase is used */
+  sectionLabel: { fontSize: 11, lineHeight: 14, fontWeight: '700' as const, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
+  /** Badge / chip text — 12, 600, sentence case */
+  badge: { fontSize: 12, lineHeight: 16, fontWeight: '600' as const },
 } as const;
 
 export const BUTTON = {
-  primary: { height: 64, borderRadius: 24, fontSize: 20, fontWeight: '900' as const },
-  secondary: { height: 56, borderRadius: 20, fontSize: 14, fontWeight: '900' as const, letterSpacing: 2 },
-  ghost: { height: 48, borderRadius: 16, fontSize: 14, fontWeight: '700' as const },
-  pill: { height: 40, borderRadius: 20, fontSize: 13, fontWeight: '700' as const },
-} as const;
-
-export const RADIUS = {
-  sm: 8, md: 16, lg: 24, xl: 32, xxl: 40, xxxl: 48, max: 56,
+  /** Main action — 52 tall, 12 radius */
+  primary: { height: 52, borderRadius: RADIUS.md, fontSize: 16, fontWeight: '600' as const },
+  secondary: { height: 48, borderRadius: RADIUS.md, fontSize: 15, fontWeight: '600' as const },
+  ghost: { height: 44, borderRadius: RADIUS.md, fontSize: 15, fontWeight: '600' as const },
+  /** Compact control — 44 minimum touch target */
+  pill: { height: 44, borderRadius: RADIUS.md, fontSize: 14, fontWeight: '600' as const },
 } as const;
 
 export const SPACING = {
   xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32, xxxxl: 40,
 } as const;
 
+/**
+ * Elevation. Cards and buttons use a 1px border instead.
+ * Only true floating elements (tab bar, primary submit/export) get `floating`.
+ */
 export const SHADOWS = {
-  sm: { boxShadow: '0px 4px 12px rgba(0,0,0,0.2)', elevation: 5 },
-  md: { boxShadow: '0px 10px 20px rgba(0,0,0,0.3)', elevation: 10 },
-  glow: (color: string) => ({ boxShadow: `0px 10px 20px ${color}66`, elevation: 8 }),
+  none: {},
+  floating: { boxShadow: '0px 6px 16px rgba(0,0,0,0.25)', elevation: 6 },
 } as const;

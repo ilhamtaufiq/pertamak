@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Alert, Modal, Dimensions, RefreshControl, StatusBar, TextInput as RNTextInput, StyleSheet } from 'react-native';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, LinearGradient, BlurView } from '../../tw';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput } from '../../tw';
 import {
    Folder,
    HardDrive,
@@ -26,23 +26,29 @@ import {
    ChevronLeft,
    CloudLightning,
    Settings2,
-   Settings
 } from 'lucide-react-native';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn, SlideInRight, SlideInLeft } from 'react-native-reanimated';
 import { useMedia, useCreateFolder, useUploadMedia, useDeleteItem, useRenameItem, FileMedia, Folder as FolderType } from '../../hooks/useMedia';
 import { haptics } from '../../services/haptics';
+import { getMediaUrl } from '../../config';
 import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
+import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SPACING } from '../../tokens';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+/** Pesan galat yang ramah pengguna, dengan detail teknis bila tersedia */
+const describeError = (e: any) =>
+   e?.message
+      ? `${e.message}\n\nPeriksa koneksi internet, lalu coba lagi.`
+      : 'Periksa koneksi internet, lalu coba lagi.';
 
 export default function MediaTab() {
    const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
    const [searchQuery, setSearchQuery] = useState('');
 
-   const { data, isLoading, refetch, isRefetching } = useMedia(currentFolderId);
+   const { data, isLoading, isError, refetch, isRefetching } = useMedia(currentFolderId);
    const createFolderMutation = useCreateFolder();
    const uploadMutation = useUploadMedia();
    const deleteMutation = useDeleteItem();
@@ -70,7 +76,7 @@ export default function MediaTab() {
          setNewFolderName('');
          setShowCreateFolder(false);
          haptics.success();
-      } catch (e: any) { Alert.alert('Gagal', e.message); }
+      } catch (e: any) { Alert.alert('Gagal membuat folder', describeError(e)); }
    };
 
    const traverseFolder = (id: number | null) => {
@@ -90,30 +96,37 @@ export default function MediaTab() {
             if (currentFolderId) formData.append('folder_id', currentFolderId.toString());
             await uploadMutation.mutateAsync({ formData });
             haptics.success();
-         } catch (e: any) { Alert.alert('Gagal', e.message); } finally { setIsUploading(false); }
+         } catch (e: any) { Alert.alert('Gagal mengunggah berkas', describeError(e)); } finally { setIsUploading(false); }
       }
    };
 
    const handleDelete = async () => {
       if (!selectedItem) return;
-      Alert.alert('Hapus?', `Yakin ingin hapus ${selectedItem.name}?`, [
-         { text: 'Batal', style: 'cancel' },
-         {
-            text: 'Hapus', style: 'destructive', onPress: async () => {
-               try {
-                  await deleteMutation.mutateAsync({ type: selectedItem.type, id: selectedItem.id });
-                  setShowOptions(false);
-                  haptics.impactHeavy();
-               } catch (e: any) { Alert.alert('Gagal', e.message); }
+      const kind = selectedItem.type === 'folder' ? 'folder' : 'berkas';
+      Alert.alert(
+         `Hapus ${kind} permanen?`,
+         `"${selectedItem.name}" akan dihapus permanen dan tidak bisa dikembalikan.`,
+         [
+            { text: 'Batal', style: 'cancel' },
+            {
+               text: 'Hapus permanen', style: 'destructive', onPress: async () => {
+                  try {
+                     await deleteMutation.mutateAsync({ type: selectedItem.type, id: selectedItem.id });
+                     setShowOptions(false);
+                     haptics.impactHeavy();
+                  } catch (e: any) { Alert.alert(`Gagal menghapus ${kind}`, describeError(e)); }
+               }
             }
-         }
-      ]);
+         ]
+      );
    };
+
+   const isSearching = searchQuery.trim().length > 0;
+   const hasNoResults = filteredFolders.length === 0 && filteredFiles.length === 0;
 
    return (
       <View style={styles.container}>
          <StatusBar barStyle="light-content" />
-         <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={StyleSheet.absoluteFill} />
 
          <ScrollView
             style={styles.scroll}
@@ -121,51 +134,74 @@ export default function MediaTab() {
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
          >
-            {/* Consistent Header Pattern from Kegiatan List */}
             <View style={styles.header}>
                <Animated.View entering={FadeInDown} style={styles.headerTitleContainer}>
                   <View>
-                     <Text style={styles.headerSubtitle}>ASET & BERKAS DIGITAL</Text>
-                     <Text style={styles.headerTitle}>{currentFolderId ? 'Sub Direktori' : 'Cloud Drive'}</Text>
+                     <Text style={styles.headerSubtitle}>Aset dan berkas digital</Text>
+                     <Text style={styles.headerTitle}>{currentFolderId ? 'Isi folder' : 'Cloud drive'}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => setShowCreateFolder(true)} style={styles.headerActionBtn}>
-                     <Settings color="white" size={20} />
+                  <TouchableOpacity
+                     onPress={() => setShowCreateFolder(true)}
+                     style={styles.headerActionBtn}
+                     accessibilityRole="button"
+                     accessibilityLabel="Buat folder baru"
+                  >
+                     <Plus color={COLORS.primary} size={20} />
                   </TouchableOpacity>
                </Animated.View>
             </View>
 
-            {/* Global Toolbar from Katalog Kerja */}
+            {/* Search and upload */}
             <View style={styles.toolbarContainer}>
                <Animated.View entering={ZoomIn.delay(200)} style={styles.toolbar}>
                   <View style={styles.searchBox}>
-                     <Search color={COLORS.primary} size={20} style={{ marginRight: 12 }} />
+                     <Search color={COLORS.textSecondary} size={18} style={{ marginRight: SPACING.md }} />
                      <RNTextInput
                         placeholder="Cari berkas atau folder..."
-                        placeholderTextColor="#475569"
+                        placeholderTextColor={COLORS.textTertiary}
                         style={styles.searchInput}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        accessibilityLabel="Cari berkas atau folder"
+                        returnKeyType="search"
                      />
                   </View>
-                  <TouchableOpacity onPress={handleUpload} style={styles.uploadBtn}>
+                  <TouchableOpacity
+                     onPress={handleUpload}
+                     style={styles.uploadBtn}
+                     accessibilityRole="button"
+                     accessibilityLabel="Unggah foto atau video"
+                  >
                      <Upload color="white" size={20} />
                   </TouchableOpacity>
                </Animated.View>
             </View>
 
-            {/* Breadcrumbs - Pills Pattern */}
+            {/* Breadcrumbs */}
             <View style={styles.breadcrumbWrapper}>
-               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-                  <TouchableOpacity onPress={() => traverseFolder(null)} style={[styles.breadcrumbPill, !currentFolderId && styles.breadcrumbPillActive]}>
-                     <Home color={!currentFolderId ? 'white' : COLORS.primary} size={14} style={{ marginRight: 8 }} />
-                     <Text style={[styles.breadcrumbText, !currentFolderId && styles.breadcrumbTextActive]}>ROOT</Text>
+               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.xxl }}>
+                  <TouchableOpacity
+                     onPress={() => traverseFolder(null)}
+                     style={[styles.breadcrumbPill, !currentFolderId && styles.breadcrumbPillActive]}
+                     accessibilityRole="button"
+                     accessibilityLabel="Buka folder utama"
+                     accessibilityState={{ selected: !currentFolderId }}
+                  >
+                     <Home color={!currentFolderId ? 'white' : COLORS.textSecondary} size={14} style={{ marginRight: SPACING.sm }} />
+                     <Text style={[styles.breadcrumbText, !currentFolderId && styles.breadcrumbTextActive]}>Beranda</Text>
                   </TouchableOpacity>
 
                   {data?.breadcrumbs.map((crumb: any) => (
                      <View key={crumb.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <ChevronRight color="#1E293B" size={14} style={{ marginHorizontal: 4 }} />
-                        <TouchableOpacity onPress={() => traverseFolder(crumb.id)} style={[styles.breadcrumbPill, currentFolderId === crumb.id && styles.breadcrumbPillActive]}>
-                           <Text style={[styles.breadcrumbText, currentFolderId === crumb.id && styles.breadcrumbTextActive]}>{crumb.name.toUpperCase()}</Text>
+                        <ChevronRight color={COLORS.textInactive} size={14} style={{ marginHorizontal: SPACING.xs }} />
+                        <TouchableOpacity
+                           onPress={() => traverseFolder(crumb.id)}
+                           style={[styles.breadcrumbPill, currentFolderId === crumb.id && styles.breadcrumbPillActive]}
+                           accessibilityRole="button"
+                           accessibilityLabel={`Buka folder ${crumb.name}`}
+                           accessibilityState={{ selected: currentFolderId === crumb.id }}
+                        >
+                           <Text style={[styles.breadcrumbText, currentFolderId === crumb.id && styles.breadcrumbTextActive]}>{crumb.name}</Text>
                         </TouchableOpacity>
                      </View>
                   ))}
@@ -174,29 +210,33 @@ export default function MediaTab() {
 
             {!currentFolderId && (
                <Animated.View entering={FadeInDown.delay(400)} style={styles.statsContainer}>
-                  <LinearGradient colors={['#0F172A', '#020617']} style={styles.statsCard}>
+                  <View style={styles.statsCard}>
                      <View style={styles.statsHeader}>
-                        <View style={styles.statsIconBox}><HardDrive color={COLORS.primary} size={16} /></View>
-                        <Text style={styles.statsCaption}>PENGGUNAAN DRIVE</Text>
+                        <HardDrive color={COLORS.textSecondary} size={16} style={{ marginRight: SPACING.sm }} />
+                        <Text style={styles.statsCaption}>Penggunaan drive</Text>
                      </View>
                      <Text style={styles.statsMainValue}>920.4 MB</Text>
                      <View style={styles.progressTrack}>
                         <View style={[styles.progressFill, { width: '65%' }]} />
                      </View>
                      <View style={styles.statsFooter}>
-                        <Text style={styles.statsStatusText}>65% TERPAKAI</Text>
-                        <TouchableOpacity style={styles.statsActionLink}>
-                           <Text style={styles.statsActionText}>DETAIL</Text>
+                        <Text style={styles.statsStatusText}>65% terpakai</Text>
+                        <TouchableOpacity
+                           style={styles.statsActionLink}
+                           accessibilityRole="button"
+                           accessibilityLabel="Lihat detail penggunaan drive"
+                        >
+                           <Text style={styles.statsActionText}>Detail</Text>
                         </TouchableOpacity>
                      </View>
-                  </LinearGradient>
+                  </View>
                </Animated.View>
             )}
 
-            <View style={{ paddingHorizontal: 24 }}>
+            <View style={{ paddingHorizontal: SPACING.xxl }}>
                {filteredFolders.length > 0 && (
-                  <View style={{ marginBottom: 32 }}>
-                     <Text style={styles.sectionTitle}>FOLDER UTAMA</Text>
+                  <View style={{ marginBottom: SPACING.xxl }}>
+                     <Text style={styles.sectionTitle}>Folder</Text>
                      <View style={styles.folderGrid}>
                         {filteredFolders.map((f: any, idx: number) => (
                            <FolderCard
@@ -214,9 +254,28 @@ export default function MediaTab() {
                   </View>
                )}
 
-               <Text style={styles.sectionTitle}>BERKAS & LAMPIRAN</Text>
-               {filteredFiles.length > 0 ? (
-                  <View style={{ gap: 12 }}>
+               <Text style={styles.sectionTitle}>Berkas</Text>
+               {isLoading && !data ? (
+                  <View style={styles.emptyBox} accessibilityLiveRegion="polite">
+                     <ActivityIndicator color={COLORS.primary} />
+                     <Text style={styles.emptyText}>Memuat berkas...</Text>
+                  </View>
+               ) : isError && !data ? (
+                  <View style={styles.emptyBox} accessibilityLiveRegion="polite">
+                     <Folder color={COLORS.textTertiary} size={40} />
+                     <Text style={styles.emptyText}>Gagal memuat berkas</Text>
+                     <Text style={styles.emptySubtext}>Periksa koneksi internet, lalu coba lagi.</Text>
+                     <TouchableOpacity
+                        onPress={() => refetch()}
+                        style={styles.retryBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Coba muat ulang berkas"
+                     >
+                        <Text style={styles.retryBtnText}>Coba lagi</Text>
+                     </TouchableOpacity>
+                  </View>
+               ) : filteredFiles.length > 0 ? (
+                  <View style={{ gap: SPACING.md }}>
                      {filteredFiles.map((file: any, idx: number) => (
                         <FileItem
                            key={file.id}
@@ -231,48 +290,61 @@ export default function MediaTab() {
                      ))}
                   </View>
                ) : (
-                  <View style={styles.emptyBox}>
-                     <Folder color="#1E293B" size={40} />
-                     <Text style={styles.emptyText}>BELUM ADA BERKAS</Text>
+                  <View style={styles.emptyBox} accessibilityLiveRegion="polite">
+                     <Folder color={COLORS.textTertiary} size={40} />
+                     {isSearching && hasNoResults ? (
+                        <>
+                           <Text style={styles.emptyText}>Tidak ada hasil</Text>
+                           <Text style={styles.emptySubtext}>Tidak ada yang cocok dengan "{searchQuery.trim()}". Coba kata kunci lain.</Text>
+                        </>
+                     ) : (
+                        <>
+                           <Text style={styles.emptyText}>Belum ada berkas di sini</Text>
+                           <Text style={styles.emptySubtext}>Ketuk ikon unggah untuk menambahkan foto atau video.</Text>
+                        </>
+                     )}
                   </View>
                )}
             </View>
          </ScrollView>
 
          {/* Action Drawer */}
-         <Modal visible={showOptions} transparent animationType="fade">
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)' }}>
-               <TouchableOpacity style={{ flex: 1 }} onPress={() => setShowOptions(false)} />
-               <BlurView intensity={30} tint="dark" style={styles.drawerCard}>
+         <Modal visible={showOptions} transparent animationType="fade" onRequestClose={() => setShowOptions(false)}>
+            <View style={styles.scrim}>
+               <TouchableOpacity
+                  style={{ flex: 1 }}
+                  onPress={() => setShowOptions(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tutup menu"
+               />
+               <View style={styles.drawerCard}>
                   <View style={styles.drawerHead}>
                      <View style={styles.drawerIcon}>
-                        {selectedItem?.type === 'folder' ? <Folder color={COLORS.primary} size={24} /> : <File color={COLORS.primary} size={24} />}
+                        {selectedItem?.type === 'folder' ? <Folder color={COLORS.textSecondary} size={24} /> : <File color={COLORS.textSecondary} size={24} />}
                      </View>
                      <View style={{ flex: 1 }}>
-                        <Text style={styles.drawerSubtitle}>{selectedItem?.type?.toUpperCase()}</Text>
+                        <Text style={styles.drawerSubtitle}>{selectedItem?.type === 'folder' ? 'Folder' : 'Berkas'}</Text>
                         <Text style={styles.drawerName} numberOfLines={1}>{selectedItem?.name}</Text>
                      </View>
                   </View>
-                  <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
-                     <Trash2 color={COLORS.rose} size={20} style={{ marginRight: 16 }} />
-                     <Text style={styles.deleteBtnText}>Hapus Permanen</Text>
+                  <TouchableOpacity
+                     onPress={handleDelete}
+                     style={styles.deleteBtn}
+                     accessibilityRole="button"
+                     accessibilityLabel={`Hapus permanen ${selectedItem?.name ?? ''}`}
+                  >
+                     <Trash2 color={COLORS.rose} size={18} style={{ marginRight: SPACING.md }} />
+                     <Text style={styles.deleteBtnText}>Hapus permanen</Text>
                   </TouchableOpacity>
-               </BlurView>
+               </View>
             </View>
          </Modal>
 
-         {/* Floating Action Button */}
-         {/* <View style={styles.fabWrapper}>
-         <TouchableOpacity onPress={() => setShowCreateFolder(true)} style={styles.fab}>
-            <Plus color="white" size={32} />
-         </TouchableOpacity>
-      </View>
- */}
          {isUploading && (
-            <BlurView intensity={20} tint="dark" style={styles.uploadModal}>
-               <ActivityIndicator color={COLORS.primary} style={{ marginRight: 16 }} />
-               <Text style={styles.uploadStatus}>MENGUNGGAH BERKAS...</Text>
-            </BlurView>
+            <View style={styles.uploadModal} accessibilityLiveRegion="polite">
+               <ActivityIndicator color={COLORS.primary} style={{ marginRight: SPACING.md }} />
+               <Text style={styles.uploadStatus}>Mengunggah berkas...</Text>
+            </View>
          )}
 
          {/* Image Preview Modal */}
@@ -283,39 +355,62 @@ export default function MediaTab() {
            onRequestClose={() => setPreviewMedia(null)}
          >
            <View style={styles.previewOverlay}>
-             <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+             <View style={styles.previewModal}>
                <View style={styles.previewHeader}>
-                 <TouchableOpacity onPress={() => setPreviewMedia(null)} style={{ padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 }}>
+                 <TouchableOpacity
+                   onPress={() => setPreviewMedia(null)}
+                   style={styles.previewCloseBtn}
+                   accessibilityRole="button"
+                   accessibilityLabel="Tutup pratinjau"
+                 >
                    <X color="white" size={24} />
                  </TouchableOpacity>
                </View>
-               <Image source={{ uri: previewMedia }} style={styles.previewFullImage} resizeMode="contain" />
-             </BlurView>
+               <Image
+                 source={{ uri: previewMedia ?? undefined }}
+                 style={styles.previewFullImage}
+                 resizeMode="contain"
+                 accessibilityLabel="Pratinjau berkas"
+               />
+             </View>
            </View>
          </Modal>
 
          {/* Create Folder Modal */}
-         <Modal visible={showCreateFolder} transparent animationType="fade">
+         <Modal visible={showCreateFolder} transparent animationType="fade" onRequestClose={() => setShowCreateFolder(false)}>
             <View style={styles.modalOverlay}>
-               <BlurView intensity={40} tint="dark" style={styles.folderModal}>
-                  <Text style={styles.modalHeading}>Folder Baru</Text>
+               <View style={styles.folderModal}>
+                  <Text style={styles.modalHeading}>Folder baru</Text>
                   <RNTextInput
                      style={styles.modalField}
-                     placeholder="NAMA FOLDER"
-                     placeholderTextColor="#64748B"
+                     placeholder="Nama folder"
+                     placeholderTextColor={COLORS.textTertiary}
                      value={newFolderName}
                      onChangeText={setNewFolderName}
                      autoFocus
+                     accessibilityLabel="Nama folder baru"
+                     returnKeyType="done"
+                     onSubmitEditing={handleCreateFolder}
                   />
                   <View style={styles.modalActions}>
-                     <TouchableOpacity onPress={() => setShowCreateFolder(false)} style={styles.btnSecondary}>
-                        <Text style={styles.btnSecondaryText}>BATAL</Text>
+                     <TouchableOpacity
+                        onPress={() => setShowCreateFolder(false)}
+                        style={styles.btnSecondary}
+                        accessibilityRole="button"
+                        accessibilityLabel="Batal membuat folder"
+                     >
+                        <Text style={styles.btnSecondaryText}>Batal</Text>
                      </TouchableOpacity>
-                     <TouchableOpacity onPress={handleCreateFolder} style={styles.btnPrimary}>
-                        <Text style={styles.btnPrimaryText}>SIMPAN</Text>
+                     <TouchableOpacity
+                        onPress={handleCreateFolder}
+                        style={styles.btnPrimary}
+                        accessibilityRole="button"
+                        accessibilityLabel="Simpan folder baru"
+                     >
+                        <Text style={styles.btnPrimaryText}>Simpan</Text>
                      </TouchableOpacity>
                   </View>
-               </BlurView>
+               </View>
             </View>
          </Modal>
       </View>
@@ -324,15 +419,17 @@ export default function MediaTab() {
 
 function FolderCard({ folder, delay, onPress, onLongPress }: any) {
    return (
-      <Animated.View entering={FadeInUp.delay(delay)} style={{ width: '48%', marginBottom: 16 }}>
-         <TouchableOpacity onPress={onPress} onLongPress={onLongPress} activeOpacity={0.7} style={styles.folderBox}>
-            <View style={styles.folderIconWrapp}>
-               <Folder color="white" size={28} fill="rgba(56, 189, 248, 0.4)" strokeWidth={1.5} />
-            </View>
+      <Animated.View entering={FadeInUp.delay(delay)} style={{ width: '48%', marginBottom: SPACING.lg }}>
+         <TouchableOpacity
+            onPress={onPress}
+            onLongPress={onLongPress}
+            activeOpacity={0.7}
+            style={styles.folderBox}
+            accessibilityRole="button"
+            accessibilityLabel={`Folder ${folder.name}`}
+         >
+            <Folder color={COLORS.textSecondary} size={28} strokeWidth={1.5} />
             <Text style={styles.folderTitle} numberOfLines={1}>{folder.name}</Text>
-            <View style={styles.folderTag}>
-               <Text style={styles.folderTagText}>DIR</Text>
-            </View>
          </TouchableOpacity>
       </Animated.View>
    );
@@ -342,89 +439,150 @@ function FileItem({ file, delay, onPress, onPreview }: any) {
    const isImage = file.mime_type.startsWith('image/');
    return (
       <Animated.View entering={FadeInUp.delay(delay)}>
-         <TouchableOpacity onPress={() => isImage && onPreview ? onPreview(file) : onPress?.()} style={styles.fileItemCard}>
+         <TouchableOpacity
+            onPress={() => isImage && onPreview ? onPreview(file) : onPress?.()}
+            style={styles.fileItemCard}
+            accessibilityRole="button"
+            accessibilityLabel={`${isImage ? 'Berkas gambar' : 'Berkas'} ${file.name}`}
+         >
             <View style={styles.fileIconFrame}>
                {isImage ? (
                   <Image source={{ uri: file.thumb || file.url.replace('localhost', 'pertamak.cianjur.space') }} style={{ width: '100%', height: '100%' }} />
                ) : (
-                  <FileText color={COLORS.primary} size={24} />
+                  <FileText color={COLORS.textSecondary} size={24} />
                )}
             </View>
             <View style={{ flex: 1 }}>
                <Text style={styles.fileTitle} numberOfLines={1}>{file.name}</Text>
                <Text style={styles.fileInfo}>{file.human_size} • {format(new Date(file.created_at), 'dd/MM/yy')}</Text>
             </View>
-            <ChevronRight color="#1E293B" size={16} />
+            <ChevronRight color={COLORS.textTertiary} size={16} />
          </TouchableOpacity>
       </Animated.View>
    );
 }
 
 const styles = StyleSheet.create({
-   container: { flex: 1, backgroundColor: '#020617' },
+   container: { flex: 1, backgroundColor: COLORS.darkBg },
    scroll: { flex: 1 },
-   header: { paddingHorizontal: 24, marginBottom: 32 },
+   header: { paddingHorizontal: SPACING.xxl, marginBottom: SPACING.xxl },
    headerTitleContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-   headerSubtitle: { color: COLORS.primary, fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 4, marginBottom: 8 },
-   headerTitle: { color: 'white', fontSize: 36, fontWeight: '900', letterSpacing: -1 },
-   headerActionBtn: { backgroundColor: '#0F172A', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: '#1E293B' },
-   toolbarContainer: { paddingHorizontal: 24, marginBottom: 32 },
-   toolbar: { backgroundColor: '#0F172A', padding: 8, borderRadius: 32, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.1)' },
-   searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: 16 },
-   searchInput: { flex: 1, color: 'white', fontWeight: '700', fontSize: 16 },
-   uploadBtn: { backgroundColor: COLORS.primarySolid, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-   breadcrumbWrapper: { marginBottom: 32 },
-   breadcrumbPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: '#0F172A', borderWidth: 1, borderColor: '#1E293B', marginRight: 8 },
-   breadcrumbPillActive: { backgroundColor: COLORS.primarySolid, borderColor: COLORS.primarySolid },
-   breadcrumbText: { color: COLORS.primary, fontWeight: '900', fontSize: 9, letterSpacing: 1 },
+   headerSubtitle: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginBottom: SPACING.xs },
+   headerTitle: { color: COLORS.text, ...TYPOGRAPHY.title },
+   headerActionBtn: {
+      backgroundColor: COLORS.darkSurface, width: 44, height: 44, borderRadius: RADIUS.md,
+      borderWidth: 1, borderColor: COLORS.darkBorder, alignItems: 'center', justifyContent: 'center',
+   },
+   toolbarContainer: { paddingHorizontal: SPACING.xxl, marginBottom: SPACING.xxl },
+   toolbar: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+   searchBox: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', height: BUTTON.primary.height,
+      backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.darkBorder,
+      paddingLeft: SPACING.lg,
+   },
+   searchInput: { flex: 1, height: '100%', color: COLORS.text, ...TYPOGRAPHY.body },
+   uploadBtn: {
+      backgroundColor: COLORS.primaryDeep, width: BUTTON.primary.height, height: BUTTON.primary.height,
+      borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center',
+   },
+   breadcrumbWrapper: { marginBottom: SPACING.xxl },
+   breadcrumbPill: {
+      flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: SPACING.lg,
+      borderRadius: RADIUS.sm, backgroundColor: COLORS.darkSurface, borderWidth: 1, borderColor: COLORS.darkBorder,
+      marginRight: SPACING.sm,
+   },
+   breadcrumbPillActive: { backgroundColor: COLORS.primaryDeep, borderColor: COLORS.primaryDeep },
+   breadcrumbText: { color: COLORS.textSecondary, ...TYPOGRAPHY.badge },
    breadcrumbTextActive: { color: 'white' },
-   statsContainer: { paddingHorizontal: 24, marginBottom: 40 },
-   statsCard: { padding: 32, borderRadius: 48, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.1)' },
-   statsHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-   statsIconBox: { backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: 8, borderRadius: 12, marginRight: 12 },
-   statsCaption: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4 },
-   statsMainValue: { color: 'white', fontSize: 32, fontWeight: '900', marginBottom: 20 },
-   progressTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 },
-   progressFill: { height: '100%', backgroundColor: COLORS.primarySolid },
+   statsContainer: { paddingHorizontal: SPACING.xxl, marginBottom: SPACING.xxxl },
+   statsCard: {
+      padding: SPACING.lg, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.darkBorder,
+      backgroundColor: COLORS.darkSurface,
+   },
+   statsHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md },
+   statsCaption: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption },
+   statsMainValue: { color: COLORS.text, ...TYPOGRAPHY.title, marginBottom: SPACING.lg },
+   progressTrack: { height: 8, backgroundColor: COLORS.darkBg, borderRadius: 4, overflow: 'hidden', marginBottom: SPACING.md },
+   progressFill: { height: '100%', backgroundColor: COLORS.primary },
    statsFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-   statsStatusText: { color: '#64748B', fontWeight: '900', fontSize: 10 },
-   statsActionLink: { paddingHorizontal: 12, paddingVertical: 6 },
-   statsActionText: { color: COLORS.primary, fontWeight: '900', fontSize: 10 },
-   sectionTitle: { color: '#64748B', fontWeight: '900', fontSize: 10, letterSpacing: 2, marginBottom: 20, paddingLeft: 8 },
+   statsStatusText: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption },
+   statsActionLink: { minWidth: 44, minHeight: 44, paddingHorizontal: SPACING.md, alignItems: 'center', justifyContent: 'center' },
+   statsActionText: { color: COLORS.primary, ...TYPOGRAPHY.badge },
+   sectionTitle: { color: COLORS.textSecondary, ...TYPOGRAPHY.sectionLabel, marginBottom: SPACING.md },
    folderGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-   folderBox: { backgroundColor: '#0F172A', padding: 24, borderRadius: 40, alignItems: 'center', borderWidth: 1, borderColor: '#1E293B' },
-   folderIconWrapp: { backgroundColor: 'rgba(56, 189, 248, 0.1)', width: 64, height: 64, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-   folderTitle: { color: 'white', fontWeight: '900', fontSize: 14, marginBottom: 8, textAlign: 'center' },
-   folderTag: { backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-   folderTagText: { color: '#64748B', fontWeight: '900', fontSize: 8 },
-   fileItemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F172A', padding: 16, borderRadius: 32, borderWidth: 1, borderColor: '#1E293B' },
-   fileIconFrame: { width: 56, height: 56, borderRadius: 20, backgroundColor: '#020617', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-   fileTitle: { color: 'white', fontWeight: '900', fontSize: 14, marginBottom: 4 },
-   fileInfo: { color: '#475569', fontWeight: '900', fontSize: 9 },
-   emptyBox: { paddingVertical: 60, alignItems: 'center', borderRadius: 40, borderStyle: 'dashed', borderWidth: 1, borderColor: '#1E293B' },
-   emptyText: { color: '#1E293B', fontWeight: '900', fontSize: 10, marginTop: 16 },
-   fabWrapper: { position: 'absolute', bottom: 40, alignSelf: 'center' },
-   fab: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primarySolid, alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 20px rgba(14, 165, 233, 0.5)', elevation: 20 },
-   drawerCard: { backgroundColor: 'rgba(15,23,42,0.95)', padding: 40, borderTopLeftRadius: 56, borderTopRightRadius: 56, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-   drawerHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
-   drawerIcon: { width: 64, height: 64, backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 20 },
-   drawerSubtitle: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 4 },
-   drawerName: { color: 'white', fontSize: 24, fontWeight: '900' },
-   deleteBtn: { backgroundColor: 'rgba(244,63,94,0.1)', paddingVertical: 24, paddingHorizontal: 32, borderRadius: 24, flexDirection: 'row', alignItems: 'center' },
-   deleteBtnText: { color: COLORS.rose, fontWeight: '900', fontSize: 16 },
-   uploadModal: { position: 'absolute', bottom: 120, alignSelf: 'center', flexDirection: 'row', padding: 20, borderRadius: 24, backgroundColor: 'rgba(15,23,42,0.9)' },
-   uploadStatus: { color: 'white', fontWeight: '900', fontSize: 10 },
-   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center', padding: 32 },
-   folderModal: { width: '100%', padding: 40, borderRadius: 48, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)' },
-   modalHeading: { color: 'white', fontSize: 28, fontWeight: '900', marginBottom: 32 },
-   modalField: { backgroundColor: '#0F172A', padding: 24, borderRadius: 24, color: 'white', fontWeight: '700', fontSize: 18, marginBottom: 32, borderWidth: 1, borderColor: '#1E293B' },
-   modalActions: { flexDirection: 'row', gap: 12 },
-   btnSecondary: { flex: 1, paddingVertical: 20, alignItems: 'center' },
-   btnSecondaryText: { color: '#64748B', fontWeight: '900', fontSize: 12 },
-   btnPrimary: { flex: 1, backgroundColor: COLORS.primarySolid, paddingVertical: 20, borderRadius: 20, alignItems: 'center' },
-   btnPrimaryText: { color: 'white', fontWeight: '900', fontSize: 12 },
-   previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+   folderBox: {
+      backgroundColor: COLORS.darkSurface, padding: SPACING.lg, borderRadius: RADIUS.lg,
+      alignItems: 'center', borderWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   folderTitle: { color: COLORS.text, ...TYPOGRAPHY.bodySecondary, marginTop: SPACING.md, textAlign: 'center' },
+   fileItemCard: {
+      flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.darkSurface, padding: SPACING.md,
+      borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   fileIconFrame: {
+      width: 56, height: 56, borderRadius: RADIUS.sm, backgroundColor: COLORS.darkBg, overflow: 'hidden',
+      alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md,
+   },
+   fileTitle: { color: COLORS.text, ...TYPOGRAPHY.bodySecondary, marginBottom: SPACING.xs },
+   fileInfo: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption },
+   emptyBox: {
+      paddingVertical: SPACING.xxxl, paddingHorizontal: SPACING.xxl, alignItems: 'center',
+      borderRadius: RADIUS.lg, backgroundColor: COLORS.darkSurface, borderWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   emptyText: { color: COLORS.text, ...TYPOGRAPHY.bodySecondary, marginTop: SPACING.lg, textAlign: 'center' },
+   emptySubtext: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginTop: SPACING.sm, textAlign: 'center' },
+   retryBtn: {
+      marginTop: SPACING.lg, minHeight: BUTTON.pill.height, minWidth: 120, paddingHorizontal: SPACING.xl,
+      borderRadius: RADIUS.md, backgroundColor: COLORS.primaryDeep, alignItems: 'center', justifyContent: 'center',
+   },
+   retryBtnText: { color: 'white', fontSize: BUTTON.pill.fontSize, fontWeight: BUTTON.pill.fontWeight },
+   scrim: { flex: 1, backgroundColor: 'rgba(2,6,23,0.7)' },
+   drawerCard: {
+      backgroundColor: COLORS.darkSurface, paddingHorizontal: SPACING.xxl, paddingTop: SPACING.xxl, paddingBottom: 40,
+      borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, borderTopWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   drawerHead: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.xl },
+   drawerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
+   drawerSubtitle: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginBottom: SPACING.xs },
+   drawerName: { color: COLORS.text, ...TYPOGRAPHY.subheading },
+   deleteBtn: {
+      flexDirection: 'row', alignItems: 'center', minHeight: BUTTON.primary.height, paddingHorizontal: SPACING.lg,
+      borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.darkBorder, backgroundColor: COLORS.darkBg,
+   },
+   deleteBtnText: { color: COLORS.rose, ...TYPOGRAPHY.bodySecondary },
+   uploadModal: {
+      position: 'absolute', bottom: 120, alignSelf: 'center', flexDirection: 'row', alignItems: 'center',
+      paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, borderRadius: RADIUS.md,
+      backgroundColor: COLORS.darkSurface, borderWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   uploadStatus: { color: COLORS.text, ...TYPOGRAPHY.bodySecondary },
+   modalOverlay: { flex: 1, backgroundColor: 'rgba(2,6,23,0.7)', alignItems: 'center', justifyContent: 'center', padding: SPACING.xxl },
+   folderModal: {
+      width: '100%', padding: SPACING.xxl, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.darkBorder,
+      backgroundColor: COLORS.darkSurface,
+   },
+   modalHeading: { color: COLORS.text, ...TYPOGRAPHY.heading, marginBottom: SPACING.lg },
+   modalField: {
+      backgroundColor: COLORS.darkBg, paddingHorizontal: SPACING.lg, height: BUTTON.primary.height, borderRadius: RADIUS.md,
+      color: COLORS.text, ...TYPOGRAPHY.body, marginBottom: SPACING.xl, borderWidth: 1, borderColor: COLORS.darkBorder,
+   },
+   modalActions: { flexDirection: 'row', gap: SPACING.md },
+   btnSecondary: {
+      flex: 1, height: BUTTON.primary.height, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.darkBorder,
+      backgroundColor: COLORS.darkBg, alignItems: 'center', justifyContent: 'center',
+   },
+   btnSecondaryText: { color: COLORS.textSecondary, ...TYPOGRAPHY.bodySecondary },
+   btnPrimary: {
+      flex: 1, height: BUTTON.primary.height, backgroundColor: COLORS.primaryDeep, borderRadius: RADIUS.md,
+      alignItems: 'center', justifyContent: 'center',
+   },
+   btnPrimaryText: { color: 'white', ...TYPOGRAPHY.bodySecondary },
+   previewOverlay: { flex: 1, backgroundColor: 'rgba(2,6,23,0.95)', justifyContent: 'center' },
    previewModal: { flex: 1 },
-   previewHeader: { position: 'absolute', top: 60, right: 20, zIndex: 10 },
+   previewHeader: { position: 'absolute', top: 60, right: SPACING.lg, zIndex: 10 },
+   previewCloseBtn: {
+      width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.darkSurface,
+      borderWidth: 1, borderColor: COLORS.darkBorder, alignItems: 'center', justifyContent: 'center',
+   },
    previewFullImage: { width: '100%', height: '90%', marginTop: 80 },
 });

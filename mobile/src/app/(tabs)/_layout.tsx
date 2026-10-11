@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tabs, useRouter, Redirect } from 'expo-router';
 import { Home, ClipboardList, User, Plus, FolderOpen } from 'lucide-react-native';
-import { View, Platform, TouchableOpacity, BlurView } from '@/tw';
+import { View, Platform, TouchableOpacity } from '@/tw';
+import { COLORS, RADIUS, SHADOWS, TYPOGRAPHY } from '@/tokens';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function TabLayout() {
@@ -27,38 +28,26 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: '#38BDF8', // Cyan 400 (Kitabisa vibe)
-        tabBarInactiveTintColor: '#64748B',
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 30 : 20,
           left: 16,
           right: 16,
-          height: 76,
-          borderRadius: 38,
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(15, 23, 42, 0.95)',
-          borderTopWidth: 0,
-          paddingBottom: 12,
-          paddingTop: 8,
-          elevation: 10,
-          boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.3)',
+          height: 68,
+          borderRadius: RADIUS.lg,
+          backgroundColor: COLORS.darkSurface,
+          borderTopWidth: 1,
+          borderTopColor: COLORS.darkBorder,
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.1)',
+          borderColor: COLORS.darkBorder,
+          paddingBottom: 10,
+          paddingTop: 8,
+          ...SHADOWS.floating,
         },
-        tabBarBackground: () => (
-          Platform.OS === 'ios' ? (
-            <BlurView
-              intensity={40}
-              tint="dark"
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            />
-          ) : null
-        ),
         tabBarLabelStyle: {
-          fontSize: 9,
-          fontWeight: '900',
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
+          ...TYPOGRAPHY.badge,
           marginTop: 2,
         }
       }}
@@ -90,19 +79,17 @@ export default function TabLayout() {
           title: '',
           tabBarIcon: () => (
             <View style={{
-              top: -20,
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              backgroundColor: '#0EA5E9',
+              top: -18,
+              width: 56,
+              height: 56,
+              borderRadius: RADIUS.lg,
+              backgroundColor: COLORS.primaryDeep,
               justifyContent: 'center',
               alignItems: 'center',
-              boxShadow: '0px 8px 15px rgba(14, 165, 233, 0.5)',
-              elevation: 12,
               borderWidth: 4,
-              borderColor: '#0F172A',
+              borderColor: COLORS.darkBg,
             }}>
-              <Plus color="white" size={32} strokeWidth={3} />
+              <Plus color="white" size={28} strokeWidth={2.5} />
             </View>
           ),
           tabBarButton: (props) => {

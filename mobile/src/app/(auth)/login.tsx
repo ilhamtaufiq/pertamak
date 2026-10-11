@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'expo-router/head';
 import { KeyboardAvoidingView, Platform, StatusBar, StyleSheet } from 'react-native';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, LinearGradient, BlurView } from '../../tw';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from '../../tw';
 import { Animated } from '../../tw/animated';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
 import { Mail, Lock, LogIn, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { APP_CONFIG } from '../../config';
+import { APP_CONFIG, APP_VERSION } from '../../config';
+import { Alert } from 'react-native';
 import { z } from 'zod';
 import logger from '../../lib/logger';
-import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SHADOWS, SPACING } from '../../tokens';
+import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
 const loginSchema = z.object({
   email: z.string().email('Format email tidak valid'),
@@ -86,11 +87,6 @@ export default function LoginScreen() {
         <meta name="description" content="Halaman masuk aplikasi Pertamak untuk pelaporan kegiatan lapangan" />
       </Head>
       <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={[T.darkBg, T.darkSurface, T.primarySolid]}
-        style={StyleSheet.absoluteFill}
-      />
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex1}
@@ -105,15 +101,13 @@ export default function LoginScreen() {
             entering={FadeInDown.duration(1000).springify()}
             style={styles.brandSection}
           >
-            <View style={styles.logoBox}>
-              <LogIn color={T.primary} size={56} strokeWidth={1.5} />
-            </View>
+            <LogIn color={T.primary} size={40} strokeWidth={1.75} style={{ marginBottom: SPACING.lg }} />
             <Text style={styles.brandTitle}>Pertamak</Text>
           </Animated.View>
 
-          {/* Glassmorphic Login Card */}
+          {/* Login Card */}
           <Animated.View entering={FadeInUp.delay(200).duration(1000).springify()}>
-            <BlurView intensity={20} tint="dark" style={styles.loginCard}>
+            <View style={styles.loginCard}>
               <View style={styles.loginCardInner}>
                 <View style={styles.welcomeSection}>
                   <Text style={styles.welcomeTitle}>Selamat Datang</Text>
@@ -122,7 +116,7 @@ export default function LoginScreen() {
 
                 {error ? (
                   <Animated.View entering={FadeInDown} style={styles.errorBox}>
-                    <ShieldAlert color="#F87171" size={20} style={{ marginRight: 12 }} />
+                    <ShieldAlert color="#FCA5A5" size={20} style={{ marginRight: 12 }} />
                     <Text style={styles.errorText}>{error}</Text>
                   </Animated.View>
                 ) : null}
@@ -131,10 +125,10 @@ export default function LoginScreen() {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.fieldLabel}>Nama Pengguna (Email)</Text>
                   <View style={styles.inputRow}>
-                    <Mail color="#64748B" size={20} style={{ marginRight: 16 }} />
+                    <Mail color={T.textSecondary} size={20} style={{ marginRight: 12 }} />
                     <TextInput
                       placeholder="admin@pertamak.com"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={T.textTertiary}
                       style={styles.textInput}
                       autoCapitalize="none"
                       keyboardType="email-address"
@@ -148,20 +142,25 @@ export default function LoginScreen() {
                 <View style={styles.fieldGroupLast}>
                   <Text style={styles.fieldLabel}>Sandi Rahasia (Password)</Text>
                   <View style={styles.inputRow}>
-                    <Lock color="#64748B" size={20} style={{ marginRight: 16 }} />
+                    <Lock color={T.textSecondary} size={20} style={{ marginRight: 12 }} />
                     <TextInput
                       placeholder="••••••••"
-                      placeholderTextColor="#475569"
+                      placeholderTextColor={T.textTertiary}
                       secureTextEntry={!showPassword}
                       style={styles.textInput}
                       value={password}
                       onChangeText={setPassword}
                     />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.eyeBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Sembunyikan sandi' : 'Tampilkan sandi'}
+                    >
                       {showPassword ? (
-                        <EyeOff color="#64748B" size={20} />
+                        <EyeOff color={T.textSecondary} size={20} />
                       ) : (
-                        <Eye color="#64748B" size={20} />
+                        <Eye color={T.textSecondary} size={20} />
                       )}
                     </TouchableOpacity>
                   </View>
@@ -174,33 +173,31 @@ export default function LoginScreen() {
                   activeOpacity={0.9}
                   style={styles.loginBtnWrapper}
                 >
-                  <LinearGradient
-                    colors={[T.primary, T.primarySolid]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.loginBtn}
-                  >
+                  <View style={styles.loginBtn}>
                     {isLoading ? (
                       <ActivityIndicator color="white" />
                     ) : (
                       <>
                         <Text style={styles.loginBtnText}>Masuk Sesi</Text>
-                        <ArrowRight color="white" size={20} strokeWidth={3} />
+                        <ArrowRight color="white" size={18} strokeWidth={2.5} style={{ marginLeft: 8 }} />
                       </>
                     )}
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.forgotBtn}>
+                <TouchableOpacity
+                  style={styles.forgotBtn}
+                  accessibilityRole="button"
+                  onPress={() => Alert.alert('Lupa Sandi', 'Sandi hanya bisa direset oleh admin. Hubungi admin kantor Anda.')}
+                >
                   <Text style={styles.forgotText}>Lupa sandi Anda?</Text>
                 </TouchableOpacity>
               </View>
-            </BlurView>
+            </View>
           </Animated.View>
 
-              <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
-            <View style={styles.footerLine} />
-            <Text style={styles.footerText}>Pertamak v1.0.0</Text>
+          <Animated.View entering={FadeInUp.delay(400)} style={styles.footerSection}>
+            <Text style={styles.footerText}>Pertamak v{APP_VERSION}</Text>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -212,45 +209,36 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.darkBg },
   flex1: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.xxl, paddingVertical: 48 },
-  brandSection: { alignItems: 'center', marginBottom: 48 },
-  logoBox: {
-    backgroundColor: 'rgba(14, 165, 233, 0.2)', padding: SPACING.xxl, borderRadius: RADIUS.xxl,
-    marginBottom: SPACING.xxl, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.3)',
-    ...SHADOWS.glow(T.primarySolid),
+  brandSection: { alignItems: 'center', marginBottom: 40 },
+  brandTitle: { color: T.text, ...TYPOGRAPHY.display },
+  loginCard: {
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: T.darkBorder, backgroundColor: T.darkSurface,
   },
-  brandTitle: { color: 'white', ...TYPOGRAPHY.display, marginBottom: 8 },
-  brandBadge: {
-    backgroundColor: 'rgba(14, 165, 233, 0.2)', paddingHorizontal: SPACING.lg, paddingVertical: 6,
-    borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(56, 189, 248, 0.2)',
-  },
-  brandBadgeText: { color: '#7DD3FC', fontWeight: '700', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase' },
-  loginCard: { borderRadius: RADIUS.xxl, overflow: 'hidden', borderWidth: 1, borderColor: T.darkBorder },
-  loginCardInner: { padding: RADIUS.xl, backgroundColor: T.darkCard },
-  welcomeSection: { marginBottom: RADIUS.xl },
-  welcomeTitle: { color: 'white', fontSize: 30, fontWeight: '700', marginBottom: 8 },
-  welcomeSubtitle: { color: '#94A3B8', ...TYPOGRAPHY.bodySecondary },
+  loginCardInner: { padding: SPACING.xl },
+  welcomeSection: { marginBottom: SPACING.xl },
+  welcomeTitle: { color: T.text, ...TYPOGRAPHY.title, fontSize: 24, lineHeight: 30, marginBottom: 4 },
+  welcomeSubtitle: { color: T.textSecondary, ...TYPOGRAPHY.bodySecondary },
   errorBox: {
-    backgroundColor: 'rgba(239,68,68,0.1)', flexDirection: 'row', alignItems: 'center',
-    padding: RADIUS.md, borderRadius: RADIUS.md, marginBottom: SPACING.xxl, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
+    backgroundColor: 'rgba(244,63,94,0.08)', flexDirection: 'row', alignItems: 'center',
+    padding: SPACING.md, borderRadius: RADIUS.md, marginBottom: SPACING.xl, borderWidth: 1, borderColor: 'rgba(244,63,94,0.3)',
   },
   errorText: { color: '#FCA5A5', flex: 1, ...TYPOGRAPHY.caption },
-  fieldGroup: { marginBottom: SPACING.xl },
-  fieldGroupLast: { marginBottom: RADIUS.xxl },
-  fieldLabel: { color: '#94A3B8', ...TYPOGRAPHY.label, marginBottom: SPACING.md, marginLeft: 4 },
+  fieldGroup: { marginBottom: SPACING.lg },
+  fieldGroupLast: { marginBottom: SPACING.xl },
+  fieldLabel: { color: T.textSecondary, ...TYPOGRAPHY.label, marginBottom: SPACING.sm },
   inputRow: {
-    backgroundColor: 'rgba(15,23,42,0.5)', flexDirection: 'row', alignItems: 'center',
-    borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', height: BUTTON.primary.height, paddingHorizontal: SPACING.xl,
+    backgroundColor: T.darkBg, flexDirection: 'row', alignItems: 'center',
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: T.darkBorder, height: BUTTON.primary.height, paddingLeft: SPACING.lg, paddingRight: SPACING.xs,
   },
-  textInput: { flex: 1, color: 'white', ...TYPOGRAPHY.body },
-  loginBtnWrapper: { marginBottom: SPACING.xxl },
+  textInput: { flex: 1, color: T.text, ...TYPOGRAPHY.body },
+  eyeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  loginBtnWrapper: { marginBottom: SPACING.lg },
   loginBtn: {
-    ...BUTTON.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
-    ...SHADOWS.glow(T.primarySolid),
+    ...BUTTON.primary, backgroundColor: T.primaryDeep, alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
   },
-  loginBtnText: { color: 'white', ...TYPOGRAPHY.subheading, marginRight: 8 },
-  forgotBtn: { alignItems: 'center', paddingVertical: 8 },
-  forgotText: { color: T.textInactive, ...TYPOGRAPHY.caption, fontWeight: '600' },
-  footerSection: { alignItems: 'center', marginTop: 48 },
-  footerLine: { height: 1, width: 48, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: SPACING.lg },
-  footerText: { color: T.textTertiary, fontWeight: '700', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
+  loginBtnText: { color: 'white', ...TYPOGRAPHY.subheading },
+  forgotBtn: { alignItems: 'center', justifyContent: 'center', minHeight: 44 },
+  forgotText: { color: T.textSecondary, ...TYPOGRAPHY.caption, fontWeight: '600' },
+  footerSection: { alignItems: 'center', marginTop: 40 },
+  footerText: { color: T.textTertiary, ...TYPOGRAPHY.badge },
 });

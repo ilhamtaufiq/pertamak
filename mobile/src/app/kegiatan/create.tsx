@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { KeyboardAvoidingView, Platform, Alert, Dimensions, Modal, TextInput as RNTextInput, StatusBar, StyleSheet } from 'react-native';
-import { View, Text, TouchableOpacity, LinearGradient, BlurView, Image, ScrollView, ActivityIndicator } from '../../tw';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { KeyboardAvoidingView, Platform, Alert, Dimensions, Modal, TextInput as RNTextInput, StatusBar, StyleSheet, Keyboard, ScrollView as RNScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ActivityIndicator } from '../../tw';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Camera, MapPin, Calendar, X, Plus, ChevronLeft, Map as MapIcon, Send, RefreshCcw, FileText } from 'lucide-react-native';
 import * as Location from 'expo-location';
@@ -11,17 +11,10 @@ import logger from '../../lib/logger';
 import { Animated } from '../../tw/animated';
 import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
+import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SPACING } from '../../tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  emerald: '#10B981',
-  amber: '#F59E0B',
-};
 
 const MOCK_PLACES = [
   "Masjid Agung Cianjur, Pamoyanan, Cianjur",
@@ -58,6 +51,10 @@ export default function CreateKegiatanScreen() {
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ lokasi?: string; uraian?: string }>({});
+  const submittingRef = useRef(false);
+  const scrollRef = useRef<RNScrollView>(null);
+  const uraianSectionY = useRef(0);
 
   // Load existing data for Edit Mode
   useEffect(() => {
@@ -84,6 +81,7 @@ export default function CreateKegiatanScreen() {
 
   const handleLocationChange = (text: string) => {
     setLokasi(text);
+    if (errors.lokasi) setErrors(prev => ({ ...prev, lokasi: undefined }));
     if (text.length > 2) {
       const filtered = MOCK_PLACES.filter(p => p.toLowerCase().includes(text.toLowerCase()));
       setSuggestions(filtered);
@@ -151,10 +149,21 @@ export default function CreateKegiatanScreen() {
   const removeImage = (index: number) => setImages(images.filter((_, i) => i !== index));
 
   const handleSubmit = async () => {
-    if (!uraian || !lokasi) {
-      Alert.alert('Data Belum Lengkap', 'Silakan isi uraian kegiatan dan lokasi.');
+    if (submittingRef.current) return;
+    const nextErrors: { lokasi?: string; uraian?: string } = {};
+    if (!lokasi.trim()) nextErrors.lokasi = 'Lokasi wajib diisi.';
+    if (!uraian.trim()) nextErrors.uraian = 'Uraian kegiatan wajib diisi.';
+    setErrors(nextErrors);
+    if (nextErrors.lokasi || nextErrors.uraian) {
+      if (nextErrors.lokasi) {
+        // Lokasi sits at the top, so jump back to it.
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      } else {
+        scrollRef.current?.scrollTo({ y: uraianSectionY.current - 16, animated: true });
+      }
       return;
     }
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -187,7 +196,9 @@ export default function CreateKegiatanScreen() {
       goBack();
     } catch (e: any) {
       logger.error(e, 'Submit failed');
+      Alert.alert('Gagal Menyimpan', 'Laporan belum terkirim. Periksa koneksi Anda lalu coba lagi.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -195,8 +206,8 @@ export default function CreateKegiatanScreen() {
   if (isEdit && isLoadingPrev) {
     return (
       <View style={styles.loadingScreen}>
-        <ActivityIndicator color={COLORS.primarySolid} size="large" />
-        <Text style={styles.loadingText}>Draf di Sinkronkan...</Text>
+        <ActivityIndicator color={COLORS.primary} size="large" />
+        <Text style={styles.loadingText}>Memuat...</Text>
       </View>
     );
   }
@@ -205,29 +216,31 @@ export default function CreateKegiatanScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <Stack.Screen options={{ headerShown: false }} />
-      <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={StyleSheet.absoluteFill} />
 
-      {/* Premium Header */}
+      {/* Header */}
       <View style={styles.headerWrapper}>
-        <LinearGradient colors={[COLORS.darkBg, COLORS.darkSurface]} style={styles.headerGradient}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => goBack()} style={styles.backBtn}>
-              <ChevronLeft color="white" size={24} />
-            </TouchableOpacity>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerLabel}>{isEdit ? 'Ubah Jurnal' : 'Entri Laporan'}</Text>
-              <Text style={styles.headerTitle}>{isEdit ? 'Update Kegiatan' : 'Laporan Baru'}</Text>
-            </View>
-            <View style={{ width: 56 }} />
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            onPress={() => goBack()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Kembali"
+          >
+            <ChevronLeft color={COLORS.text} size={24} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerLabel}>{isEdit ? 'Ubah jurnal' : 'Jurnal kegiatan'}</Text>
+            <Text style={styles.headerTitle}>{isEdit ? 'Ubah kegiatan' : 'Laporan baru'}</Text>
           </View>
-        </LinearGradient>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
-      {/* Floating Info Pill */}
+      {/* Date */}
       <View style={styles.pillWrapper}>
         <Animated.View entering={ZoomIn.delay(300)} style={styles.datePill}>
-          <Calendar color={COLORS.primary} size={16} style={{ marginRight: 12 }} />
-          <Text style={styles.datePillText}>{format(new Date(tanggal), 'EEEE, dd MMMM yyyy')}</Text>
+          <Calendar color={COLORS.textSecondary} size={16} style={{ marginRight: SPACING.md }} />
+          <Text style={styles.datePillText}>{format(new Date(tanggal), 'EEEE, dd MMMM yyyy', { locale: localeId })}</Text>
         </Animated.View>
       </View>
 
@@ -235,23 +248,29 @@ export default function CreateKegiatanScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView
+        <RNScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 150, paddingTop: 40, paddingHorizontal: 24 }}
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ paddingBottom: 150, paddingTop: SPACING.xxl, paddingHorizontal: SPACING.xxl }}
         >
           {/* Section 1: Lokasi */}
           <Animated.View entering={FadeInDown.delay(100)} style={[styles.section, { zIndex: 100 }]}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: COLORS.primarySolid }]} />
-              <Text style={styles.sectionTitle}>Dimana Anda bekerja?</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Di mana Anda bekerja?</Text>
 
             <View style={styles.formCard}>
               <View style={styles.gpsRow}>
-                <TouchableOpacity onPress={detectLocation} disabled={isLocating} style={{ padding: 8 }}>
-                  {isLocating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <RefreshCcw color="#64748B" size={16} />}
+                <TouchableOpacity
+                  onPress={detectLocation}
+                  disabled={isLocating}
+                  style={styles.iconTapTarget}
+                  accessibilityRole="button"
+                  accessibilityLabel="Deteksi ulang lokasi"
+                  accessibilityState={{ disabled: isLocating, busy: isLocating }}
+                >
+                  {isLocating ? <ActivityIndicator size="small" color={COLORS.primary} /> : <RefreshCcw color={COLORS.textSecondary} size={16} />}
                 </TouchableOpacity>
               </View>
 
@@ -263,35 +282,50 @@ export default function CreateKegiatanScreen() {
                 onRequestClose={() => setPreviewImage(null)}
               >
                 <View style={styles.modalOverlay}>
-                  <BlurView intensity={20} tint="dark" style={styles.previewModal}>
+                  <View style={styles.previewModal}>
                     <View style={styles.previewHeader}>
-                      <TouchableOpacity onPress={() => setPreviewImage(null)} style={styles.previewCloseBtn}>
-                        <X color="white" size={24} />
+                      <TouchableOpacity
+                        onPress={() => setPreviewImage(null)}
+                        style={styles.previewCloseBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel="Tutup pratinjau"
+                      >
+                        <X color={COLORS.text} size={24} />
                       </TouchableOpacity>
                     </View>
-                    <Image source={{ uri: previewImage }} style={styles.previewImage} resizeMode="contain" />
-                  </BlurView>
+                    <Image source={{ uri: previewImage ?? undefined }} style={styles.previewImage} resizeMode="contain" />
+                  </View>
                 </View>
               </Modal>
 
               <View style={{ position: 'relative' }}>
                 <View style={styles.locationInputRow}>
-                  <MapPin color={COLORS.primarySolid} size={24} style={{ marginRight: 24 }} />
+                  <MapPin color={COLORS.textSecondary} size={20} style={{ marginRight: SPACING.md }} />
                   <RNTextInput
                     value={lokasi}
                     onChangeText={handleLocationChange}
                     placeholder="Cari lokasi atau ketik..."
-                    placeholderTextColor="#475569"
+                    placeholderTextColor={COLORS.textTertiary}
                     underlineColorAndroid="transparent"
                     style={styles.locationInput}
+                    accessibilityLabel="Lokasi kegiatan"
+                    returnKeyType="done"
+                    onSubmitEditing={Keyboard.dismiss}
                   />
                 </View>
+                {errors.lokasi && <Text style={styles.fieldError} accessibilityLiveRegion="polite">{errors.lokasi}</Text>}
 
                 {suggestions.length > 0 && (
                   <Animated.View entering={FadeInUp} style={styles.suggestionsBox}>
                     {suggestions.map((p, idx) => (
-                      <TouchableOpacity key={idx} onPress={() => selectPlace(p)} style={styles.suggestionItem}>
-                        <MapIcon color={COLORS.primary} size={16} style={{ marginRight: 16 }} />
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => selectPlace(p)}
+                        style={styles.suggestionItem}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Pilih lokasi ${p}`}
+                      >
+                        <MapIcon color={COLORS.textSecondary} size={16} style={{ marginRight: SPACING.md }} />
                         <Text style={styles.suggestionText} numberOfLines={1}>{p}</Text>
                       </TouchableOpacity>
                     ))}
@@ -302,96 +336,126 @@ export default function CreateKegiatanScreen() {
           </Animated.View>
 
           {/* Section 2: Uraian */}
-          <Animated.View entering={FadeInDown.delay(200)} style={[styles.section, { zIndex: 1 }]}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: COLORS.emerald }]} />
-              <Text style={styles.sectionTitle}>Apa yang dilakukan?</Text>
-            </View>
+          <Animated.View
+            entering={FadeInDown.delay(200)}
+            style={[styles.section, { zIndex: 1 }]}
+            onLayout={e => { uraianSectionY.current = e.nativeEvent.layout.y; }}
+          >
+            <Text style={styles.sectionTitle}>Apa yang dilakukan?</Text>
 
             <View style={styles.formCard}>
               <View style={styles.descLabelRow}>
-                <FileText color={COLORS.emerald} size={20} style={{ marginRight: 16 }} />
-                <Text style={styles.descLabel}>DESKRIPSI RINCI</Text>
+                <FileText color={COLORS.textSecondary} size={16} style={{ marginRight: SPACING.md }} />
+                <Text style={styles.descLabel}>Deskripsi rinci</Text>
               </View>
               <RNTextInput
                 multiline
                 numberOfLines={8}
                 value={uraian}
-                onChangeText={setUraian}
+                onChangeText={text => {
+                  setUraian(text);
+                  if (errors.uraian) setErrors(prev => ({ ...prev, uraian: undefined }));
+                }}
+                onFocus={() => {
+                  // Keep the textarea above the keyboard once it opens.
+                  setTimeout(() => scrollRef.current?.scrollTo({ y: uraianSectionY.current - 16, animated: true }), 250);
+                }}
                 placeholder="Ketik rincian pekerjaan Anda di sini..."
-                placeholderTextColor="#475569"
+                placeholderTextColor={COLORS.textTertiary}
                 textAlignVertical="top"
                 underlineColorAndroid="transparent"
                 style={styles.uraianInput}
+                accessibilityLabel="Uraian kegiatan"
+                autoCapitalize="sentences"
               />
+              {errors.uraian && <Text style={styles.fieldError} accessibilityLiveRegion="polite">{errors.uraian}</Text>}
             </View>
           </Animated.View>
 
           {/* Section 3: Dokumentasi */}
           <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
             <View style={styles.sectionHeaderBetween}>
-              <View style={styles.sectionHeaderLeft}>
-                <View style={[styles.sectionDot, { backgroundColor: COLORS.amber }]} />
-                <Text style={styles.sectionTitle}>Bukti Lapangan</Text>
-              </View>
+              <Text style={styles.sectionTitle}>Bukti lapangan</Text>
               <View style={styles.photoCountPill}>
-                <Text style={styles.photoCountText}>{images.length}/5 FOTO</Text>
+                <Text style={styles.photoCountText}>{images.length}/5 foto</Text>
               </View>
             </View>
 
             <View style={styles.mediaGrid}>
-              <TouchableOpacity onPress={takePhoto} style={styles.cameraBtn}>
-                <Camera color="white" size={32} />
+              <TouchableOpacity
+                onPress={takePhoto}
+                style={styles.cameraBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Ambil foto dengan kamera"
+              >
+                <Camera color={COLORS.primary} size={24} />
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={pickImage} style={styles.addPhotoBtn}>
-                <Plus color={COLORS.primary} size={32} />
+              <TouchableOpacity
+                onPress={pickImage}
+                style={styles.addPhotoBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Pilih foto dari galeri"
+              >
+                <Plus color={COLORS.primary} size={24} />
               </TouchableOpacity>
 
               {images.map((img, idx) => (
-                <TouchableOpacity key={idx} onPress={() => setPreviewImage(img.uri)} style={styles.imageThumb}>
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => setPreviewImage(img.uri)}
+                  style={styles.imageThumb}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`Pratinjau foto ${idx + 1}`}
+                >
                   <Image source={{ uri: img.uri }} style={styles.imageThumbImg} />
-                  <TouchableOpacity onPress={() => removeImage(idx)} style={styles.removeImageBtn}>
-                    <X color="white" size={14} />
+                  <TouchableOpacity
+                    onPress={() => removeImage(idx)}
+                    style={styles.removeImageBtn}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Hapus foto ${idx + 1}`}
+                  >
+                    <X color={COLORS.text} size={14} />
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </View>
           </Animated.View>
 
-          {/* Final Action Button */}
+          {/* Submit */}
           <Animated.View entering={FadeInUp.delay(500)} style={styles.submitSection}>
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={handleSubmit}
               disabled={isSubmitting}
-              style={styles.submitBtnWrapper}
+              style={styles.submitBtn}
+              accessibilityRole="button"
+              accessibilityLabel={isEdit ? 'Simpan perubahan' : 'Kirim laporan'}
+              accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
             >
-              <LinearGradient
-                colors={[COLORS.primarySolid, '#0284C7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.submitBtnGradient}
-              />
               <View style={styles.submitBtnContent}>
+                {isSubmitting ? (
+                  <ActivityIndicator color="white" size="small" style={{ marginRight: SPACING.md }} />
+                ) : null}
                 <Text style={styles.submitBtnText}>
-                  {isEdit ? 'SIMPAN PERUBAHAN' : 'KIRIM LAPORAN'}
+                  {isSubmitting ? 'Mengirim...' : isEdit ? 'Simpan perubahan' : 'Kirim laporan'}
                 </Text>
-                <Send color="white" size={24} />
+                {!isSubmitting && <Send color="white" size={18} style={{ marginLeft: SPACING.md }} />}
               </View>
             </TouchableOpacity>
           </Animated.View>
-        </ScrollView>
+        </RNScrollView>
       </KeyboardAvoidingView>
 
       {/* Full Screen Loading Overlay */}
       {isSubmitting && (
-        <BlurView intensity={30} tint="dark" style={styles.loadingOverlay}>
+        <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
             <ActivityIndicator color={COLORS.primary} size="large" />
-            <Text style={styles.loadingOverlayText}>Mengunggah Data...</Text>
+            <Text style={styles.loadingOverlayText}>Mengunggah data...</Text>
           </View>
-        </BlurView>
+        </View>
       )}
     </View>
   );
@@ -402,112 +466,108 @@ const ITEM_WIDTH = (SCREEN_WIDTH - 48 - 32) / 3; // 3 columns with gaps
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.darkBg },
   loadingScreen: { flex: 1, backgroundColor: COLORS.darkBg, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#94A3B8', marginTop: 16, fontWeight: '900', fontSize: 10, letterSpacing: 4, textTransform: 'uppercase' },
-  headerWrapper: { height: 192, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' },
-  headerGradient: { flex: 1, paddingTop: 64, paddingHorizontal: 24 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+  loadingText: { color: COLORS.textSecondary, marginTop: SPACING.lg, ...TYPOGRAPHY.caption },
+  headerWrapper: {
+    paddingTop: 64, paddingHorizontal: SPACING.xxl, paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.darkBg, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)', padding: 16, borderRadius: 24,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    width: 44, height: 44, borderRadius: RADIUS.md,
+    backgroundColor: COLORS.darkSurface, borderWidth: 1, borderColor: COLORS.darkBorder,
+    alignItems: 'center', justifyContent: 'center',
   },
   headerCenter: { alignItems: 'center' },
-  headerLabel: { color: COLORS.primary, fontWeight: '900', fontSize: 10, letterSpacing: 4, marginBottom: 8, textTransform: 'uppercase' },
-  headerTitle: { color: 'white', fontSize: 30, fontWeight: '900', letterSpacing: -0.5 },
-  pillWrapper: { marginTop: -32, paddingHorizontal: 32, zIndex: 10 },
+  headerSpacer: { width: 44 },
+  headerLabel: { color: COLORS.textSecondary, ...TYPOGRAPHY.caption, marginBottom: SPACING.xs },
+  headerTitle: { color: COLORS.text, ...TYPOGRAPHY.subheading },
+  pillWrapper: { paddingTop: SPACING.lg, paddingHorizontal: SPACING.xxl },
   datePill: {
-    backgroundColor: COLORS.darkSurface, borderRadius: 32, paddingVertical: 16, paddingHorizontal: 32,
+    backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md, paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.3)', elevation: 8,
+    borderWidth: 1, borderColor: COLORS.darkBorder,
   },
-  datePillText: { color: 'white', fontWeight: '900', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
-  section: { marginBottom: 40 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, paddingLeft: 8 },
-  sectionHeaderBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingLeft: 8, paddingRight: 16 },
-  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
-  sectionDot: { width: 6, height: 24, borderRadius: 3, marginRight: 16 },
-  sectionTitle: { color: 'white', fontWeight: '900', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' },
+  datePillText: { color: COLORS.text, ...TYPOGRAPHY.label },
+  section: { marginBottom: SPACING.xxxl },
+  sectionTitle: { color: COLORS.text, ...TYPOGRAPHY.subheading, marginBottom: SPACING.lg },
+  sectionHeaderBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg },
   formCard: {
-    backgroundColor: COLORS.darkSurface, paddingHorizontal: 12, paddingVertical: 32,
-    borderRadius: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
-    boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.2)', elevation: 5,
+    backgroundColor: COLORS.darkSurface, padding: SPACING.lg,
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.darkBorder,
   },
-  gpsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, paddingHorizontal: 16 },
-  gpsBadge: {
-    backgroundColor: 'rgba(56,189,248,0.1)', paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)',
-  },
-  gpsBadgeText: { color: '#0284C7', fontWeight: '900', fontSize: 9, letterSpacing: 2 },
+  gpsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: SPACING.sm },
+  iconTapTarget: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  fieldError: { color: COLORS.rose, ...TYPOGRAPHY.caption, marginTop: SPACING.sm },
   locationInputRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.darkBg,
-    paddingHorizontal: 32, borderRadius: 40, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', height: 96,
+    paddingHorizontal: SPACING.lg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.darkBorder, height: 52,
   },
-  locationInput: { flex: 1, height: '100%', color: 'white', fontWeight: '900', fontSize: 20 },
+  locationInput: { flex: 1, height: '100%', color: COLORS.text, ...TYPOGRAPHY.body },
   suggestionsBox: {
-    position: 'absolute', top: 88, left: 0, right: 0, zIndex: 50,
-    backgroundColor: COLORS.darkSurface, borderRadius: 32, borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)', overflow: 'hidden',
-    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
+    position: 'absolute', top: 60, left: 0, right: 0, zIndex: 50,
+    backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md, borderWidth: 1,
+    borderColor: COLORS.darkBorder, overflow: 'hidden',
   },
-  suggestionItem: { padding: 24, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', flexDirection: 'row', alignItems: 'center' },
-  suggestionText: { color: 'white', fontWeight: '700' },
-  descLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  descLabel: { color: '#94A3B8', fontWeight: '900', fontSize: 10, letterSpacing: 2 },
+  suggestionItem: {
+    minHeight: 44, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
+    borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder, flexDirection: 'row', alignItems: 'center',
+  },
+  suggestionText: { flex: 1, color: COLORS.text, ...TYPOGRAPHY.bodySecondary },
+  descLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md },
+  descLabel: { color: COLORS.textSecondary, ...TYPOGRAPHY.label },
   uraianInput: {
-    backgroundColor: COLORS.darkBg, padding: 24, borderRadius: 32, color: 'white',
-    fontWeight: '700', fontSize: 18, height: 240, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.darkBg, padding: SPACING.lg, borderRadius: RADIUS.md, color: COLORS.text,
+    ...TYPOGRAPHY.body, height: 240, borderWidth: 1, borderColor: COLORS.darkBorder,
     textAlignVertical: 'top',
   },
   photoCountPill: {
-    backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 4,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.darkSurface, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.darkBorder,
   },
-  photoCountText: { color: COLORS.primary, fontWeight: '900', fontSize: 9, letterSpacing: -0.3 },
-  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingHorizontal: 8 },
+  photoCountText: { color: COLORS.textSecondary, ...TYPOGRAPHY.badge },
+  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.lg },
   cameraBtn: {
-    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.primarySolid, borderRadius: 32,
-    alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0px 0px 15px rgba(14, 165, 233, 0.4)', elevation: 8,
+    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md,
+    borderWidth: 1, borderColor: COLORS.darkBorder, alignItems: 'center', justifyContent: 'center',
   },
   addPhotoBtn: {
-    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.darkSurface, borderRadius: 32,
-    borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)',
+    width: ITEM_WIDTH, aspectRatio: 1, backgroundColor: COLORS.darkSurface, borderRadius: RADIUS.md,
+    borderWidth: 1, borderStyle: 'dashed', borderColor: COLORS.darkBorder,
     alignItems: 'center', justifyContent: 'center',
   },
   imageThumb: {
-    width: ITEM_WIDTH, aspectRatio: 1, borderRadius: 32, overflow: 'hidden',
+    width: ITEM_WIDTH, aspectRatio: 1, borderRadius: RADIUS.md, overflow: 'hidden',
     backgroundColor: COLORS.darkSurface,
   },
   imageThumbImg: { width: '100%', height: '100%' },
   removeImageBtn: {
-    position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)',
+    position: 'absolute', top: SPACING.sm, right: SPACING.sm, backgroundColor: 'rgba(0,0,0,0.6)',
     width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
   },
-  cloudAssetBadge: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: COLORS.primarySolid, paddingVertical: 4, alignItems: 'center',
+  submitSection: { marginTop: SPACING.xxl },
+  submitBtn: {
+    height: BUTTON.primary.height, borderRadius: BUTTON.primary.borderRadius,
+    backgroundColor: COLORS.primaryDeep, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
   },
-  cloudAssetText: { fontSize: 7, color: 'white', fontWeight: '900', letterSpacing: -0.3, textTransform: 'uppercase' },
-  submitSection: { marginTop: 32 },
-  submitBtnWrapper: {
-    backgroundColor: COLORS.darkSurface, paddingVertical: 32, borderRadius: 48,
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-    boxShadow: '0px 0px 20px rgba(0, 0, 0, 0.3)', elevation: 10,
-  },
-  submitBtnGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 48 },
   submitBtnContent: { flexDirection: 'row', alignItems: 'center' },
-  submitBtnText: { color: 'white', fontWeight: '900', fontSize: 20, letterSpacing: 4, marginRight: 16 },
+  submitBtnText: { color: 'white', fontSize: BUTTON.primary.fontSize, fontWeight: BUTTON.primary.fontWeight },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(2,6,23,0.9)', justifyContent: 'center' },
   loadingOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center', zIndex: 100,
+    backgroundColor: 'rgba(2,6,23,0.7)',
   },
   loadingCard: {
-    backgroundColor: 'rgba(15,23,42,0.9)', padding: 48, borderRadius: 56,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center',
+    backgroundColor: COLORS.darkSurface, paddingVertical: SPACING.xxl, paddingHorizontal: SPACING.xxxl,
+    borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.darkBorder, alignItems: 'center',
   },
-  loadingOverlayText: { color: 'white', marginTop: 24, fontWeight: '900', fontSize: 10, letterSpacing: 6, textTransform: 'uppercase' },
-  previewModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center' },
-  previewHeader: { position: 'absolute', top: 40, right: 20, zIndex: 10 },
-  previewCloseBtn: { padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24 },
+  loadingOverlayText: { color: COLORS.text, marginTop: SPACING.lg, ...TYPOGRAPHY.bodySecondary },
+  previewModal: { flex: 1, justifyContent: 'center' },
+  previewHeader: { position: 'absolute', top: 40, right: SPACING.lg, zIndex: 10 },
+  previewCloseBtn: {
+    width: 44, height: 44, borderRadius: RADIUS.md, backgroundColor: COLORS.darkSurface,
+    borderWidth: 1, borderColor: COLORS.darkBorder, alignItems: 'center', justifyContent: 'center',
+  },
   previewImage: { width: '100%', height: '80%' },
 });

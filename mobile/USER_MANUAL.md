@@ -25,6 +25,8 @@ Tempat di mana Anda menambah catatan tugas, melampirkan berkas foto, dan memanta
 - Masuk dari Tab **Kegiatan** di bilah bawah (*bottom bar*).
 - **Lihat Riwayat:** Skrol layar untuk melihat laporan apa saja yang telah dicatat (biasanya dilengkapi filter/pencarian).
 - **Input Kegiatan Baru:** Tap tombol persetujuan atau bujur (+) untuk menambahkan jurnal, mengisikan deskripsi pekerjaan, dan menyimpannya ke *server*.
+- **Filter Periode:** Tap ikon filter untuk memilih bulan dan tahun.
+- **Export Laporan:** Tap ikon unduh (⬇) di samping filter, pilih format **PDF** (siap cetak) atau **Word/DOCX** (bisa diedit), lalu tap **Export**. Laporan berisi kegiatan Anda sendiri (lengkap dengan foto dokumentasi) untuk periode filter aktif, atau bulan berjalan jika filter kosong. File dapat disimpan ke perangkat atau dibagikan lewat WhatsApp, Drive, email, dan lainnya.
 
 ## 5. Peta Lokasi (Maps & Tracking)
 Fitur pemantauan dan pencatatan lokasi lapangan secara visual menggunakan peta interaktif.

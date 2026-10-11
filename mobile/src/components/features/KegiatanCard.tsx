@@ -1,21 +1,10 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, Image, BlurView } from '../../tw';
+import { View, Text, TouchableOpacity, Image } from '../../tw';
+import { COLORS, RADIUS, TYPOGRAPHY } from '../../tokens';
 import { Kegiatan } from '../../types/kegiatan';
 import { haptics } from '../../services/haptics';
-import { MapPin, Calendar, ChevronRight, CheckCircle2, FileText, Image as ImageIcon } from 'lucide-react-native';
+import { MapPin, Calendar, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
-
-const COLORS = {
-  primary: '#38BDF8',
-  primarySolid: '#0EA5E9',
-  darkBg: '#020617',
-  darkSurface: '#0F172A',
-  text: '#FFFFFF',
-  textSecondary: '#64748B',
-  textTertiary: '#475569',
-  emerald: '#10B981',
-  border: 'rgba(255,255,255,0.1)',
-};
 
 interface KegiatanCardProps {
   item: Kegiatan;
@@ -32,12 +21,14 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
   const firstMedia = hasMedia ? item.media![0].original_url : null;
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       activeOpacity={0.9}
       onPress={handlePress}
       style={styles.card}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.uraian_kegiatan}, ${item.lokasi}, ${item.hari}`}
     >
-      <BlurView intensity={10} tint="dark" style={styles.cardInner}>
+      <View style={styles.cardInner}>
         <View style={styles.contentRow}>
           {/* Content Section */}
           <View style={styles.textContent}>
@@ -46,7 +37,7 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
                 <Text style={styles.dayText}>{item.hari}</Text>
               </View>
               <View style={styles.dateRow}>
-                <Calendar color="#94A3B8" size={12} style={{ marginRight: 6 }} />
+                <Calendar color={COLORS.textSecondary} size={12} style={{ marginRight: 6 }} />
                 <Text style={styles.dateText}>
                   {new Date(item.tanggal).toLocaleDateString('id-ID', {
                     day: '2-digit',
@@ -62,16 +53,18 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
             </Text>
 
             <View style={styles.locationRow}>
-              <MapPin color={COLORS.primary} size={14} style={{ marginRight: 8 }} />
+              <MapPin color={COLORS.textSecondary} size={14} style={{ marginRight: 8 }} />
               <Text style={styles.locationText} numberOfLines={1}>
                 {item.lokasi}
               </Text>
             </View>
 
             <View style={styles.footer}>
-              <View style={styles.statusBadge}>
-                <CheckCircle2 color={COLORS.emerald} size={12} style={{ marginRight: 6 }} />
-                <Text style={styles.statusText}>Terverifikasi</Text>
+              <View style={styles.photoInfo}>
+                <ImageIcon color={COLORS.textTertiary} size={12} style={{ marginRight: 6 }} />
+                <Text style={styles.photoInfoText}>
+                  {hasMedia ? `${item.media?.length} foto` : 'Tanpa foto'}
+                </Text>
               </View>
               <View style={styles.detailLink}>
                 <Text style={styles.detailText}>Detail</Text>
@@ -96,103 +89,81 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
               </View>
             ) : (
               <View style={styles.noMediaFrame}>
-                <FileText color={COLORS.textTertiary} size={32} strokeWidth={1} />
-                <Text style={styles.noMediaText}>No Media</Text>
+                <FileText color={COLORS.textTertiary} size={28} strokeWidth={1.5} />
+                <Text style={styles.noMediaText}>Tanpa foto</Text>
               </View>
             )}
           </View>
         </View>
-      </BlurView>
+      </View>
     </TouchableOpacity>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 16,
-    borderRadius: 32,
+    marginBottom: 12,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 5,
+    borderColor: COLORS.darkBorder,
+    backgroundColor: COLORS.darkSurface,
   },
-  cardInner: { padding: 20 },
+  cardInner: { padding: 16 },
   contentRow: { flexDirection: 'row' },
-  textContent: { flex: 1, paddingRight: 16 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  dayBadge: {
-    backgroundColor: 'rgba(56, 189, 248, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.2)',
-    marginRight: 12,
-  },
-  dayText: { color: '#7DD3FC', fontWeight: '900', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
+  textContent: { flex: 1, paddingRight: 12 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  dayBadge: { marginRight: 10 },
+  dayText: { color: COLORS.textSecondary, ...TYPOGRAPHY.badge },
   dateRow: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { color: '#94A3B8', fontSize: 12, fontWeight: '700' },
-  title: { color: 'white', fontWeight: '700', fontSize: 18, lineHeight: 24, marginBottom: 12 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  locationText: { color: '#94A3B8', fontSize: 14, fontWeight: '500', flex: 1 },
+  dateText: { color: COLORS.textTertiary, fontSize: 12, fontWeight: '500' },
+  title: { color: COLORS.text, fontWeight: '600', fontSize: 16, lineHeight: 22, marginBottom: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  locationText: { color: COLORS.textSecondary, fontSize: 14, fontWeight: '500', flex: 1 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.darkBorder,
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
-  },
-  statusText: { color: '#34D399', fontSize: 10, fontWeight: '900', letterSpacing: -0.3, textTransform: 'uppercase' },
+  photoInfo: { flexDirection: 'row', alignItems: 'center' },
+  photoInfoText: { color: COLORS.textTertiary, fontSize: 12, fontWeight: '500' },
   detailLink: { flexDirection: 'row', alignItems: 'center' },
-  detailText: { color: COLORS.primary, fontSize: 12, fontWeight: '700', marginRight: 4 },
-  mediaSection: { width: 96, alignItems: 'center', justifyContent: 'center' },
+  detailText: { color: COLORS.primary, fontSize: 13, fontWeight: '600', marginRight: 4 },
+  mediaSection: { width: 88, alignItems: 'center', justifyContent: 'center' },
   mediaFrame: {
-    width: 96,
-    height: 128,
-    borderRadius: 16,
+    width: 88,
+    height: 116,
+    borderRadius: RADIUS.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.darkSurface,
+    borderColor: COLORS.darkBorder,
+    backgroundColor: COLORS.darkBg,
   },
   mediaImage: { width: '100%', height: '100%' },
   mediaCountBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(2,6,23,0.75)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: RADIUS.sm,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  mediaCountText: { color: 'white', fontSize: 9, fontWeight: '700' },
+  mediaCountText: { color: 'white', fontSize: 11, fontWeight: '600' },
   noMediaFrame: {
-    width: 96,
-    height: 128,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    width: 88,
+    height: 116,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.darkBg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.darkBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  noMediaText: { color: '#475569', fontSize: 9, fontWeight: '900', letterSpacing: 2, marginTop: 8, textTransform: 'uppercase' },
+  noMediaText: { color: COLORS.textTertiary, fontSize: 11, fontWeight: '500', marginTop: 6 },
 });

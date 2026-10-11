@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\Folder;
+use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Auth;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Illuminate\Support\Facades\Schema;
@@ -14,6 +15,8 @@ class MediaController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate(['parent_id' => 'nullable|integer|exists:folders,id']);
+
         $user = Auth::user();
         $isAdmin = $user->hasRole('admin');
         $parentId = $request->get('parent_id');
@@ -76,9 +79,9 @@ class MediaController extends Controller
                 'size' => $media->size,
                 'human_size' => $media->human_readable_size,
                 'mime_type' => $media->mime_type,
-                'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
-                'original_url' => $media->getUrl(),
-                'thumb' => $isImage ? $media->getUrl('thumb') : null,
+                'url' => $isImage ? MediaUrl::for($media, 'optimized') : MediaUrl::for($media),
+                'original_url' => MediaUrl::for($media),
+                'thumb' => $isImage ? MediaUrl::for($media, 'thumb') : null,
                 'created_at' => $media->created_at,
                 'owner_name' => $ownerName
             ];
@@ -87,7 +90,7 @@ class MediaController extends Controller
         return response()->json([
             'folders' => $folders,
             'files' => $files,
-            'breadcrumbs' => $this->getBreadcrumbs($parentId)
+            'breadcrumbs' => $this->getBreadcrumbs($parentId, $user)
         ]);
     }
 
@@ -95,7 +98,7 @@ class MediaController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:folders,id'
+            'parent_id' => 'nullable|integer|exists:folders,id'
         ]);
 
         // Security check for parent folder
@@ -116,8 +119,8 @@ class MediaController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:51200',
-            'folder_id' => 'nullable|exists:folders,id'
+            'file' => 'required|file|mimes:jpeg,jpg,png,gif,webp,pdf|max:51200',
+            'folder_id' => 'nullable|integer|exists:folders,id'
         ]);
 
         $user = Auth::user();
@@ -146,19 +149,21 @@ class MediaController extends Controller
             'size' => $media->size,
             'human_size' => $media->human_readable_size,
             'mime_type' => $media->mime_type,
-            'url' => $isImage ? $media->getUrl('optimized') : $media->getUrl(),
-            'original_url' => $media->getUrl(),
-            'thumb' => $isImage ? $media->getUrl('thumb') : null,
+            'url' => $isImage ? MediaUrl::for($media, 'optimized') : MediaUrl::for($media),
+            'original_url' => MediaUrl::for($media),
+            'thumb' => $isImage ? MediaUrl::for($media, 'thumb') : null,
             'created_at' => $media->created_at,
         ]);
     }
 
     public function rename(Request $request, $type, $id)
     {
+        $this->ensureValidType($type);
+
         $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'parent_id' => 'sometimes|nullable|exists:folders,id',
-            'folder_id' => 'sometimes|nullable|exists:folders,id'
+            'name' => ['sometimes', 'string', 'max:255', 'not_regex:/[\/\\\\\x00]|\.\./'],
+            'parent_id' => 'sometimes|nullable|integer|exists:folders,id',
+            'folder_id' => 'sometimes|nullable|integer|exists:folders,id'
         ]);
 
         $user = Auth::user();
@@ -170,12 +175,16 @@ class MediaController extends Controller
             
             $folder = $query->findOrFail($id);
             $updateData = [];
-            if ($request->has('name')) $updateData['name'] = $request->name;
+            if ($request->has('name')) $updateData['name'] = $this->sanitizeName($request->name);
             if ($request->has('parent_id')) {
                 // Check move target permission
                 if ($request->parent_id && !$isAdmin) {
                     $target = Folder::where('user_id', $user->id)->find($request->parent_id);
                     if (!$target) return response()->json(['message' => 'Unauthorized'], 403);
+                }
+                // A folder cannot become its own descendant
+                if ($request->parent_id && $this->isSameOrDescendant($request->parent_id, $folder->id)) {
+                    return response()->json(['message' => 'Folder tidak bisa dipindah ke dalam dirinya sendiri.'], 422);
                 }
                 $updateData['parent_id'] = $request->parent_id;
             }
@@ -193,7 +202,7 @@ class MediaController extends Controller
             }
 
             $updateData = [];
-            if ($request->has('name')) $updateData['file_name'] = $request->name;
+            if ($request->has('name')) $updateData['file_name'] = $this->sanitizeName($request->name);
             if ($request->has('folder_id')) {
                 // Check move target folder permission
                 if ($request->folder_id && !$isAdmin) {
@@ -221,6 +230,8 @@ class MediaController extends Controller
 
     public function destroy($type, $id)
     {
+        $this->ensureValidType($type);
+
         $user = Auth::user();
         $isAdmin = $user->hasRole('admin');
 
@@ -228,6 +239,16 @@ class MediaController extends Controller
             $query = Folder::query();
             if (!$isAdmin) $query->where('user_id', $user->id);
             $folder = $query->findOrFail($id);
+
+            if (!$isAdmin && $this->subtreeHasForeignContent($folder, $user->id)) {
+                return response()->json([
+                    'message' => 'Folder ini berisi berkas milik orang lain dan tidak bisa dihapus.',
+                ], 409);
+            }
+
+            // DB cascade removes rows but not stored files, so delete the files through Spatie first
+            Media::whereIn('folder_id', $this->subtreeFolderIds($folder))->get()->each->delete();
+
             $folder->delete();
         } else {
             $media = Media::findOrFail($id);
@@ -242,12 +263,20 @@ class MediaController extends Controller
         return response()->json(['message' => 'Deleted successfully']);
     }
 
-    private function getBreadcrumbs($id)
+    private function getBreadcrumbs($id, $user)
     {
         $breadcrumbs = [];
         $current = $id ? Folder::find($id) : null;
+        $seen = [];
 
-        while ($current) {
+        while ($current && !in_array($current->id, $seen, true) && count($seen) < self::MAX_DEPTH) {
+            $seen[] = $current->id;
+
+            // Do not reveal names of ancestors the user does not own
+            if (!$user->hasRole('admin') && $current->user_id !== $user->id) {
+                break;
+            }
+
             array_unshift($breadcrumbs, [
                 'id' => $current->id,
                 'name' => $current->name
@@ -256,5 +285,82 @@ class MediaController extends Controller
         }
 
         return $breadcrumbs;
+    }
+
+    private const MAX_DEPTH = 50;
+
+    private function ensureValidType(string $type): void
+    {
+        abort_unless(in_array($type, ['folder', 'file'], true), 404);
+    }
+
+    /**
+     * Strip path separators, traversal sequences and control characters from a client-supplied name.
+     */
+    private function sanitizeName(string $name): string
+    {
+        $clean = str_replace(['/', '\\', '..'], '', $name);
+        $clean = preg_replace('/[\x00-\x1F]/', '', $clean);
+
+        return trim($clean) ?: 'Tanpa nama';
+    }
+
+    /**
+     * True when $folderId is $rootId itself or sits underneath it.
+     */
+    private function isSameOrDescendant($folderId, $rootId): bool
+    {
+        $current = Folder::find($folderId);
+        $seen = [];
+
+        while ($current && count($seen) < self::MAX_DEPTH) {
+            if ($current->id === (int) $rootId) {
+                return true;
+            }
+            if (in_array($current->id, $seen, true)) {
+                break;
+            }
+            $seen[] = $current->id;
+            $current = $current->parent;
+        }
+
+        return false;
+    }
+
+    /**
+     * The folder id plus every folder id beneath it (breadth-first, depth-capped).
+     */
+    private function subtreeFolderIds(Folder $root): array
+    {
+        $ids = [$root->id];
+        $frontier = [$root->id];
+        $depth = 0;
+
+        while ($frontier && $depth++ < self::MAX_DEPTH) {
+            $frontier = Folder::whereIn('parent_id', $frontier)->pluck('id')->all();
+            $ids = array_merge($ids, $frontier);
+        }
+
+        return $ids;
+    }
+
+    /**
+     * True when the folder or any folder beneath it holds an item owned by someone else.
+     */
+    private function subtreeHasForeignContent(Folder $root, int $userId): bool
+    {
+        $ids = $this->subtreeFolderIds($root);
+
+        if (Folder::whereIn('id', $ids)->where('user_id', '!=', $userId)->exists()) {
+            return true;
+        }
+
+        return Media::whereIn('folder_id', $ids)->get()->contains(function (Media $media) use ($userId) {
+            $owner = $media->model instanceof Folder
+                ? $media->model->user_id
+                : ($media->model_type === \App\Models\User::class ? $media->model_id : null);
+
+            return $owner !== $userId;
+        });
     }
 }

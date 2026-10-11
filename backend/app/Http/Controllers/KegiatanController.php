@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kegiatan;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -21,31 +24,12 @@ class KegiatanController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $perPage = $request->get('per_page', 15);
-        $user = auth()->user();
+        $filters = $this->validatedFilters($request);
+        $perPage = $request->integer('per_page', 15);
 
-        $query = Kegiatan::with(['media', 'user.karyawan'])
-            ->orderBy('tanggal', 'desc');
-
-        if (!$user->hasRole('admin')) {
-            $query->where('user_id', $user->id);
-        }
-
-        // Filtering
-        if ($request->has('day') && !empty($request->day)) {
-            $query->whereDay('tanggal', $request->day);
-        }
-        if ($request->has('month') && !empty($request->month)) {
-            $query->whereMonth('tanggal', $request->month);
-        }
-        if ($request->has('year') && !empty($request->year)) {
-            $query->whereYear('tanggal', $request->year);
-        }
-        if ($user->hasRole('admin') && $request->has('user_id') && !empty($request->user_id)) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        $kegiatans = $query->paginate($perPage);
+        $kegiatans = $this->filteredQuery($filters)
+            ->orderBy('tanggal', 'desc')
+            ->paginate($perPage);
 
         return response()->json($kegiatans);
     }
@@ -59,29 +43,10 @@ class KegiatanController extends Controller
         ini_set('memory_limit', '512M');
         set_time_limit(300);
 
-        $user = auth()->user();
-        $query = Kegiatan::with(['media', 'user.karyawan'])
-            ->orderBy('tanggal', 'asc');
-
-        if (!$user->hasRole('admin')) {
-            $query->where('user_id', $user->id);
-        }
-
-        // Filtering (same as index)
-        if ($request->has('day') && !empty($request->day)) {
-            $query->whereDay('tanggal', $request->day);
-        }
-        if ($request->has('month') && !empty($request->month)) {
-            $query->whereMonth('tanggal', $request->month);
-        }
-        if ($request->has('year') && !empty($request->year)) {
-            $query->whereYear('tanggal', $request->year);
-        }
-        if ($user->hasRole('admin') && $request->has('user_id') && !empty($request->user_id)) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        $kegiatans = $query->get();
+        $filters = $this->validatedFilters($request);
+        $kegiatans = $this->filteredQuery($filters)
+            ->orderBy('tanggal', 'asc')
+            ->get();
 
         $phpWord = new PhpWord();
         
@@ -106,18 +71,12 @@ class KegiatanController extends Controller
 
         $section->addTitle('LAPORAN KEGIATAN', 1);
         
-        if ($request->has('month') && $request->has('year')) {
-            $monthName = Carbon::createFromDate($request->year, $request->month, 1)->translatedFormat('F');
-            $section->addText("Periode: $monthName {$request->year}", ['bold' => true], ['alignment' => Jc::CENTER]);
+        if ($periode = $this->periodeLabel($filters)) {
+            $section->addText("Periode: $periode", ['bold' => true], ['alignment' => Jc::CENTER]);
         }
-        
-        if ($user->hasRole('admin') && $request->has('user_id')) {
-            $exportUser = \App\Models\User::find($request->user_id);
-            if ($exportUser) {
-                $section->addText("Nama: {$exportUser->name}", ['bold' => true], ['alignment' => Jc::CENTER]);
-            }
-        } elseif (!$user->hasRole('admin')) {
-            $section->addText("Nama: {$user->name}", ['bold' => true], ['alignment' => Jc::CENTER]);
+
+        if ($exportUser = $this->exportUser($filters)) {
+            $section->addText("Nama: {$exportUser->name}", ['bold' => true], ['alignment' => Jc::CENTER]);
         }
 
         $section->addTextBreak(1);
@@ -165,11 +124,7 @@ class KegiatanController extends Controller
             }
         }
 
-        $filename = 'Laporan_Kegiatan';
-        if ($request->has('month') && $request->has('year')) {
-            $filename .= '_' . $request->year . '_' . str_pad($request->month, 2, '0', STR_PAD_LEFT);
-        }
-        $filename .= '_' . now()->format('His') . '.docx';
+        $filename = $this->exportFilename($filters, 'docx');
 
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
         
@@ -177,6 +132,145 @@ class KegiatanController extends Controller
         $objWriter->save($tempFile);
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Export kegiatan to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $filters = $this->validatedFilters($request);
+        $kegiatans = $this->filteredQuery($filters)
+            ->orderBy('tanggal', 'asc')
+            ->get();
+
+        // Embed photos as data URIs so dompdf never needs filesystem or remote access.
+        // Capped per export to keep memory bounded; the cap is reported via headers.
+        $limit = (int) config('kegiatan.pdf_max_images', 150);
+        $embedded = 0;
+        $skipped = 0;
+
+        $rows = $kegiatans->map(function (Kegiatan $kegiatan) use ($limit, &$embedded, &$skipped) {
+            $images = [];
+            foreach ($kegiatan->media as $media) {
+                if ($embedded >= $limit) {
+                    $skipped++;
+                    continue;
+                }
+
+                $imagePath = $media->getPath('optimized');
+                if (!file_exists($imagePath)) {
+                    $imagePath = $media->getPath();
+                }
+                if (file_exists($imagePath)) {
+                    $mime = mime_content_type($imagePath) ?: $media->mime_type;
+                    $images[] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($imagePath));
+                    $embedded++;
+                }
+            }
+
+            return [
+                'tanggal' => $kegiatan->hari . ', ' . $kegiatan->tanggal->format('d-m-Y'),
+                'lokasi' => $kegiatan->lokasi,
+                'uraian' => $kegiatan->uraian_kegiatan,
+                'images' => $images,
+            ];
+        });
+
+        $pdf = Pdf::loadView('exports.kegiatan-pdf', [
+            'rows' => $rows,
+            'periode' => $this->periodeLabel($filters),
+            'nama' => $this->exportUser($filters)?->name,
+        ])->setPaper([0, 0, 595.28, 935.43]); // F4 (210 x 330 mm), same as the DOCX export
+
+        return $pdf->download($this->exportFilename($filters, 'pdf'))
+            ->header('X-Export-Images-Limit', (string) $limit)
+            ->header('X-Export-Images-Skipped', (string) $skipped);
+    }
+
+    /**
+     * Validate the shared list/export filters.
+     */
+    private function validatedFilters(Request $request): array
+    {
+        return $request->validate([
+            'day' => 'nullable|integer|between:1,31',
+            'month' => 'nullable|integer|between:1,12',
+            'year' => 'nullable|integer|between:2000,2100',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'per_page' => 'nullable|integer|between:1,100',
+        ]);
+    }
+
+    /**
+     * Base query honoring filters. Non-admins are always scoped to their own kegiatan.
+     */
+    private function filteredQuery(array $filters): Builder
+    {
+        $user = auth()->user();
+        $query = Kegiatan::with(['media', 'user.karyawan']);
+
+        if (!$user->hasRole('admin')) {
+            $query->where('user_id', $user->id);
+        } elseif (!empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
+        if (!empty($filters['day'])) {
+            $query->whereDay('tanggal', $filters['day']);
+        }
+        if (!empty($filters['month'])) {
+            $query->whereMonth('tanggal', $filters['month']);
+        }
+        if (!empty($filters['year'])) {
+            $query->whereYear('tanggal', $filters['year']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Human readable period for export headers, e.g. "Maret 2026" or "2026".
+     */
+    private function periodeLabel(array $filters): ?string
+    {
+        if (!empty($filters['month']) && !empty($filters['year'])) {
+            return Carbon::createFromDate((int) $filters['year'], (int) $filters['month'], 1)->locale('id')->translatedFormat('F Y');
+        }
+        if (!empty($filters['year'])) {
+            return (string) $filters['year'];
+        }
+
+        return null;
+    }
+
+    /**
+     * The user whose kegiatan are exported (null when an admin exports everyone).
+     */
+    private function exportUser(array $filters): ?User
+    {
+        $user = auth()->user();
+        if (!$user->hasRole('admin')) {
+            return $user;
+        }
+
+        return !empty($filters['user_id']) ? User::find($filters['user_id']) : null;
+    }
+
+    private function exportFilename(array $filters, string $extension): string
+    {
+        $filename = 'Laporan_Kegiatan';
+        if (!empty($filters['year'])) {
+            $filename .= '_' . $filters['year'];
+            if (!empty($filters['month'])) {
+                $filename .= '_' . str_pad($filters['month'], 2, '0', STR_PAD_LEFT);
+            }
+        }
+
+        return $filename . '_' . now()->format('His') . '.' . $extension;
     }
 
     /**
@@ -235,6 +329,11 @@ class KegiatanController extends Controller
      */
     public function show(Kegiatan $kegiatan): JsonResponse
     {
+        $user = auth()->user();
+        if (!$user->hasRole('admin') && $kegiatan->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         return response()->json($kegiatan->load('media'));
     }
 
