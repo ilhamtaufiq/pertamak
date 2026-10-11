@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, Image, TouchableOpacity, ActivityIndicator } from '../../tw';
-import { ScrollView, Modal, Alert, StatusBar, StyleSheet, Linking, Dimensions } from 'react-native';
+import { ScrollView, Modal, Alert, StatusBar, StyleSheet, Linking, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useKegiatanById, useDeleteKegiatan } from '../../hooks/useKegiatan';
 import { ChevronLeft, Trash2, Pencil, ShieldAlert, MapPin, Map as MapIcon, X, User } from 'lucide-react-native';
@@ -8,9 +8,9 @@ import { haptics } from '../../services/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const PHOTO_WIDTH = SCREEN_WIDTH - SPACING.xl * 2;
 const DANGER = '#E11D48';
+// Keeps photos from stretching too wide on tablets and desktop web
+const MAX_CONTENT_WIDTH = 640;
 
 function toPublicUrl(url: string) {
   if (!url) return '';
@@ -21,6 +21,9 @@ export default function KegiatanDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const contentWidth = Math.min(windowWidth, MAX_CONTENT_WIDTH);
+  const photoWidth = contentWidth - SPACING.xl * 2;
   const { data: kegiatan, isLoading, error } = useKegiatanById(Number(id));
   const deleteMutation = useDeleteKegiatan();
 
@@ -132,7 +135,7 @@ export default function KegiatanDetailScreen() {
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              snapToInterval={PHOTO_WIDTH + SPACING.md}
+              snapToInterval={photoWidth + SPACING.md}
               decelerationRate="fast"
               contentContainerStyle={styles.galleryContent}
             >
@@ -142,7 +145,7 @@ export default function KegiatanDetailScreen() {
                   onPress={() => setPreviewIndex(idx)}
                   accessibilityRole="imagebutton"
                   accessibilityLabel={`Perbesar foto ${idx + 1} dari ${photos.length}`}
-                  style={[styles.photo, { width: PHOTO_WIDTH }]}
+                  style={[styles.photo, { width: photoWidth }]}
                 >
                   <Image source={{ uri: toPublicUrl(photo.original_url) }} style={styles.photoImage} resizeMode="cover" />
                 </TouchableOpacity>
@@ -290,7 +293,7 @@ const styles = StyleSheet.create({
 
   galleryWrap: { marginBottom: SPACING.xl },
   galleryContent: { paddingHorizontal: SPACING.xl },
-  photo: { height: 260, borderRadius: RADIUS.lg, overflow: 'hidden', marginRight: SPACING.md, backgroundColor: T.darkSurface },
+  photo: { aspectRatio: 4 / 3, borderRadius: RADIUS.lg, overflow: 'hidden', marginRight: SPACING.md, backgroundColor: T.darkSurface },
   photoImage: { width: '100%', height: '100%' },
   photoCount: { color: T.textSecondary, ...TYPOGRAPHY.caption, marginTop: SPACING.sm, marginLeft: SPACING.xl },
   noPhoto: {
