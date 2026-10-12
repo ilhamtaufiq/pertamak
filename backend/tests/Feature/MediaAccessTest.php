@@ -100,7 +100,7 @@ class MediaAccessTest extends TestCase
     public function test_expired_media_url_is_rejected(): void
     {
         $media = $this->kegiatan->getFirstMedia('dokumentasi');
-        $url = URL::temporarySignedRoute('media.file', now()->subMinute(), ['media' => $media->id, 'variant' => 'original']);
+        $url = URL::temporarySignedRoute('media.file', now()->subMinute(), ['media' => $media->id, 'variant' => 'original'], absolute: false);
 
         $this->get($url)->assertForbidden();
     }
@@ -109,7 +109,7 @@ class MediaAccessTest extends TestCase
     {
         $html = UploadedFile::fake()->createWithContent('halaman.html', '<script>alert(document.cookie)</script>');
         $media = $this->karyawan->addMedia($html)->toMediaCollection('library');
-        $url = URL::temporarySignedRoute('media.file', now()->addHour(), ['media' => $media->id, 'variant' => 'original']);
+        $url = URL::temporarySignedRoute('media.file', now()->addHour(), ['media' => $media->id, 'variant' => 'original'], absolute: false);
 
         $response = $this->get($url)->assertOk();
 
@@ -153,7 +153,7 @@ class MediaAccessTest extends TestCase
         Storage::disk('media')->assertExists($legacy->id . '/conversions/lama-thumb.jpg');
         Storage::disk('public')->assertMissing($legacy->id . '/lama.jpg');
 
-        $url = URL::temporarySignedRoute('media.file', now()->addHour(), ['media' => $legacy->id, 'variant' => 'original']);
+        $url = URL::temporarySignedRoute('media.file', now()->addHour(), ['media' => $legacy->id, 'variant' => 'original'], absolute: false);
         $this->get($url)->assertOk();
     }
 }

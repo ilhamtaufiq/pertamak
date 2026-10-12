@@ -6,8 +6,11 @@ use Illuminate\Support\Facades\URL;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
- * Builds signed, expiring URLs for private media. Clients get these instead of
- * direct storage paths, so every file request passes the signature check.
+ * Builds signed, expiring URLs for private media.
+ *
+ * The signature covers only the path and query, not the host or scheme. Reverse proxies rewrite
+ * those (Traefik and Cloudflare), so a host-bound signature fails in production even though the
+ * URL is correct. The file route validates with `signed:relative` to match.
  */
 class MediaUrl
 {
@@ -15,10 +18,13 @@ class MediaUrl
 
     public static function for(Media $media, string $variant = 'original'): string
     {
-        return URL::temporarySignedRoute(
+        $relative = URL::temporarySignedRoute(
             'media.file',
             now()->addHours(self::TTL_HOURS),
-            ['media' => $media->id, 'variant' => $variant]
+            ['media' => $media->id, 'variant' => $variant],
+            absolute: false,
         );
+
+        return rtrim((string) config('app.url'), '/') . $relative;
     }
 }
