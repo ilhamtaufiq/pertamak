@@ -16,7 +16,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // Private media. Authorised by the signed URL (see App\Support\MediaUrl), not a bearer token.
 Route::get('/media/{media}/{variant}', [MediaFileController::class, 'show'])
     ->whereIn('variant', ['original', 'optimized', 'thumb'])
-    ->middleware('signed')
+    ->middleware([\App\Http\Middleware\UseAppUrlScheme::class, 'signed'])
     ->name('media.file');
 
 Route::middleware(['auth:sanctum', 'last_seen'])->group(function () {

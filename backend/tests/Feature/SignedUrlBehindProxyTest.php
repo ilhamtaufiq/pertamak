@@ -23,6 +23,7 @@ class SignedUrlBehindProxyTest extends TestCase
     private function signedMediaUrl(): string
     {
         Storage::fake('media');
+        config(['app.url' => 'https://pertamak.cianjur.space']);
         URL::forceRootUrl('https://pertamak.cianjur.space');
         URL::forceScheme('https');
         Role::create(['name' => 'karyawan', 'guard_name' => 'web']);
@@ -42,6 +43,17 @@ class SignedUrlBehindProxyTest extends TestCase
         // Traefik forwards over plain http and reports the original scheme and host
         $this->get(str_replace('https://', 'http://', $url), [
             'X-Forwarded-Proto' => 'https',
+            'X-Forwarded-Host' => 'pertamak.cianjur.space',
+        ])->assertOk();
+    }
+
+    public function test_signed_url_is_accepted_when_the_proxy_overwrites_the_scheme_with_http(): void
+    {
+        // Production case: APP_URL is https, but Traefik rewrites X-Forwarded-Proto to http
+        $url = $this->signedMediaUrl();
+
+        $this->get(str_replace('https://', 'http://', $url), [
+            'X-Forwarded-Proto' => 'http',
             'X-Forwarded-Host' => 'pertamak.cianjur.space',
         ])->assertOk();
     }
