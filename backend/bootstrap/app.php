@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // The app runs behind Traefik and Cloudflare, which terminate HTTPS. Without trusting
+        // them, Laravel sees http and every signed media URL (built with https) fails validation.
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
         
         // Exclude API routes from CSRF (using token-based auth)
