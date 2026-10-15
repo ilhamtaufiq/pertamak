@@ -47,6 +47,23 @@ class SignedUrlBehindProxyTest extends TestCase
         ])->assertOk();
     }
 
+    public function test_serialized_media_urls_are_all_signed_api_urls(): void
+    {
+        Storage::fake('media');
+        Role::create(['name' => 'karyawan', 'guard_name' => 'web']);
+        $user = User::factory()->create()->assignRole('karyawan');
+        $kegiatan = Kegiatan::create([
+            'user_id' => $user->id, 'tanggal' => '2026-03-02', 'hari' => 'Senin', 'lokasi' => 'X', 'uraian_kegiatan' => 'U',
+        ]);
+        $kegiatan->addMedia(UploadedFile::fake()->image('foto.jpg'))->toMediaCollection('dokumentasi');
+
+        $media = $kegiatan->fresh()->load('media')->toArray()['media'][0];
+
+        $this->assertStringNotContainsString('/storage/', $media['original_url']);
+        $this->assertStringContainsString('/api/media/', $media['original_url']);
+        $this->assertStringContainsString('signature=', $media['original_url']);
+    }
+
     public function test_signed_url_is_accepted_when_the_proxy_overwrites_the_scheme_with_http(): void
     {
         // Production case: APP_URL is https, but Traefik rewrites X-Forwarded-Proto to http
