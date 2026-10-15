@@ -36,6 +36,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
 import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SPACING } from '../../tokens';
 import { confirmAction } from '../../services/dialogs';
+import { toSecureMediaUrl } from '../../lib/mediaUrl';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -445,7 +446,7 @@ function FileItem({ file, delay, onPress, onPreview }: any) {
          >
             <View style={styles.fileIconFrame}>
                {isImage ? (
-                  <Image source={{ uri: file.thumb || file.url.replace('localhost', 'pertamak.cianjur.space') }} style={{ width: '100%', height: '100%' }} />
+                  <Image source={{ uri: toSecureMediaUrl(file.thumb || file.url) }} style={{ width: '100%', height: '100%' }} />
                ) : (
                   <FileText color={COLORS.textSecondary} size={24} />
                )}

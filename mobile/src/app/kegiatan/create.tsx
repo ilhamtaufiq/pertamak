@@ -13,6 +13,7 @@ import { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { TYPOGRAPHY, BUTTON, COLORS, RADIUS, SPACING } from '../../tokens';
+import { toSecureMediaUrl } from '../../lib/mediaUrl';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -67,7 +68,7 @@ export default function CreateKegiatanScreen() {
 
       if (existingData.media && existingData.media.length > 0) {
         setImages(existingData.media.map(m => ({
-          uri: m.original_url.replace('localhost', 'pertamak.cianjur.space'),
+          uri: toSecureMediaUrl(m.original_url),
           isExisting: true,
           id: m.id
         })));
