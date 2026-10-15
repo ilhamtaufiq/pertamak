@@ -9,15 +9,13 @@ import { confirmAction } from '../../services/dialogs';
 import { shareKegiatanPhoto } from '../../services/share';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TYPOGRAPHY, BUTTON, COLORS as T, RADIUS, SPACING } from '../../tokens';
+import { toSecureMediaUrl } from '../../lib/mediaUrl';
 
 const DANGER = '#E11D48';
 // Keeps photos from stretching too wide on tablets and desktop web
 const MAX_CONTENT_WIDTH = 640;
 
-function toPublicUrl(url: string) {
-  if (!url) return '';
-  return url.replace('http://localhost:8000', 'https://pertamak.cianjur.space');
-}
+const toPublicUrl = toSecureMediaUrl;
 
 export default function KegiatanDetailScreen() {
   const { id } = useLocalSearchParams();

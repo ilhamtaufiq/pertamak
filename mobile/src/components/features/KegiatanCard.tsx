@@ -5,6 +5,7 @@ import { Kegiatan } from '../../types/kegiatan';
 import { haptics } from '../../services/haptics';
 import { MapPin, Calendar, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
+import { toSecureMediaUrl } from '../../lib/mediaUrl';
 
 interface KegiatanCardProps {
   item: Kegiatan;
@@ -78,7 +79,7 @@ export const KegiatanCard = memo(function KegiatanCard({ item, onPress }: Kegiat
             {hasMedia ? (
               <View style={styles.mediaFrame}>
                 <Image 
-                  source={{ uri: firstMedia!.replace('localhost', 'pertamak.cianjur.space') }}
+                  source={{ uri: toSecureMediaUrl(firstMedia) }}
                   style={styles.mediaImage}
                   resizeMode="cover"
                 />

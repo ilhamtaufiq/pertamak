@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import type { Kegiatan, Media } from '../types/kegiatan';
+import { toSecureMediaUrl } from '../lib/mediaUrl';
 
 const MAX_CAPTION = 2000; // Instagram caption limit is 2,200 characters
 
@@ -43,7 +44,7 @@ export async function shareKegiatanPhoto(kegiatan: Kegiatan, photo: Media): Prom
   const caption = buildCaption(kegiatan);
 
   if (Platform.OS === 'web') {
-    const response = await fetch(photo.original_url);
+    const response = await fetch(toSecureMediaUrl(photo.original_url));
     if (!response.ok) throw new Error('Foto tidak bisa diunduh.');
     const blob = await response.blob();
     const file = new File([blob], `pertamak-${kegiatan.id}-${photo.id}.${extensionFor(photo.mime_type)}`, { type: photo.mime_type });
@@ -66,7 +67,7 @@ export async function shareKegiatanPhoto(kegiatan: Kegiatan, photo: Media): Prom
   }
 
   const uri = `${FileSystem.cacheDirectory}pertamak-${kegiatan.id}-${photo.id}.${extensionFor(photo.mime_type)}`;
-  const result = await FileSystem.downloadAsync(photo.original_url, uri);
+  const result = await FileSystem.downloadAsync(toSecureMediaUrl(photo.original_url), uri);
   if (result.status !== 200) {
     await FileSystem.deleteAsync(uri, { idempotent: true });
     throw new Error('Foto tidak bisa diunduh. Periksa koneksi, lalu coba lagi.');

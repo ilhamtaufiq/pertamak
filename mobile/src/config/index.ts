@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { toSecureMediaUrl } from '../lib/mediaUrl';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000/api";
 const APP_NAME = process.env.EXPO_PUBLIC_APP_NAME || "Pertamak Hub";
@@ -14,9 +15,7 @@ export const APP_CONFIG = {
 
 /** Resolve media URL: replace localhost with production domain */
 export function getMediaUrl(url: string | null | undefined): string {
-  if (!url) return '';
-  if (url.includes('pertamak.cianjur.space') || !url.includes('localhost')) return url;
-  return url.replace('http://localhost:8000', 'https://pertamak.cianjur.space');
+  return toSecureMediaUrl(url);
 }
 
 export default APP_CONFIG;
