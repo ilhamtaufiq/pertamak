@@ -14,7 +14,7 @@ COPY backend/composer.json backend/composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
 # Production stage - using Debian for faster extension install
-FROM php:8.3-fpm AS production
+FROM php:8.3.36-fpm AS production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
